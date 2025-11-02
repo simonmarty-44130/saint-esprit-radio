@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Author Display</title>
+    <script>
+        // Simuler les données localStorage
+        const testData = {
+            'saint-esprit-user': 'Simon Marty',
+            'saint-esprit-user-fullname': 'Simon Marty',
+            'saint-esprit-user-email': 'simon.marty@radio-fidelite.fr',
+            'saint-esprit-user-sub': '7199604e-c0b1-700b-8cdb-3b100af8fef0'
+        };
+
+        // Fonction de test basée sur getAuthorDisplay
+        function getAuthorDisplay(author) {
+            if (!author) return 'Anonyme';
+            
+            // Si c'est un UUID
+            if (author.includes('-')) {
+                const fullname = testData['saint-esprit-user-fullname'];
+                const username = testData['saint-esprit-user'];
+                const userEmail = testData['saint-esprit-user-email'];
+                
+                // Si l'UUID correspond à l'utilisateur actuel
+                if (testData['saint-esprit-user-sub'] === author) {
+                    return fullname || username || userEmail?.split('@')[0] || 'Anonyme';
+                }
+                
+                return 'Utilisateur';
+            }
+            
+            return author;
+        }
+
+        // Tests
+        console.log('Test 1 - Author = "Simon Marty":', getAuthorDisplay('Simon Marty'));
+        console.log('Test 2 - Author = UUID:', getAuthorDisplay('7199604e-c0b1-700b-8cdb-3b100af8fef0'));
+        console.log('Test 3 - Author = null:', getAuthorDisplay(null));
+        console.log('Test 4 - Author = "Reporter":', getAuthorDisplay('Reporter'));
+        
+        // Test de création d'item
+        const defaults = {
+            news: {
+                title: 'Nouveau titre',
+                content: '',
+                duration: '00:30',
+                author: 'Reporter'
+            }
+        };
+        
+        const authorName = testData['saint-esprit-user'] || 'Reporter';
+        
+        // Ancien code (problématique)
+        const oldItem = {
+            id: Date.now().toString() + '_old',
+            author: authorName,
+            ...defaults.news  // Écrase author avec 'Reporter'
+        };
+        
+        // Nouveau code (corrigé)
+        const newItem = {
+            ...defaults.news,  // Defaults en premier
+            id: Date.now().toString() + '_new',
+            author: authorName // Écrase avec le nom correct
+        };
+        
+        console.log('');
+        console.log('Création d\'item:');
+        console.log('Ancien code - author:', oldItem.author); // Affichera "Reporter"
+        console.log('Nouveau code - author:', newItem.author); // Affichera "Simon Marty"
+    </script>
+</head>
+<body>
+    <h1>Test Author Display</h1>
+    <p>Ouvrez la console pour voir les résultats des tests.</p>
+    
+    <div id="results"></div>
+    
+    <script>
+        // Affichage visuel des résultats
+        const results = document.getElementById('results');
+        
+        const tests = [
+            { input: 'Simon Marty', expected: 'Simon Marty', actual: getAuthorDisplay('Simon Marty') },
+            { input: '7199604e-c0b1-700b-8cdb-3b100af8fef0', expected: 'Simon Marty', actual: getAuthorDisplay('7199604e-c0b1-700b-8cdb-3b100af8fef0') },
+            { input: null, expected: 'Anonyme', actual: getAuthorDisplay(null) },
+            { input: 'Reporter', expected: 'Reporter', actual: getAuthorDisplay('Reporter') }
+        ];
+        
+        let html = '<h2>Résultats des tests</h2><ul>';
+        tests.forEach((test, index) => {
+            const passed = test.actual === test.expected;
+            html += `<li style="color: ${passed ? 'green' : 'red'}">
+                Test ${index + 1}: Input="${test.input}" → "${test.actual}" 
+                ${passed ? '✓' : '✗ (attendu: "' + test.expected + '")'}
+            </li>`;
+        });
+        html += '</ul>';
+        
+        html += '<h2>Test de création d\'item</h2>';
+        html += '<p><strong>Avec l\'ancien code:</strong> author = "' + oldItem.author + '" (problème: toujours "Reporter")</p>';
+        html += '<p><strong>Avec le nouveau code:</strong> author = "' + newItem.author + '" (correct: "Simon Marty")</p>';
+        
+        results.innerHTML = html;
+    </script>
+</body>
+</html>

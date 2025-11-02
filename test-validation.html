@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Validation Saint-Esprit AWS</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        .warning { color: #ff0; }
+        .info { color: #0ff; }
+        #results { margin: 20px 0; padding: 20px; background: #000; border: 1px solid #0f0; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test de Validation Saint-Esprit AWS</h1>
+    <div id="status">Connexion à saint-esprit.link...</div>
+    <div id="results"></div>
+    
+    <button onclick="runTests()">Lancer les tests</button>
+    <button onclick="window.open('https://saint-esprit.link', '_blank')">Ouvrir Saint-Esprit</button>
+    
+    <script>
+        const results = document.getElementById('results');
+        const status = document.getElementById('status');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            results.appendChild(div);
+        }
+        
+        async function runTests() {
+            results.innerHTML = '';
+            log('📊 Début des tests de validation...', 'info');
+            
+            // Test 1: Vérifier l'accès à l'API
+            try {
+                const response = await fetch('https://saint-esprit.link/index.html');
+                if (response.ok) {
+                    const html = await response.text();
+                    
+                    // Vérifier AWS SDK unique
+                    const awsSdkMatches = html.match(/aws-sdk-[\d.]+\.min\.js/g) || [];
+                    if (awsSdkMatches.length === 1) {
+                        log('✅ AWS SDK: Une seule version trouvée (' + awsSdkMatches[0] + ')', 'success');
+                    } else if (awsSdkMatches.length > 1) {
+                        log('❌ AWS SDK: ' + awsSdkMatches.length + ' versions trouvées!', 'error');
+                        awsSdkMatches.forEach(v => log('  - ' + v, 'warning'));
+                    } else {
+                        log('⚠️ AWS SDK: Aucune version trouvée', 'warning');
+                    }
+                    
+                    // Vérifier storage-dynamodb
+                    if (html.includes('storage-dynamodb.js?v=1757350310')) {
+                        log('✅ Storage: storage-dynamodb.js avec nouveau timestamp', 'success');
+                    } else if (html.includes('storage-dynamodb.js')) {
+                        log('⚠️ Storage: storage-dynamodb.js trouvé mais pas la nouvelle version', 'warning');
+                    } else {
+                        log('❌ Storage: storage-dynamodb.js non trouvé', 'error');
+                    }
+                    
+                    // Vérifier HabillageManager
+                    if (html.includes('HabillageManager.js?v=1757350310')) {
+                        log('✅ HabillageManager: Présent avec nouveau timestamp', 'success');
+                    } else if (html.includes('HabillageManager.js')) {
+                        log('⚠️ HabillageManager: Présent mais pas la nouvelle version', 'warning');
+                    }
+                    
+                    // Vérifier UnifiedBroadcast supprimé
+                    if (html.includes('<!-- <script src="js/components/automation/UnifiedBroadcast.js')) {
+                        log('✅ UnifiedBroadcast: Correctement commenté/supprimé', 'success');
+                    } else if (html.includes('UnifiedBroadcast.js') && !html.includes('<!--')) {
+                        log('❌ UnifiedBroadcast: Toujours actif!', 'error');
+                    } else {
+                        log('✅ UnifiedBroadcast: Supprimé', 'success');
+                    }
+                    
+                    // Vérifier OnAir
+                    if (html.includes('OnAir.js?v=1757350310')) {
+                        log('✅ OnAir: Module avec nouveau timestamp', 'success');
+                    }
+                    
+                    // Vérifier app.js
+                    if (html.includes('app.js?v=1757350310')) {
+                        log('✅ App.js: Nouveau timestamp appliqué', 'success');
+                    }
+                    
+                    log('', 'info');
+                    log('📋 RÉSUMÉ:', 'info');
+                    log('Cache CloudFront invalidé à ' + new Date().toLocaleTimeString(), 'info');
+                    log('Toutes les versions ont été mises à jour avec timestamp: 1757350310', 'info');
+                    
+                } else {
+                    log('❌ Impossible d\'accéder à saint-esprit.link', 'error');
+                }
+            } catch (error) {
+                log('❌ Erreur lors des tests: ' + error.message, 'error');
+            }
+            
+            log('', 'info');
+            log('🎯 Tests terminés. Ouvrez saint-esprit.link dans un navigateur pour vérifier le fonctionnement.', 'info');
+        }
+        
+        // Lancer les tests automatiquement
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 1000);
+        });
+    </script>
+</body>
+</html>

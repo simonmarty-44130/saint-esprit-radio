@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saint Esprit LOCAL - Module Automation</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/main.css?v=1.1">
+    <link rel="stylesheet" href="css/components/template-modal.css?v=1.1">
+    <link rel="stylesheet" href="css/components/locks.css?v=1.1">
+    <link rel="stylesheet" href="css/components/conductor-selector.css?v=1.1">
+    <link rel="stylesheet" href="css/sections/news-optimized.css?v=1.1">
+    <link rel="stylesheet" href="css/sections/blocks-optimized.css?v=1.1">
+    <link rel="stylesheet" href="css/sections/cross-user.css?v=1.2">
+    <link rel="stylesheet" href="css/stream-recorder.css?v=1.2">
+    <link rel="stylesheet" href="css/volunteer-mode.css?v=1.0">
+    <link rel="stylesheet" href="css/debug-force.css?v=1.1">
+    <link rel="stylesheet" href="css/fixes/scrollbar-fix.css?v=1.0">
+    <link rel="stylesheet" href="css/fixes/editor-layout-fix.css?v=1.0">
+    <link rel="stylesheet" href="css/fixes/layout-fix.css?v=1.0">
+    <link rel="stylesheet" href="css/fixes/sound-panel-fix.css?v=1.0">
+    <link rel="stylesheet" href="css/fixes/blocks-panel-fix.css?v=1.0">
+    <link rel="stylesheet" href="css/automation/automation.css?v=1.0">
+    
+    <style>
+        /* Override pour version locale */
+        .header {
+            background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
+            border-bottom: 2px solid #00B4D8;
+            padding: 1rem;
+        }
+        
+        .local-banner {
+            background: #ff6b6b;
+            color: white;
+            padding: 0.5rem;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        /* Styles simplifiés pour la navigation */
+        .nav-container {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: #222;
+        }
+        
+        .nav-item {
+            padding: 0.75rem 1.5rem;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item:hover {
+            background: #444;
+        }
+        
+        .nav-item.active {
+            background: #00B4D8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Banner Local -->
+    <div class="local-banner">
+        🔧 VERSION LOCALE - Sans authentification Cognito
+    </div>
+    
+    <!-- Header simplifié -->
+    <header class="header">
+        <h1 style="margin: 0; color: white;">Saint-Esprit - Module Automation</h1>
+        <div class="timer-display" id="main-timer-display">
+            <div class="timer-item">
+                <div class="timer-label">TIME</div>
+                <div class="timer-value" id="current-time">00:00:00</div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Navigation simplifiée -->
+    <nav class="nav-container">
+        <button class="nav-item active" onclick="showSection('automation')">
+            🎙️ Automation
+        </button>
+        <button class="nav-item" onclick="showSection('test')">
+            🧪 Tests
+        </button>
+    </nav>
+    
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Automation Section -->
+        <div id="automation-section" class="section active">
+            <!-- Le contenu sera généré par UnifiedBroadcast.js -->
+        </div>
+        
+        <!-- Test Section -->
+        <div id="test-section" class="section" style="display: none;">
+            <div style="padding: 2rem; background: #222; color: white;">
+                <h2>🧪 Zone de Test</h2>
+                <div style="margin: 2rem 0;">
+                    <button onclick="testAutomation()" style="padding: 0.75rem 1.5rem; background: #00B4D8; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        🚀 Tester le module
+                    </button>
+                    <button onclick="testSpaceKey()" style="padding: 0.75rem 1.5rem; background: #00B4D8; color: white; border: none; border-radius: 6px; cursor: pointer; margin-left: 1rem;">
+                        ⏯️ Tester ESPACE
+                    </button>
+                </div>
+                <div id="test-results" style="background: #1a1a1a; padding: 1rem; border-radius: 8px; margin-top: 1rem; min-height: 200px;">
+                    <!-- Résultats des tests -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Données de test en dur (sans DynamoDB) -->
+    <script>
+        // Mock des données pour fonctionner sans backend
+        window.mockData = {
+            conducteur: [
+                {
+                    id: '1',
+                    type: 'news',
+                    title: 'Flash Info 8h',
+                    duration: '2:00',
+                    content: {
+                        title: 'Flash Info 8h',
+                        content: '[LANCEMENT]Bonjour à tous, voici le flash info de 8h avec les principales actualités de la matinée.[/LANCEMENT]\n\nContenu principal de la news...\n\n[DESANNONCE]Merci de votre écoute, retrouvez-nous pour le prochain flash à 9h.[/DESANNONCE]'
+                    },
+                    sounds: []
+                },
+                {
+                    id: '2',
+                    type: 'animation',
+                    title: 'Jingle matinale',
+                    duration: '0:15',
+                    content: {
+                        title: 'Jingle matinale',
+                        content: '[LANCEMENT]Et maintenant, place à notre jingle du matin ![/LANCEMENT]'
+                    },
+                    sounds: []
+                },
+                {
+                    id: '3',
+                    type: 'news',
+                    title: 'Météo',
+                    duration: '1:30',
+                    content: {
+                        title: 'Météo',
+                        content: '[LANCEMENT]Découvrons ensemble les prévisions météo pour cette journée.[/LANCEMENT]\n\nDétails météo...\n\n[DESANNONCE]Belle journée en perspective ![/DESANNONCE]'
+                    },
+                    sounds: []
+                }
+            ]
+        };
+        
+        // Mock du storage pour fonctionner localement
+        window.app = {
+            storage: {
+                getAllItems: async (type) => {
+                    console.log('Mock: getAllItems', type);
+                    return [];
+                }
+            },
+            conductorManager: {
+                getSegments: () => {
+                    console.log('Mock: getSegments');
+                    return window.mockData.conducteur;
+                }
+            },
+            newsManager: {
+                getDatabase: () => []
+            },
+            animationManager: {
+                getDatabase: () => []
+            },
+            automationModule: null
+        };
+        
+        // Navigation simple
+        function showSection(sectionName) {
+            document.querySelectorAll('.section').forEach(s => {
+                s.style.display = 'none';
+            });
+            document.querySelectorAll('.nav-item').forEach(n => {
+                n.classList.remove('active');
+            });
+            
+            const section = document.getElementById(sectionName + '-section');
+            if (section) {
+                section.style.display = 'block';
+            }
+            
+            event.target.classList.add('active');
+            
+            // Initialiser automation si nécessaire
+            if (sectionName === 'automation' && !window.app.automationModule) {
+                initAutomation();
+            }
+        }
+        
+        // Initialisation du module
+        async function initAutomation() {
+            console.log('Initialisation du module Automation...');
+            if (!window.app.automationModule) {
+                window.app.automationModule = new UnifiedBroadcast();
+                
+                // Override pour utiliser les données mock
+                window.app.automationModule.loadConductor = async function() {
+                    console.log('Chargement du conducteur mock...');
+                    this.conducteurItems = window.mockData.conducteur;
+                    this.updateDisplay();
+                };
+                
+                await window.app.automationModule.init();
+            }
+        }
+        
+        // Tests
+        function testAutomation() {
+            const results = document.getElementById('test-results');
+            results.innerHTML = '<h3>Test du module...</h3>';
+            
+            if (window.app.automationModule) {
+                results.innerHTML += '<p>✅ Module chargé</p>';
+                results.innerHTML += '<p>✅ ' + window.mockData.conducteur.length + ' éléments dans le conducteur</p>';
+                results.innerHTML += '<p>ℹ️ Appuyez sur ESPACE pour tester play/pause</p>';
+                results.innerHTML += '<p>ℹ️ Alt+1/2/3 pour changer la vue du prompteur</p>';
+            } else {
+                results.innerHTML += '<p>❌ Module non chargé</p>';
+            }
+        }
+        
+        function testSpaceKey() {
+            const results = document.getElementById('test-results');
+            results.innerHTML += '<p>🎹 Appuyez sur ESPACE maintenant...</p>';
+            
+            // Écouter la prochaine touche ESPACE
+            const listener = (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    results.innerHTML += '<p>✅ ESPACE détecté !</p>';
+                    document.removeEventListener('keydown', listener);
+                }
+            };
+            document.addEventListener('keydown', listener);
+            
+            setTimeout(() => {
+                document.removeEventListener('keydown', listener);
+            }, 5000);
+        }
+        
+        // Clock simple
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toTimeString().split(' ')[0];
+            const timeEl = document.getElementById('current-time');
+            if (timeEl) {
+                timeEl.textContent = timeStr;
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+    
+    <!-- Scripts principaux -->
+    <script src="js/core/utils.js?v=1.1"></script>
+    <script src="js/utils/audio-url-fixer.js?v=1.0"></script>
+    <script src="js/components/automation/UnifiedBroadcast.js?v=1.0"></script>
+    
+    <script>
+        // Auto-init au chargement
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Page chargée, initialisation...');
+            initAutomation();
+        });
+    </script>
+</body>
+</html>

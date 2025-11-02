@@ -1,0 +1,792 @@
+/* ========================================
+   VOLUNTEER MODE CSS
+   Extension progressive pour mode bénévole
+   ======================================== */
+
+/* ===== MODAL SÉLECTION DE RÔLE ===== */
+.role-selection-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+
+.role-modal-content {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease;
+}
+
+.role-modal-content h2 {
+    color: var(--primary);
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.role-modal-content p {
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.role-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.role-btn {
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.role-btn:hover {
+    border-color: var(--primary);
+    background: var(--bg-lighter);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 255, 159, 0.2);
+}
+
+.role-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.role-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.role-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    display: block;
+}
+
+.journalist-btn:hover .role-icon {
+    animation: bounce 0.5s ease;
+}
+
+.volunteer-btn:hover .role-icon {
+    animation: pulse 0.5s ease;
+}
+
+/* ===== INDICATEUR DE RÔLE ===== */
+.user-role-volunteer .app-header {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%) !important;
+    padding: 1.5rem;
+    text-align: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.user-role-volunteer .app-header::after {
+    content: "🎙️ Espace Bénévole - Création d'Émissions";
+    color: white;
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.user-role-journalist .app-header::after {
+    content: "📰 Mode Journaliste";
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: var(--bg-dark);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 255, 159, 0.3);
+}
+
+/* ===== MASQUAGE CONDITIONNEL POUR BÉNÉVOLES ===== */
+
+/* Masquer COMPLÈTEMENT le menu latéral gauche en mode bénévole */
+.user-role-volunteer .sidebar {
+    display: none !important;
+}
+
+/* Ajuster le contenu principal pour prendre toute la largeur */
+.user-role-volunteer .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Centrer le contenu bénévole */
+.user-role-volunteer #dashboard-section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Masquer aussi le toggle button du menu */
+.user-role-volunteer .sidebar-toggle {
+    display: none !important;
+}
+
+/* Masquer les éléments complexes avec la classe journalist-only */
+.user-role-volunteer .journalist-only {
+    display: none !important;
+}
+
+/* Masquer les modules avancés pour les bénévoles */
+.user-role-volunteer .conductor-advanced,
+.user-role-volunteer .news-templates,
+.user-role-volunteer .animation-scheduling,
+.user-role-volunteer .advanced-audio-editor,
+.user-role-volunteer .block-manager-advanced,
+.user-role-volunteer .sync-settings,
+.user-role-volunteer .export-options {
+    display: none !important;
+}
+
+/* Masquer certains boutons dans la toolbar */
+.user-role-volunteer .toolbar-btn.btn-template,
+.user-role-volunteer .toolbar-btn.btn-schedule,
+.user-role-volunteer .toolbar-btn.btn-export {
+    display: none !important;
+}
+
+/* Masquer TOUTES les autres sections en mode bénévole SAUF audio-editor quand nécessaire */
+.user-role-volunteer #news-section,
+.user-role-volunteer #animation-section,
+.user-role-volunteer #multitrack-section,
+.user-role-volunteer #blocks-section,
+.user-role-volunteer #fridge-section,
+.user-role-volunteer #conductor-section,
+.user-role-volunteer #onair-section,
+.user-role-volunteer #settings-section {
+    display: none !important;
+}
+
+/* L'éditeur audio sera affiché/masqué dynamiquement */
+.user-role-volunteer #audio-editor-section {
+    display: none;
+}
+
+/* Afficher uniquement le dashboard en mode bénévole */
+.user-role-volunteer #dashboard-section {
+    display: block !important;
+}
+
+/* Masquer les panneaux par défaut, ils seront affichés via JS */
+.user-role-volunteer #emission-panel,
+.user-role-volunteer .studios-calendar-panel {
+    display: none;
+}
+
+/* ===== INTERFACE ACCUEIL BÉNÉVOLE ===== */
+.volunteer-home-interface {
+    text-align: center;
+    padding: 3rem 2rem;
+}
+
+.volunteer-home-interface h1 {
+    color: #4CAF50;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.volunteer-home-interface .subtitle {
+    color: #666;
+    font-size: 1.2rem;
+    margin-bottom: 3rem;
+}
+
+.volunteer-main-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.volunteer-action-btn {
+    background: white;
+    border: 3px solid #4CAF50;
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.volunteer-action-btn:hover {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.3);
+}
+
+.volunteer-action-btn:hover * {
+    color: white !important;
+}
+
+.volunteer-action-btn .action-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.volunteer-action-btn .action-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.volunteer-action-btn .action-desc {
+    font-size: 1rem;
+    color: #666;
+}
+
+.btn-back-home {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.btn-back-home:hover {
+    background: #45a049;
+    transform: translateX(-5px);
+}
+
+/* Responsive pour petits écrans */
+@media (max-width: 768px) {
+    .volunteer-main-buttons {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .volunteer-action-btn {
+        padding: 2rem 1.5rem;
+    }
+    
+    .volunteer-action-btn .action-icon {
+        font-size: 3rem;
+    }
+}
+
+/* ===== INTERFACE SIMPLIFIÉE BÉNÉVOLES ===== */
+
+/* Masquer les boutons et éléments non nécessaires dans le dashboard */
+.user-role-volunteer .dashboard-actions {
+    display: none !important;
+}
+
+.user-role-volunteer .stats-grid {
+    display: none !important;
+}
+
+.user-role-volunteer .dashboard-card {
+    display: none !important;
+}
+
+.user-role-volunteer .quick-actions {
+    display: none !important;
+}
+
+.user-role-volunteer button[onclick*="createNews"],
+.user-role-volunteer button[onclick*="createAnimation"],
+.user-role-volunteer button[onclick*="showConductor"],
+.user-role-volunteer button[onclick*="loadTemplate"] {
+    display: none !important;
+}
+
+/* Dashboard simplifié */
+.user-role-volunteer #dashboard-section {
+    padding: 2rem;
+}
+
+/* Masquer TOUT le contenu du dashboard original */
+.user-role-volunteer .dashboard-header,
+.user-role-volunteer .dashboard-stats,
+.user-role-volunteer .dashboard-content > *:not(#emission-panel):not(.studios-calendar-panel) {
+    display: none !important;
+}
+
+/* Masquer le sélecteur de template */
+.user-role-volunteer .template-selector,
+.user-role-volunteer #template-selector,
+.user-role-volunteer .conductor-selector {
+    display: none !important;
+}
+
+/* Masquer les statistiques par leur structure */
+.user-role-volunteer .stats-container,
+.user-role-volunteer .statistics-panel,
+.user-role-volunteer div[style*="📊"] {
+    display: none !important;
+}
+
+/* Masquer tous les boutons d'action rapide du dashboard */
+.user-role-volunteer .btn-primary:not(.btn-create-emission),
+.user-role-volunteer .action-buttons {
+    display: none !important;
+}
+
+/* Editor simplifié pour bénévoles */
+.user-role-volunteer .editor-toolbar {
+    background: linear-gradient(to right, #4CAF50, #45a049);
+}
+
+.user-role-volunteer .editor-toolbar .toolbar-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.user-role-volunteer .editor-toolbar .toolbar-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Éditeur audio simplifié pour bénévoles */
+.user-role-volunteer #audio-editor-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.user-role-volunteer #audio-editor-section h2 {
+    color: #4CAF50;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+/* Simplifier l'interface audio pour les bénévoles */
+.user-role-volunteer .audio-library,
+.user-role-volunteer .audio-import-export {
+    display: none !important;
+}
+
+.user-role-volunteer .audio-editor-container {
+    border: 3px solid #4CAF50;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+/* Simplifier le conductor pour bénévoles */
+.user-role-volunteer #conductor-section .conductor-header {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+}
+
+.user-role-volunteer .conductor-actions button:not(.btn-add) {
+    display: none;
+}
+
+/* ===== PANNEAU CALENDRIERS STUDIOS (PHASE 2) ===== */
+.studios-calendar-panel {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin: 1rem;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+.studios-calendar-panel h3 {
+    color: white;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.studios-calendar-panel h3::before {
+    content: "📅";
+    font-size: 1.5rem;
+}
+
+.studio-calendar-item {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-sm);
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.studio-calendar-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(5px);
+}
+
+.studio-calendar-item h4 {
+    color: white;
+    font-size: 1.1rem;
+    margin-bottom: 0.3rem;
+}
+
+.studio-calendar-item .calendar-link {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.studio-calendar-item .calendar-link:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+/* ===== INTERFACE ÉMISSIONS (PHASE 3) ===== */
+.emission-creator-panel {
+    background: linear-gradient(135deg, #ffffff 0%, #f0f8f0 100%);
+    border: 3px solid #4CAF50;
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    margin: 1rem;
+    box-shadow: 0 8px 24px rgba(76, 175, 80, 0.15);
+}
+
+/* Zone d'écriture mise en avant */
+#emission-form-container {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: #333 !important; /* Forcer le texte en noir */
+}
+
+#emission-form-container * {
+    color: #333 !important; /* Tout le texte en noir dans le formulaire */
+}
+
+#emission-form-container label {
+    color: #333 !important;
+    font-weight: 600;
+}
+
+#emission-form-container input,
+#emission-form-container textarea,
+#emission-form-container select {
+    background: #f9f9f9 !important;
+    color: #333 !important;
+    border: 2px solid #ddd !important;
+}
+
+#emission-form-container input:focus,
+#emission-form-container textarea:focus,
+#emission-form-container select:focus {
+    border-color: #4CAF50 !important;
+    background: white !important;
+}
+
+.emission-form h3 {
+    color: #4CAF50 !important;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 3px solid #4CAF50;
+}
+
+.emission-toolbar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.emissions-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.emission-item {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.emission-item:hover {
+    border-color: #4CAF50;
+    transform: translateX(5px);
+}
+
+.emission-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.emission-item-header h4 {
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.emission-status {
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.emission-status.status-draft {
+    background: rgba(255, 193, 7, 0.2);
+    color: #FFC107;
+}
+
+.emission-status.status-ready {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+}
+
+.emission-item-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.emission-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.emission-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.emission-creator-panel h3 {
+    color: #4CAF50;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+}
+
+.emission-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.emission-form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.emission-form-group label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+.emission-form-group input,
+.emission-form-group textarea,
+.emission-form-group select {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    padding: 0.5rem;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.emission-form-group input:focus,
+.emission-form-group textarea:focus,
+.emission-form-group select:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
+
+/* Bouton création émission */
+.btn-create-emission {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%) !important;
+    color: white !important;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: var(--border-radius);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+/* Boutons dans le formulaire */
+#emission-form-container .btn {
+    color: white !important;
+}
+
+#emission-form-container .btn-secondary {
+    background: #666 !important;
+}
+
+#emission-form-container .btn-success {
+    background: #4CAF50 !important;
+}
+
+#emission-form-container .btn-info {
+    background: #2196F3 !important;
+}
+
+.user-role-volunteer .btn-create-emission:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.user-role-volunteer .btn-create-emission::before {
+    content: "🎙️";
+    font-size: 1.2rem;
+}
+
+/* Liste des musiques dans une émission */
+.emission-music-list {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-sm);
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.emission-music-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 0.5rem;
+}
+
+.emission-music-item .music-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.emission-music-item .music-icon {
+    font-size: 1.2rem;
+}
+
+.emission-music-item .music-title {
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.emission-music-item .music-duration {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.emission-music-item .btn-remove {
+    background: transparent;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: transform 0.2s ease;
+}
+
+.emission-music-item .btn-remove:hover {
+    transform: scale(1.2);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .role-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .user-role-volunteer .app-header::after,
+    .user-role-journalist .app-header::after {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .studios-calendar-panel {
+        margin: 0.5rem;
+        padding: 1rem;
+    }
+}

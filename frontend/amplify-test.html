@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Amplify Gen 2 - Saint-Esprit Radio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #b8daff; }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .news-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        
+        #logs {
+            height: 200px;
+            overflow-y: auto;
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            font-family: monospace;
+            border-radius: 5px;
+        }
+        
+        .password-change-form {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            background: #fff3cd;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Test Amplify Gen 2 - Saint-Esprit Radio</h1>
+    
+    <!-- Statut de connexion -->
+    <div class="container">
+        <h2>🔐 Authentification</h2>
+        <div id="auth-status" class="status info">Vérification du statut...</div>
+        
+        <div id="login-form">
+            <input type="text" id="username" placeholder="Nom d'utilisateur" value="test@saintesprit.radio">
+            <input type="password" id="password" placeholder="Mot de passe" value="TempPass123!">
+            <button onclick="testLogin()">Se connecter</button>
+        </div>
+        
+        <div id="password-change-form" class="password-change-form">
+            <h3>Changement de mot de passe requis</h3>
+            <input type="password" id="new-password" placeholder="Nouveau mot de passe">
+            <input type="password" id="confirm-password" placeholder="Confirmer le mot de passe">
+            <button onclick="changePassword()">Changer le mot de passe</button>
+        </div>
+        
+        <div id="user-info" style="display: none;">
+            <p>Connecté en tant que: <span id="current-user"></span></p>
+            <button onclick="testLogout()">Se déconnecter</button>
+        </div>
+    </div>
+    
+    <!-- Test API GraphQL -->
+    <div class="container">
+        <h2>📊 Test API GraphQL</h2>
+        <div id="api-status" class="status info">En attente de test...</div>
+        
+        <button onclick="testCreateNews()">Créer une news de test</button>
+        <button onclick="testListNews()">Lister les news</button>
+        <button onclick="startRealtimeTest()">Test temps réel</button>
+        <button onclick="stopRealtimeTest()">Arrêter temps réel</button>
+    </div>
+    
+    <!-- Création de news -->
+    <div class="container">
+        <h2>📝 Créer une News</h2>
+        <input type="text" id="news-title" placeholder="Titre de la news">
+        <textarea id="news-content" placeholder="Contenu de la news" rows="4"></textarea>
+        <button onclick="createNews()">Créer News</button>
+    </div>
+    
+    <!-- Liste des news -->
+    <div class="container">
+        <h2>📰 News Existantes</h2>
+        <div id="news-list">Aucune news chargée</div>
+        <button onclick="refreshNews()">Actualiser</button>
+    </div>
+    
+    <!-- Migration S3 -->
+    <div class="container">
+        <h2>🔄 Migration S3</h2>
+        <div id="migration-status" class="status info">Migration non testée</div>
+        <button onclick="testMigration()">Tester Migration S3 → DynamoDB</button>
+    </div>
+    
+    <!-- Logs -->
+    <div class="container">
+        <h2>📋 Logs</h2>
+        <div id="logs"></div>
+        <button onclick="clearLogs()">Vider logs</button>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        // Import des modules Amplify
+        import './js/amplify/amplify-config.js';
+        import { AmplifyAuth } from './js/amplify/amplify-auth.js';
+        import { AmplifyData } from './js/amplify/amplify-data.js';
+        
+        // Variables globales
+        window.auth = new AmplifyAuth();
+        window.data = new AmplifyData();
+        window.realtimeActive = false;
+        window.currentChallenge = null;
+        
+        // Logger
+        window.log = function(message) {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logs.innerHTML += `[${timestamp}] ${message}\n`;
+            logs.scrollTop = logs.scrollHeight;
+            console.log(message);
+        };
+        
+        window.clearLogs = function() {
+            document.getElementById('logs').innerHTML = '';
+        };
+        
+        // Fonctions de test d'authentification
+        window.testLogin = async function() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const statusDiv = document.getElementById('auth-status');
+            
+            try {
+                statusDiv.innerHTML = 'Connexion en cours...';
+                statusDiv.className = 'status info';
+                
+                const result = await window.auth.signIn(username, password);
+                
+                if (result.requiresPasswordChange) {
+                    statusDiv.innerHTML = '⚠️ Changement de mot de passe requis au premier login';
+                    statusDiv.className = 'status warning';
+                    window.currentChallenge = result.challengeParam;
+                    document.getElementById('password-change-form').style.display = 'block';
+                    window.log('Changement mot de passe requis');
+                } else if (result.username) {
+                    statusDiv.innerHTML = `✅ Connecté: ${result.username}`;
+                    statusDiv.className = 'status success';
+                    document.getElementById('current-user').textContent = result.username;
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('password-change-form').style.display = 'none';
+                    document.getElementById('user-info').style.display = 'block';
+                    window.log(`Connexion réussie: ${result.username}`);
+                }
+                
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Erreur: ${error.message}`;
+                statusDiv.className = 'status error';
+                window.log(`Erreur connexion: ${error.message}`);
+            }
+        };
+        
+        window.changePassword = async function() {
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (newPassword !== confirmPassword) {
+                alert('Les mots de passe ne correspondent pas');
+                return;
+            }
+            
+            if (!window.currentChallenge) {
+                alert('Erreur: pas de challenge en cours');
+                return;
+            }
+            
+            try {
+                const result = await window.auth.confirmNewPassword(window.currentChallenge, newPassword);
+                
+                if (result.username) {
+                    document.getElementById('auth-status').innerHTML = `✅ Connecté: ${result.username}`;
+                    document.getElementById('auth-status').className = 'status success';
+                    document.getElementById('current-user').textContent = result.username;
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('password-change-form').style.display = 'none';
+                    document.getElementById('user-info').style.display = 'block';
+                    window.currentChallenge = null;
+                    window.log(`Mot de passe changé et connexion réussie: ${result.username}`);
+                }
+            } catch (error) {
+                window.log(`Erreur changement mot de passe: ${error.message}`);
+                alert(`Erreur: ${error.message}`);
+            }
+        };
+        
+        window.testLogout = async function() {
+            try {
+                await window.auth.signOut();
+                document.getElementById('auth-status').innerHTML = '✅ Déconnecté';
+                document.getElementById('auth-status').className = 'status info';
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('user-info').style.display = 'none';
+                window.log('Déconnexion réussie');
+            } catch (error) {
+                window.log(`Erreur déconnexion: ${error.message}`);
+            }
+        };
+        
+        // Test API
+        window.testCreateNews = async function() {
+            const statusDiv = document.getElementById('api-status');
+            try {
+                const news = await window.data.createNews({
+                    title: `News de test ${new Date().toLocaleTimeString()}`,
+                    content: 'Contenu de test généré automatiquement',
+                    author: window.auth.currentUser?.username || 'Test User'
+                });
+                
+                statusDiv.innerHTML = `✅ News créée: ${news.id}`;
+                statusDiv.className = 'status success';
+                window.log(`News créée: ${news.title}`);
+                refreshNews();
+                
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Erreur: ${error.message}`;
+                statusDiv.className = 'status error';
+                window.log(`Erreur création: ${error.message}`);
+            }
+        };
+        
+        window.testListNews = async function() {
+            try {
+                const news = await window.data.listNews();
+                document.getElementById('api-status').innerHTML = `✅ ${news.length} news récupérées`;
+                document.getElementById('api-status').className = 'status success';
+                window.log(`${news.length} news récupérées`);
+                displayNews(news);
+            } catch (error) {
+                window.log(`Erreur liste: ${error.message}`);
+            }
+        };
+        
+        // Créer news depuis le formulaire
+        window.createNews = async function() {
+            const title = document.getElementById('news-title').value;
+            const content = document.getElementById('news-content').value;
+            
+            if (!title || !content) {
+                alert('Veuillez remplir le titre et le contenu');
+                return;
+            }
+            
+            try {
+                const news = await window.data.createNews({
+                    title,
+                    content,
+                    author: window.auth.currentUser?.username || 'Anonyme'
+                });
+                
+                window.log(`News créée: ${news.title}`);
+                document.getElementById('news-title').value = '';
+                document.getElementById('news-content').value = '';
+                refreshNews();
+                
+            } catch (error) {
+                window.log(`Erreur création news: ${error.message}`);
+                alert(`Erreur: ${error.message}`);
+            }
+        };
+        
+        // Afficher les news
+        window.displayNews = function(newsList) {
+            const container = document.getElementById('news-list');
+            if (!newsList || newsList.length === 0) {
+                container.innerHTML = 'Aucune news trouvée';
+                return;
+            }
+            
+            container.innerHTML = newsList.map(news => `
+                <div class="news-item">
+                    <h4>${news.title}</h4>
+                    <p>${news.content || 'Pas de contenu'}</p>
+                    <small>Par ${news.author || 'Inconnu'} - ${news.createdAt ? new Date(news.createdAt).toLocaleString() : 'Date inconnue'}</small>
+                    <br>
+                    <small>ID: ${news.id}</small>
+                </div>
+            `).join('');
+        };
+        
+        window.refreshNews = function() {
+            window.testListNews();
+        };
+        
+        // Test temps réel
+        window.startRealtimeTest = function() {
+            if (window.realtimeActive) {
+                window.log('Temps réel déjà actif');
+                return;
+            }
+            
+            window.realtimeActive = true;
+            window.log('🔔 Démarrage des notifications temps réel...');
+            
+            // Écouter les nouvelles news
+            window.data.subscribeToNewsCreated((news) => {
+                window.log(`🔔 TEMPS RÉEL: Nouvelle news "${news.title}" par ${news.author}`);
+                refreshNews();
+            });
+            
+            // Écouter les mises à jour
+            window.data.subscribeToNewsUpdated((news) => {
+                window.log(`🔔 TEMPS RÉEL: News mise à jour "${news.title}"`);
+                refreshNews();
+            });
+            
+            // Écouter les suppressions
+            window.data.subscribeToNewsDeleted((news) => {
+                window.log(`🔔 TEMPS RÉEL: News supprimée "${news.title}"`);
+                refreshNews();
+            });
+            
+            document.getElementById('api-status').innerHTML = '🔔 Temps réel actif';
+            document.getElementById('api-status').className = 'status success';
+        };
+        
+        window.stopRealtimeTest = function() {
+            if (!window.realtimeActive) {
+                window.log('Temps réel déjà arrêté');
+                return;
+            }
+            
+            window.data.unsubscribeAll();
+            window.realtimeActive = false;
+            window.log('✅ Notifications temps réel arrêtées');
+            document.getElementById('api-status').innerHTML = 'Temps réel arrêté';
+            document.getElementById('api-status').className = 'status info';
+        };
+        
+        // Test migration
+        window.testMigration = function() {
+            const statusDiv = document.getElementById('migration-status');
+            statusDiv.innerHTML = '⚠️ Migration non implémentée - nécessite accès au storage S3 existant';
+            statusDiv.className = 'status warning';
+            window.log('Test migration: nécessite intégration avec storage.js existant');
+        };
+        
+        // Initialisation
+        window.addEventListener('load', async function() {
+            window.log('🚀 Initialisation test Amplify Gen 2...');
+            window.log('API Endpoint: https://2pwh6b4pw5cuxop3r6dctrdhoi.appsync-api.eu-west-3.amazonaws.com/graphql');
+            window.log('User Pool: eu-west-3_y2eHg83mr');
+            window.log('Bucket S3: amplify-saintespritaws-di-saintespritstoragebucket-91ui2ognukke');
+            
+            // Vérifier le statut d'authentification
+            try {
+                const user = await window.auth.checkAuthStatus();
+                if (user) {
+                    document.getElementById('auth-status').innerHTML = `✅ Déjà connecté: ${user.username}`;
+                    document.getElementById('auth-status').className = 'status success';
+                    document.getElementById('current-user').textContent = user.username;
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('user-info').style.display = 'block';
+                    window.log(`Utilisateur connecté: ${user.username}`);
+                } else {
+                    document.getElementById('auth-status').innerHTML = 'Non connecté';
+                    document.getElementById('auth-status').className = 'status info';
+                    window.log('Aucun utilisateur connecté');
+                }
+            } catch (error) {
+                window.log(`Erreur vérification auth: ${error.message}`);
+            }
+            
+            window.log('✅ Initialisation terminée');
+            window.log('Utilisateur test disponible: test@saintesprit.radio / TempPass123!');
+        });
+    </script>
+</body>
+</html>

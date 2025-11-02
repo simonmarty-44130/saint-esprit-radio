@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Bénévole - Saint Esprit Radio</title>
+    
+    <!-- Auth avec Cognito Hosted UI -->
+    <script>
+        // Configuration Cognito - Pool dédié aux bénévoles
+        const cognitoConfig = {
+            domain: 'saint-esprit-benevoles.auth.eu-west-3.amazoncognito.com',
+            clientId: '62i42njgieq7ocg63crjfnopet',
+            userPoolId: 'eu-west-3_wlQrKtvCn',
+            redirectUri: window.location.origin + '/benevoles-email.html',
+            logoutUri: window.location.origin + '/logout.html',
+            region: 'eu-west-3'
+        };
+        
+        // Vérifier si on a un code d'autorisation dans l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+        
+        if (authCode) {
+            // On a reçu un code de Cognito, on est authentifié
+            localStorage.setItem('saint-esprit-authenticated', 'true');
+            localStorage.setItem('saint-esprit-auth-code', authCode);
+            
+            // Nettoyer l'URL pour rester sur benevoles.html
+            window.history.replaceState({}, document.title, '/benevoles-email.html');
+        }
+        
+        // Vérifier l'authentification
+        const isAuthenticated = localStorage.getItem('saint-esprit-authenticated');
+        
+        if (!isAuthenticated || isAuthenticated !== 'true') {
+            // Pas authentifié, rediriger vers Cognito
+            const loginUrl = `https://${cognitoConfig.domain}/login?` +
+                `client_id=${cognitoConfig.clientId}&` +
+                `response_type=code&` +
+                `scope=email+openid+profile&` +
+                `redirect_uri=${encodeURIComponent(cognitoConfig.redirectUri)}`;
+            
+            window.location.href = loginUrl;
+        }
+    </script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #4CAF50;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            flex-grow: 1;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .record-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #f44336;
+            color: white;
+            border: none;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+        
+        .record-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+        }
+        
+        .record-button.recording {
+            background: #4CAF50;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1976D2;
+        }
+        
+        .btn-secondary {
+            background: #757575;
+            color: white;
+            margin-left: 0.5rem;
+        }
+        
+        .btn-secondary:hover {
+            background: #616161;
+        }
+        
+        .status-message {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        #audio-controls {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        audio {
+            width: 100%;
+            margin: 1rem 0;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎙️ Espace Bénévole - Saint Esprit Radio</h1>
+        <div>
+            <span id="user-name">👤 Bénévole</span>
+            <button class="btn btn-secondary" onclick="logout()">Déconnexion</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="card">
+            <h2>🎤 Enregistrement de Chronique</h2>
+            
+            <!-- Formulaire de métadonnées -->
+            <div id="chronique-metadata">
+                <div class="form-group">
+                    <label for="audio-title">Titre de la chronique *</label>
+                    <input type="text" id="audio-title" placeholder="Ex: Les sorties cinéma de la semaine" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="chronique-type">Type de chronique *</label>
+                    <select id="chronique-type" required>
+                        <option value="">-- Sélectionner --</option>
+                        <option value="humeur">Billet d'humeur</option>
+                        <option value="cinema">Chronique cinéma</option>
+                        <option value="jardinage">Chronique jardinage</option>
+                        <option value="culture">Chronique culturelle</option>
+                        <option value="sport">Chronique sport</option>
+                        <option value="cuisine">Chronique cuisine</option>
+                        <option value="livre">Chronique littéraire</option>
+                        <option value="musique">Chronique musicale</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="date-diffusion">Date de diffusion souhaitée *</label>
+                    <input type="date" id="date-diffusion" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="lancement-text">
+                        🎙️ Lancement (texte pour le journaliste)
+                        <small style="display: block; color: #666;">Ce que le journaliste dira pour introduire votre chronique</small>
+                    </label>
+                    <textarea id="lancement-text" rows="3" 
+                              placeholder="Ex: Et maintenant, retrouvons Jean pour sa chronique cinéma hebdomadaire..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="desannonce-text">
+                        👋 Désannonce (texte pour le journaliste)
+                        <small style="display: block; color: #666;">Ce que le journaliste dira après votre chronique</small>
+                    </label>
+                    <textarea id="desannonce-text" rows="3" 
+                              placeholder="Ex: Merci Jean pour cette chronique ! Retrouvez-le chaque mardi à 11h30..."></textarea>
+                </div>
+            </div>
+            
+            <!-- Zone d'enregistrement -->
+            <div style="text-align: center; padding: 2rem; background: white; border-radius: 8px;">
+                <p style="font-size: 1.2rem; margin-bottom: 2rem;">
+                    Remplissez les informations ci-dessus, puis cliquez pour enregistrer
+                </p>
+                
+                <button class="record-button" id="record-button" onclick="toggleRecording()">
+                    🎤
+                </button>
+                
+                <div id="recording-status" style="font-size: 1.1rem; color: #666; margin-top: 1rem;">
+                    Prêt à enregistrer
+                </div>
+                
+                <div id="recording-time" style="font-size: 2rem; font-weight: bold; margin: 1rem 0; color: #333;">
+                    00:00
+                </div>
+            </div>
+            
+            <!-- Contrôles après enregistrement -->
+            <div id="audio-controls" style="display: none;">
+                <h3>📼 Votre enregistrement</h3>
+                <audio id="audio-player" controls></audio>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="sendByEmail()">
+                        📧 Envoyer à Clara par email
+                    </button>
+                    <button class="btn btn-secondary" onclick="downloadAudio()">
+                        💾 Télécharger uniquement
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetRecording()">
+                        🔄 Recommencer
+                    </button>
+                </div>
+                
+                <div id="send-status" style="margin-top: 1rem; display: none;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Variables globales
+        let currentUser = localStorage.getItem('saint-esprit-user') || 'Bénévole';
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingStartTime = null;
+        let recordingInterval = null;
+        let audioBlob = null;
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('user-name').textContent = `👤 ${currentUser}`;
+            
+            // Date par défaut : demain
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('date-diffusion').value = tomorrow.toISOString().split('T')[0];
+        });
+        
+        // Fonction d'enregistrement
+        async function toggleRecording() {
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        }
+        
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = () => {
+                    audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    const player = document.getElementById('audio-player');
+                    player.src = audioUrl;
+                    
+                    document.getElementById('audio-controls').style.display = 'block';
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                recordingStartTime = Date.now();
+                
+                // Mettre à jour l'interface
+                document.getElementById('record-button').classList.add('recording');
+                document.getElementById('record-button').innerHTML = '⏹️';
+                document.getElementById('recording-status').textContent = 'Enregistrement en cours...';
+                document.getElementById('recording-status').style.color = '#f44336';
+                
+                // Timer
+                recordingInterval = setInterval(updateRecordingTime, 100);
+                
+            } catch (error) {
+                alert('Impossible d\'accéder au microphone. Veuillez autoriser l\'accès.');
+                console.error('Erreur microphone:', error);
+            }
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                
+                isRecording = false;
+                clearInterval(recordingInterval);
+                
+                // Mettre à jour l'interface
+                document.getElementById('record-button').classList.remove('recording');
+                document.getElementById('record-button').innerHTML = '🎤';
+                document.getElementById('recording-status').textContent = 'Enregistrement terminé';
+                document.getElementById('recording-status').style.color = '#4CAF50';
+            }
+        }
+        
+        function updateRecordingTime() {
+            if (recordingStartTime) {
+                const elapsed = Date.now() - recordingStartTime;
+                const seconds = Math.floor(elapsed / 1000) % 60;
+                const minutes = Math.floor(elapsed / 60000);
+                const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('recording-time').textContent = display;
+            }
+        }
+        
+        function resetRecording() {
+            // Réinitialiser l'audio
+            document.getElementById('audio-controls').style.display = 'none';
+            document.getElementById('audio-player').src = '';
+            document.getElementById('record-button').classList.remove('recording');
+            document.getElementById('record-button').innerHTML = '🎤';
+            document.getElementById('recording-time').textContent = '00:00';
+            document.getElementById('recording-status').textContent = 'Prêt à enregistrer';
+            document.getElementById('recording-status').style.color = '#666';
+            audioChunks = [];
+            audioBlob = null;
+        }
+        
+        // Fonction pour télécharger l'audio
+        function downloadAudio() {
+            if (!audioBlob) {
+                alert('Aucun enregistrement disponible');
+                return;
+            }
+            
+            const title = document.getElementById('audio-title').value || 'chronique';
+            const fileName = `chronique_${new Date().toISOString().slice(0,10)}_${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.wav`;
+            
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(audioBlob);
+            downloadLink.download = fileName;
+            downloadLink.click();
+        }
+        
+        // Fonction pour envoyer par email
+        function sendByEmail() {
+            // Validation
+            const title = document.getElementById('audio-title').value;
+            const type = document.getElementById('chronique-type').value;
+            const dateDiffusion = document.getElementById('date-diffusion').value;
+            const lancement = document.getElementById('lancement-text').value;
+            const desannonce = document.getElementById('desannonce-text').value;
+            
+            if (!title || !type || !dateDiffusion) {
+                alert('Veuillez remplir tous les champs obligatoires (*)');
+                return;
+            }
+            
+            if (!audioBlob) {
+                alert('Aucun enregistrement à envoyer');
+                return;
+            }
+            
+            // Télécharger le fichier d'abord
+            const fileName = `chronique_${new Date().toISOString().slice(0,10)}_${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.wav`;
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(audioBlob);
+            downloadLink.download = fileName;
+            downloadLink.click();
+            
+            // Préparer l'email
+            const duration = document.getElementById('recording-time').textContent;
+            const subject = `[Chronique] ${title} - ${currentUser}`;
+            const body = `Bonjour Clara,
+
+Voici une nouvelle chronique enregistrée via l'espace bénévole :
+
+📝 INFORMATIONS DE LA CHRONIQUE
+================================
+• Titre : ${title}
+• Type : ${getTypeLabel(type)}
+• Chroniqueur : ${currentUser}
+• Date de diffusion souhaitée : ${new Date(dateDiffusion).toLocaleDateString('fr-FR')}
+• Durée : ${duration}
+
+🎙️ LANCEMENT (texte pour le journaliste) :
+${lancement || 'Non spécifié'}
+
+👋 DÉSANNONCE (texte après la chronique) :
+${desannonce || 'Non spécifié'}
+
+📎 FICHIER AUDIO :
+Le fichier audio "${fileName}" vient d'être téléchargé sur mon ordinateur.
+Je vais l'attacher à cet email.
+
+Date d'enregistrement : ${new Date().toLocaleString('fr-FR')}
+
+Cordialement,
+${currentUser}
+
+---
+Envoyé depuis l'espace bénévole Saint Esprit Radio`;
+            
+            // Ouvrir le client email
+            setTimeout(() => {
+                window.location.href = `mailto:clara.bert@radio-fidelite.fr?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                
+                // Afficher le message de succès
+                const statusDiv = document.getElementById('send-status');
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'status-message status-success';
+                statusDiv.innerHTML = `
+                    ✅ <strong>Fichier téléchargé !</strong><br>
+                    📧 <strong>Email préparé pour Clara</strong><br>
+                    <br>
+                    <strong>⚠️ IMPORTANT :</strong><br>
+                    1. Le fichier audio "${fileName}" a été téléchargé<br>
+                    2. Votre client email va s'ouvrir avec le message pré-rempli<br>
+                    3. <strong>N'oubliez pas d'attacher le fichier audio avant d'envoyer !</strong>
+                `;
+            }, 500);
+        }
+        
+        // Helper pour obtenir le label du type
+        function getTypeLabel(type) {
+            const types = {
+                'humeur': 'Billet d\'humeur',
+                'cinema': 'Cinéma',
+                'jardinage': 'Jardinage',
+                'culture': 'Culturelle',
+                'sport': 'Sport',
+                'cuisine': 'Cuisine',
+                'livre': 'Littéraire',
+                'musique': 'Musicale',
+                'autre': 'Autre'
+            };
+            return types[type] || type;
+        }
+        
+        // Déconnexion
+        function logout() {
+            if (confirm('Voulez-vous vous déconnecter ?')) {
+                localStorage.clear();
+                window.location.href = '/logout.html';
+            }
+        }
+    </script>
+</body>
+</html>

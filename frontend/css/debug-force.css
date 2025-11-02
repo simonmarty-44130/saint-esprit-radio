@@ -1,0 +1,28 @@
+/* CSS DEBUG - SIMPLIFICATION VISIBILITY */
+
+/* Force toutes les sections à être cachées par défaut */
+.section {
+    display: none !important;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background-color: var(--bg-dark);
+}
+
+/* Force la section active à être visible */
+.section.active {
+    display: block !important;
+}
+
+/* Sections qui utilisent flex (avec sidebar interne) */
+#news-section.active,
+#animation-section.active,
+#blocks-section.active,
+#habillage-section.active {
+    display: flex !important;
+}
+
+/* Template Builder section */
+#template-builder-section.active {
+    display: block !important;
+}

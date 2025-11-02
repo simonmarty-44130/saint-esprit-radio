@@ -1,0 +1,96 @@
+/* ===== FORCE THÈME BLANC ABSOLU ===== */
+/* Ce fichier ÉCRASE TOUT pour forcer le thème blanc */
+
+:root {
+    /* Redéfinition FORCÉE de toutes les variables sombres */
+    --bg-dark: #f8f9fa !important;
+    --bg-darker: #f1f3f4 !important;
+    --bg-light: #e9ecef !important;
+    --bg-lighter: #ffffff !important;
+    --bg-primary: #ffffff !important;
+    --bg-secondary: #f8f9fa !important;
+    --bg-tertiary: #f1f3f4 !important;
+    --bg-hover: #e9ecef !important;
+
+    /* Textes pour fond blanc */
+    --text-primary: #212529 !important;
+    --text-secondary: #495057 !important;
+    --text-muted: #6c757d !important;
+}
+
+/* Force TOUTES les sections à avoir un fond blanc */
+body,
+html,
+.section,
+.content-area,
+.main-container,
+.main-content,
+#dashboard-section,
+#news-section,
+#animation-section,
+#blocks-section,
+#conductor-section,
+#onair-section,
+#settings-section,
+#audio-editor-section,
+#multitrack-section,
+#fridge-section,
+#archives-section,
+.welcome-screen,
+.dashboard-container,
+.news-list,
+.animation-list,
+.blocks-list {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #212529 !important;
+}
+
+/* Sidebars et panneaux */
+.sidebar,
+.sidebar-content,
+aside,
+.panel,
+.card {
+    background: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+/* Éléments de contenu */
+.news-item,
+.animation-item,
+.block-item,
+.conductor-item {
+    background: #ffffff !important;
+    color: #212529 !important;
+    border-color: #dee2e6 !important;
+}
+
+/* Headers et toolbars */
+.header,
+.toolbar,
+.editor-toolbar,
+.multitrack-header {
+    background: #f8f9fa !important;
+    color: #212529 !important;
+    border-color: #dee2e6 !important;
+}
+
+/* Inputs et formulaires */
+input,
+textarea,
+select,
+button {
+    background: #ffffff !important;
+    color: #212529 !important;
+    border-color: #dee2e6 !important;
+}
+
+/* Modals */
+.modal-content,
+.modal-body,
+.modal-header,
+.modal-footer {
+    background: #ffffff !important;
+    color: #212529 !important;
+}

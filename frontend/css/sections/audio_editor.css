@@ -1,0 +1,586 @@
+/* ===== SECTION AUDIO EDITOR ===== */
+
+/* Audio editor container */
+.audio-editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--bg-primary);
+}
+
+/* Audio editor toolbar */
+.audio-editor-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border-bottom: 2px solid var(--border);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.audio-editor-tools {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.audio-editor-transport {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Tool groups */
+.tool-group {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    border-right: 1px solid var(--border);
+}
+
+.tool-group:last-child {
+    border-right: none;
+}
+
+/* Transport controls */
+.transport-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 2.5rem;
+    padding: 0;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 1rem;
+}
+
+.transport-btn:hover:not(:disabled) {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+.transport-btn.play {
+    color: var(--success);
+    border-color: var(--success);
+}
+
+.transport-btn.play:hover {
+    background: rgba(0, 255, 0, 0.1);
+}
+
+.transport-btn.record {
+    color: var(--error);
+    border-color: var(--error);
+}
+
+.transport-btn.record:hover {
+    background: rgba(255, 0, 0, 0.1);
+}
+
+.transport-btn.record.recording {
+    background: var(--error);
+    color: white;
+    animation: pulse 1s infinite;
+}
+
+/* Time display */
+.time-display {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--primary);
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    padding: 0.5rem 0.75rem;
+    min-width: 100px;
+    text-align: center;
+}
+
+/* Main editing area */
+.audio-editor-main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* Sidebar */
+.audio-editor-sidebar {
+    width: 250px;
+    background: var(--bg-tertiary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.track-controls {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.track-controls h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+/* Effects panel */
+.effects-panel {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.effects-panel h3 {
+    margin: 0 0 1rem 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.effect-btn {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    text-align: left;
+}
+
+.effect-btn:hover:not(:disabled) {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+.effect-btn:last-child {
+    margin-bottom: 0;
+}
+
+/* Audio library */
+#audio-library-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.library-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.library-item:hover {
+    background: var(--bg-primary);
+}
+
+.library-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Envelope panel */
+#envelope-panel {
+    background: rgba(255, 255, 0, 0.05);
+    border: 1px solid rgba(255, 255, 0, 0.2);
+}
+
+#envelope-panel h3 {
+    color: var(--warning);
+}
+
+/* Workspace */
+.audio-editor-workspace {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    overflow: hidden;
+}
+
+/* Timeline ruler */
+.timeline-ruler {
+    height: 30px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Waveform container */
+.waveform-container {
+    flex: 1;
+    position: relative;
+    background: var(--bg-secondary);
+    overflow: hidden;
+}
+
+#waveform-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+}
+
+/* Playhead */
+.playhead {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #ff0000;
+    z-index: 20;
+    pointer-events: none;
+    box-shadow: 0 0 4px rgba(255, 0, 0, 0.5);
+}
+
+/* Selection overlay */
+.selection-overlay {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: rgba(37, 99, 235, 0.3);
+    border: 1px solid rgba(37, 99, 235, 0.8);
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Audio info bar */
+.audio-info-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: var(--bg-tertiary);
+    border-top: 1px solid var(--border);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+#audio-duration,
+#audio-selection-info,
+#audio-format {
+    font-family: 'Courier New', monospace;
+}
+
+/* Waveform bars pour la visualisation */
+.waveform {
+    display: flex;
+    align-items: end;
+    height: 100px;
+    gap: 1px;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+}
+
+.waveform-bar {
+    background: var(--primary);
+    width: 3px;
+    min-height: 2px;
+    transition: var(--transition);
+    opacity: 0.7;
+}
+
+.waveform-bar:hover {
+    opacity: 1;
+    background: var(--secondary);
+}
+
+/* Export modal spécifique */
+#audio-export-modal .modal-content {
+    max-width: 600px;
+}
+
+#export-options-file,
+#export-options-content {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+/* Tool buttons */
+.tool-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.875rem;
+}
+
+.tool-btn:hover:not(:disabled) {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+.tool-btn.toggle.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.tool-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Envelope editing */
+.envelope-point {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: var(--warning);
+    border: 2px solid var(--bg-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 15;
+    transform: translate(-50%, -50%);
+    transition: var(--transition);
+}
+
+.envelope-point:hover {
+    background: #ffff44;
+    transform: translate(-50%, -50%) scale(1.2);
+}
+
+.envelope-point.selected {
+    background: var(--error);
+    border-color: white;
+}
+
+/* Zoom controls */
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius-sm);
+}
+
+.zoom-slider {
+    width: 100px;
+}
+
+/* Audio levels */
+.audio-levels {
+    display: flex;
+    gap: 0.25rem;
+    align-items: end;
+    height: 40px;
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+}
+
+.level-bar {
+    width: 3px;
+    background: var(--success);
+    transition: height 0.1s ease;
+    border-radius: 1px;
+}
+
+.level-bar.peak {
+    background: var(--error);
+}
+
+.level-bar.high {
+    background: var(--warning);
+}
+
+/* Status indicators */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.status-indicator.recording {
+    background: rgba(255, 0, 0, 0.2);
+    color: var(--error);
+}
+
+.status-indicator.playing {
+    background: rgba(0, 255, 0, 0.2);
+    color: var(--success);
+}
+
+.status-indicator.processing {
+    background: rgba(255, 255, 0, 0.2);
+    color: var(--warning);
+}
+
+/* Progress indicator pour processing */
+.processing-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.processing-overlay.active {
+    display: flex;
+}
+
+.processing-spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* In/Out points markers */
+.in-point-marker {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--success);
+    z-index: 15;
+    pointer-events: none;
+}
+
+.in-point-marker::before {
+    content: "IN";
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: var(--success);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 2px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.out-point-marker {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--error);
+    z-index: 15;
+    pointer-events: none;
+}
+
+.out-point-marker::before {
+    content: "OUT";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: var(--error);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 2px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+/* Responsive audio editor */
+@media (max-width: 1200px) {
+    .audio-editor-sidebar {
+        width: 200px;
+    }
+    
+    .audio-editor-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .audio-editor-tools {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .audio-editor-transport {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .audio-editor-main {
+        flex-direction: column;
+    }
+    
+    .audio-editor-sidebar {
+        width: 100%;
+        height: 200px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        overflow-x: auto;
+    }
+    
+    .effects-panel {
+        display: inline-block;
+        width: 200px;
+        vertical-align: top;
+        margin-right: 1rem;
+    }
+    
+    .tool-group {
+        flex-wrap: wrap;
+    }
+    
+    .transport-btn {
+        width: 2.5rem;
+        height: 2rem;
+        font-size: 0.875rem;
+    }
+    
+    .time-display {
+        font-size: 1rem;
+        padding: 0.375rem 0.5rem;
+    }
+    
+    .audio-info-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.25rem;
+    }
+}

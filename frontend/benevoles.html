@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Bénévole - Saint Esprit Radio</title>
+    
+    <!-- Auth avec Cognito Hosted UI -->
+    <script>
+        // Configuration Cognito - Pool dédié aux bénévoles
+        const cognitoConfig = {
+            domain: 'saint-esprit-benevoles.auth.eu-west-3.amazoncognito.com',
+            clientId: '62i42njgieq7ocg63crjfnopet',
+            userPoolId: 'eu-west-3_wlQrKtvCn',
+            redirectUri: window.location.origin + '/benevoles.html',
+            logoutUri: window.location.origin + '/logout.html',
+            region: 'eu-west-3'
+        };
+        
+        // Vérifier si on a un code d'autorisation dans l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+        
+        if (authCode) {
+            // On a reçu un code de Cognito, on est authentifié
+            localStorage.setItem('saint-esprit-authenticated', 'true');
+            localStorage.setItem('saint-esprit-auth-code', authCode);
+            
+            // Échanger le code contre des tokens
+            exchangeCodeForTokens(authCode);
+            
+            // Nettoyer l'URL pour rester sur benevoles.html
+            window.history.replaceState({}, document.title, '/benevoles.html');
+        }
+        
+        // Fonction pour échanger le code contre des tokens
+        async function exchangeCodeForTokens(code) {
+            const tokenEndpoint = `https://${cognitoConfig.domain}/oauth2/token`;
+            
+            const params = new URLSearchParams({
+                grant_type: 'authorization_code',
+                client_id: cognitoConfig.clientId,
+                redirect_uri: cognitoConfig.redirectUri,
+                code: code
+            });
+            
+            try {
+                const response = await fetch(tokenEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params.toString()
+                });
+                
+                if (response.ok) {
+                    const tokens = await response.json();
+                    
+                    // Stocker le token ID pour AWS
+                    localStorage.setItem('benevole-id-token', tokens.id_token);
+                    localStorage.setItem('benevole-access-token', tokens.access_token);
+                    
+                    // Configurer AWS avec le token
+                    if (typeof configureAWSCredentials !== 'undefined') {
+                        configureAWSCredentials(tokens.id_token);
+                    }
+                    
+                    console.log('✅ Tokens récupérés et AWS configuré');
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'échange du code:', error);
+            }
+        }
+        
+        // Vérifier l'authentification
+        const isAuthenticated = localStorage.getItem('saint-esprit-authenticated');
+        
+        if (!isAuthenticated || isAuthenticated !== 'true') {
+            // Pas authentifié, rediriger vers Cognito
+            const loginUrl = `https://${cognitoConfig.domain}/login?` +
+                `client_id=${cognitoConfig.clientId}&` +
+                `response_type=code&` +
+                `scope=email+openid+profile&` +
+                `redirect_uri=${encodeURIComponent(cognitoConfig.redirectUri)}`;
+            
+            window.location.href = loginUrl;
+        }
+    </script>
+    
+    <!-- AWS SDK -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1000.0.min.js"></script>
+    
+    <!-- Configuration AWS pour les bénévoles -->
+    <script>
+        // Configuration AWS Cognito Identity pour l'accès S3
+        AWS.config.region = 'eu-west-3';
+        
+        // Identity Pool ID pour les bénévoles
+        const IDENTITY_POOL_ID = 'eu-west-3:f3a9b658-a726-46e1-82d9-7d5bf85bd18f';
+        const USER_POOL_ID = 'eu-west-3_wlQrKtvCn';
+        
+        // Fonction pour configurer AWS après authentification
+        function configureAWSCredentials(idToken) {
+            const logins = {};
+            logins[`cognito-idp.eu-west-3.amazonaws.com/${USER_POOL_ID}`] = idToken;
+            
+            AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                IdentityPoolId: IDENTITY_POOL_ID,
+                Logins: logins
+            });
+            
+            // Rafraîchir les credentials
+            AWS.config.credentials.refresh((error) => {
+                if (error) {
+                    console.error('Erreur lors de la configuration AWS:', error);
+                } else {
+                    console.log('✅ AWS credentials configurées avec succès');
+                }
+            });
+        }
+        
+        // Vérifier si on a un token stocké
+        const storedIdToken = localStorage.getItem('benevole-id-token');
+        if (storedIdToken) {
+            configureAWSCredentials(storedIdToken);
+        } else {
+            // Configuration temporaire pour les utilisateurs non authentifiés (limité)
+            AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                IdentityPoolId: IDENTITY_POOL_ID
+            });
+        }
+    </script>
+    
+    <script src="js/core/storage.js?v=1.1"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #4CAF50;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .user-info {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .user-badge {
+            background: #4CAF50;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .btn-switch {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .btn-switch:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+        }
+        
+        .main-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        .home-screen {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .welcome-title {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .welcome-subtitle {
+            color: #666;
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .action-card {
+            background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+            border: 3px solid transparent;
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .action-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+        }
+        
+        .action-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(76, 175, 80, 0.3);
+            border-color: #4CAF50;
+        }
+        
+        .action-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .action-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .action-desc {
+            font-size: 1rem;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .content-area {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            max-width: 1400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .btn-back {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+        
+        .btn-back:hover {
+            background: #45a049;
+            transform: translateX(-5px);
+        }
+        
+        .calendar-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        .studio-calendar {
+            background: #f9f9f9;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 2px solid #4CAF50;
+        }
+        
+        .studio-calendar h3 {
+            color: #4CAF50;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .emission-editor {
+            background: #f9f9f9;
+            border-radius: 12px;
+            padding: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .form-group textarea {
+            min-height: 300px;
+            font-family: 'Georgia', serif;
+            line-height: 1.6;
+            resize: vertical;
+        }
+        
+        .time-display {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #45a049;
+        }
+        
+        .btn-secondary {
+            background: #666;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #555;
+        }
+        
+        .audio-recorder {
+            background: #f9f9f9;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .record-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #f44336;
+            color: white;
+            border: none;
+            font-size: 3rem;
+            cursor: pointer;
+            margin: 2rem auto;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .record-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 30px rgba(244, 67, 54, 0.3);
+        }
+        
+        .record-button.recording {
+            background: #ff9800;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 768px) {
+            .action-grid {
+                grid-template-columns: 1fr;
+            }
+            
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎙️ Espace Bénévole - Saint Esprit</h1>
+        <div class="user-info">
+            <span class="user-badge" id="user-name">👤 Chargement...</span>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <!-- Écran d'accueil -->
+        <div class="home-screen" id="home-screen">
+            <h2 class="welcome-title">Bienvenue dans votre espace</h2>
+            <p class="welcome-subtitle">Que souhaitez-vous faire aujourd'hui ?</p>
+            
+            <div class="action-grid">
+                <div class="action-card" onclick="showSection('planning')">
+                    <span class="action-icon">📅</span>
+                    <div class="action-title">Je consulte le planning</div>
+                    <div class="action-desc">Voir la disponibilité des studios de production et de diffusion</div>
+                </div>
+                
+                <div class="action-card" onclick="showSection('emission')">
+                    <span class="action-icon">✍️</span>
+                    <div class="action-title">J'écris mon émission</div>
+                    <div class="action-desc">Rédiger le contenu de mon émission avec calcul automatique du temps</div>
+                </div>
+                
+                <div class="action-card" onclick="showSection('audio')">
+                    <span class="action-icon">🎤</span>
+                    <div class="action-title">J'enregistre ma chronique</div>
+                    <div class="action-desc">Enregistrer et éditer mes chroniques audio</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section Planning -->
+        <div class="content-area" id="planning-section">
+            <button class="btn-back" onclick="backToHome()">
+                ← Retour au menu
+            </button>
+            
+            <h2>📅 Planning des Studios</h2>
+            
+            <div class="calendar-container">
+                <div class="studio-calendar">
+                    <h3>📻 Studio Production</h3>
+                    <iframe src="https://calendar.google.com/calendar/embed?src=planningp1%25radio-fidelite.com%40gtempaccount.com&ctz=Europe%2FParis&mode=WEEK&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&showTz=1&height=600" 
+                            style="border: 0; border-radius: 8px;" 
+                            width="100%" 
+                            height="600" 
+                            frameborder="0" 
+                            scrolling="no">
+                    </iframe>
+                </div>
+                
+                <div class="studio-calendar">
+                    <h3>📻 Grand Studio (Diffusion)</h3>
+                    <iframe src="https://calendar.google.com/calendar/embed?src=planningdiff%25radio-fidelite.com%40gtempaccount.com&ctz=Europe%2FParis&mode=WEEK&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&showTz=1&height=600" 
+                            style="border: 0; border-radius: 8px;" 
+                            width="100%" 
+                            height="600" 
+                            frameborder="0" 
+                            scrolling="no">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section Émission -->
+        <div class="content-area" id="emission-section">
+            <button class="btn-back" onclick="backToHome()">
+                ← Retour au menu
+            </button>
+            
+            <h2>✍️ Éditeur d'Émission</h2>
+            
+            <div class="emission-editor">
+                <div class="form-group">
+                    <label for="emission-title">Titre de votre émission</label>
+                    <input type="text" id="emission-title" placeholder="Ex: Chronique culturelle du mardi">
+                </div>
+                
+                <div class="form-group">
+                    <label for="emission-guests">👥 Invité(s) de l'émission</label>
+                    <input type="text" id="emission-guests" placeholder="Ex: Jean Dupont, Marie Martin (laisser vide si pas d'invité)">
+                </div>
+                
+                <div class="form-group">
+                    <label>🎵 Musiques de l'émission</label>
+                    <div id="music-list" style="background: #f0f0f0; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <div id="music-items">
+                            <!-- Les musiques seront ajoutées ici -->
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addMusic()" style="width: 100%;">
+                        ➕ Ajouter une musique
+                    </button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="emission-content">
+                        Contenu de votre émission
+                        <small style="color: #666; font-weight: normal;">(Calcul automatique : 140 mots/minute)</small>
+                    </label>
+                    <textarea id="emission-content" 
+                              placeholder="Écrivez ici le texte de votre émission..."
+                              oninput="updateReadingTime()"></textarea>
+                </div>
+                
+                <div class="time-display" id="time-display">
+                    📝 <span id="word-count">0</span> mots • 
+                    ⏱️ Temps de lecture : <span id="reading-time">0:00</span> • 
+                    🎵 Musiques : <span id="music-time">0:00</span> • 
+                    <strong>Total : <span id="total-time">0:00</span></strong>
+                </div>
+                
+                <div class="form-actions">
+                    <button class="btn btn-primary" onclick="saveEmission()">
+                        💾 Sauvegarder
+                    </button>
+                    <button class="btn btn-secondary" onclick="sendEmissionToCommunication()">
+                        📧 Envoyer à la communication
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportEmission('download')">
+                        💾 Télécharger
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportEmission('print')">
+                        🖨️ Imprimer
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section Audio -->
+        <div class="content-area" id="audio-section">
+            <button class="btn-back" onclick="backToHome()">
+                ← Retour au menu
+            </button>
+            
+            <h2>🎤 Enregistrement de Chronique</h2>
+            
+            <div class="audio-recorder">
+                <!-- Formulaire de métadonnées AVANT l'enregistrement -->
+                <div id="chronique-metadata" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 1rem;">📝 Informations de la chronique</h3>
+                    
+                    <div class="form-group">
+                        <label for="audio-title">Titre de la chronique *</label>
+                        <input type="text" id="audio-title" placeholder="Ex: Les sorties cinéma de la semaine" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="chronique-type">Type de chronique *</label>
+                        <select id="chronique-type" required>
+                            <option value="">-- Sélectionner --</option>
+                            <option value="humeur">Billet d'humeur</option>
+                            <option value="cinema">Chronique cinéma</option>
+                            <option value="jardinage">Chronique jardinage</option>
+                            <option value="culture">Chronique culturelle</option>
+                            <option value="sport">Chronique sport</option>
+                            <option value="cuisine">Chronique cuisine</option>
+                            <option value="livre">Chronique littéraire</option>
+                            <option value="musique">Chronique musicale</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="date-diffusion">Date de diffusion souhaitée *</label>
+                        <input type="date" id="date-diffusion" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lancement-text">
+                            🎙️ Lancement (texte pour le journaliste)
+                            <small style="display: block; color: #666;">Ce que le journaliste dira pour introduire votre chronique</small>
+                        </label>
+                        <textarea id="lancement-text" rows="3" 
+                                  placeholder="Ex: Et maintenant, retrouvons Jean pour sa chronique cinéma hebdomadaire..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="desannonce-text">
+                            👋 Désannonce (texte pour le journaliste)
+                            <small style="display: block; color: #666;">Ce que le journaliste dira après votre chronique</small>
+                        </label>
+                        <textarea id="desannonce-text" rows="3" 
+                                  placeholder="Ex: Merci Jean pour cette chronique ! Retrouvez-le chaque mardi à 11h30..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- Zone d'enregistrement ou upload -->
+                <div style="text-align: center; padding: 2rem; background: white; border-radius: 8px;">
+                    <p style="font-size: 1.2rem; margin-bottom: 2rem;">
+                        Remplissez les informations ci-dessus, puis choisissez une option :
+                    </p>
+                    
+                    <div style="display: flex; justify-content: center; gap: 3rem; align-items: center; flex-wrap: wrap;">
+                        <!-- Option 1: Enregistrer -->
+                        <div style="text-align: center;">
+                            <h4 style="margin-bottom: 1rem; color: #555;">Enregistrer maintenant</h4>
+                            <button class="record-button" id="record-button" onclick="toggleRecording()">
+                                🎤
+                            </button>
+                            <div id="recording-status" style="font-size: 1.1rem; color: #666; margin-top: 0.5rem;">
+                                Prêt à enregistrer
+                            </div>
+                            <div id="recording-time" style="font-size: 2rem; font-weight: bold; margin: 1rem 0; color: #333;">
+                                00:00
+                            </div>
+                        </div>
+                        
+                        <!-- Séparateur -->
+                        <div style="color: #999; font-size: 1.5rem; font-weight: bold;">OU</div>
+                        
+                        <!-- Option 2: Upload fichier -->
+                        <div style="text-align: center;">
+                            <h4 style="margin-bottom: 1rem; color: #555;">Uploader un fichier</h4>
+                            <input type="file" id="audio-file-input" accept="audio/*" style="display: none;" onchange="handleFileUpload(event)">
+                            <button class="btn btn-primary" style="font-size: 1.2rem; padding: 1rem 2rem;" onclick="document.getElementById('audio-file-input').click()">
+                                📁 Choisir un fichier audio
+                            </button>
+                            <div id="upload-status" style="font-size: 1rem; color: #666; margin-top: 1rem;">
+                                Formats acceptés : MP3, WAV, M4A, etc.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contrôles après enregistrement/upload -->
+                <div id="audio-controls" style="display: none; margin-top: 2rem; background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+                    <h3>📼 Votre audio</h3>
+                    <audio id="audio-player" controls style="width: 100%; margin: 1rem 0;"></audio>
+                    
+                    <div class="form-actions" style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="sendToProgrammation()" style="flex: 1; min-width: 200px;">
+                            📤 Envoyer à la programmation
+                        </button>
+                        <button class="btn btn-secondary" onclick="downloadAudio()" style="flex: 1; min-width: 150px;">
+                            💾 Télécharger
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetRecording()" style="flex: 1; min-width: 150px;">
+                            🔄 Recommencer
+                        </button>
+                    </div>
+                    
+                    <div id="send-status" style="margin-top: 1rem; padding: 1rem; display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Variables globales
+        let currentUser = 'Bénévole'; // Nom fixe pour tous les bénévoles
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingStartTime = null;
+        let recordingInterval = null;
+        let audioBlob = null;
+        let musicsList = [];
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Essayer de récupérer le nom depuis le token si disponible
+            const idToken = localStorage.getItem('benevole-id-token');
+            if (idToken) {
+                try {
+                    // Décoder le token pour récupérer les infos
+                    const base64Url = idToken.split('.')[1];
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                    }).join(''));
+                    const claims = JSON.parse(jsonPayload);
+                    
+                    // Utiliser le nom ou l'email si disponible
+                    if (claims.name) {
+                        currentUser = claims.name;
+                    } else if (claims.given_name || claims.family_name) {
+                        currentUser = `${claims.given_name || ''} ${claims.family_name || ''}`.trim();
+                    } else if (claims.email) {
+                        currentUser = claims.email.split('@')[0]; // Prendre la partie avant @
+                    }
+                } catch (e) {
+                    console.log('Impossible de décoder le token');
+                }
+            }
+            
+            // Si on n'a toujours pas de nom, utiliser "Bénévole"
+            if (!currentUser || currentUser === 'Utilisateur' || currentUser.startsWith('user_')) {
+                currentUser = 'Bénévole';
+            }
+            
+            document.getElementById('user-name').textContent = `👤 ${currentUser}`;
+            
+            // Effacer l'ancien ID utilisateur s'il existe
+            localStorage.removeItem('saint-esprit-user');
+        });
+        
+        // Navigation
+        function showSection(section) {
+            document.getElementById('home-screen').style.display = 'none';
+            document.querySelectorAll('.content-area').forEach(area => {
+                area.style.display = 'none';
+            });
+            document.getElementById(`${section}-section`).style.display = 'block';
+        }
+        
+        function backToHome() {
+            document.querySelectorAll('.content-area').forEach(area => {
+                area.style.display = 'none';
+            });
+            document.getElementById('home-screen').style.display = 'block';
+        }
+        
+        // Changement de mode/utilisateur
+        function switchToJournalist() {
+            if (confirm('Passer en mode journaliste ?')) {
+                localStorage.setItem('saint-esprit-role', 'journalist');
+                window.location.href = '/index.html';
+            }
+        }
+        
+        function changeUser() {
+            if (confirm('Changer d\'utilisateur ?')) {
+                localStorage.removeItem('saint-esprit-user');
+                window.location.href = '/index.html';
+            }
+        }
+        
+        // Gestion des musiques
+        function addMusic() {
+            const musicTitle = prompt('Titre de la musique :');
+            if (!musicTitle) return;
+            
+            const musicArtist = prompt('Artiste :');
+            if (!musicArtist) return;
+            
+            const musicDuration = prompt('Durée (format MM:SS, ex: 3:45) :');
+            if (!musicDuration || !musicDuration.match(/^\d{1,2}:\d{2}$/)) {
+                alert('Format de durée invalide. Utilisez MM:SS (ex: 3:45)');
+                return;
+            }
+            
+            const music = {
+                title: musicTitle,
+                artist: musicArtist,
+                duration: musicDuration
+            };
+            
+            musicsList.push(music);
+            updateMusicDisplay();
+            updateMusicTime();
+        }
+        
+        function removeMusic(index) {
+            musicsList.splice(index, 1);
+            updateMusicDisplay();
+            updateMusicTime();
+        }
+        
+        function updateMusicDisplay() {
+            const musicItems = document.getElementById('music-items');
+            if (musicsList.length === 0) {
+                musicItems.innerHTML = '<p style="color: #999; margin: 0;">Aucune musique ajoutée</p>';
+            } else {
+                musicItems.innerHTML = musicsList.map((music, index) => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border-radius: 4px; margin-bottom: 0.5rem;">
+                        <div>
+                            <strong>${music.title}</strong> - ${music.artist} (${music.duration})
+                        </div>
+                        <button onclick="removeMusic(${index})" style="background: #f44336; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer;">✕</button>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        function updateMusicTime() {
+            let totalSeconds = 0;
+            musicsList.forEach(music => {
+                const [min, sec] = music.duration.split(':').map(Number);
+                totalSeconds += min * 60 + sec;
+            });
+            
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            document.getElementById('music-time').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Recalculer le temps total
+            updateReadingTime();
+        }
+        
+        // Calcul du temps de lecture
+        function updateReadingTime() {
+            const content = document.getElementById('emission-content').value;
+            const words = content.trim().split(/\s+/).filter(word => word.length > 0).length;
+            const readingTime = Math.ceil((words / 140) * 60); // 140 mots/minute
+            const readingMinutes = Math.floor(readingTime / 60);
+            const readingSeconds = readingTime % 60;
+            
+            // Calculer le temps des musiques
+            let musicTotalSeconds = 0;
+            musicsList.forEach(music => {
+                const [min, sec] = music.duration.split(':').map(Number);
+                musicTotalSeconds += min * 60 + sec;
+            });
+            
+            // Temps total
+            const totalSeconds = readingTime + musicTotalSeconds;
+            const totalMinutes = Math.floor(totalSeconds / 60);
+            const totalSecs = totalSeconds % 60;
+            
+            document.getElementById('word-count').textContent = words;
+            document.getElementById('reading-time').textContent = `${readingMinutes}:${readingSeconds.toString().padStart(2, '0')}`;
+            document.getElementById('total-time').textContent = `${totalMinutes}:${totalSecs.toString().padStart(2, '0')}`;
+            
+            // Changer la couleur selon le temps total
+            const timeDisplay = document.getElementById('time-display');
+            if (totalMinutes >= 28) {
+                timeDisplay.style.background = 'linear-gradient(135deg, #f44336, #d32f2f)';
+            } else if (totalMinutes >= 25) {
+                timeDisplay.style.background = 'linear-gradient(135deg, #ff9800, #f57c00)';
+            } else {
+                timeDisplay.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+            }
+        }
+        
+        // Sauvegarde émission
+        function saveEmission() {
+            const title = document.getElementById('emission-title').value;
+            const content = document.getElementById('emission-content').value;
+            
+            if (!title || !content) {
+                alert('Veuillez remplir le titre et le contenu');
+                return;
+            }
+            
+            // Simulation de sauvegarde
+            alert('Émission sauvegardée avec succès !');
+        }
+        
+        // Export émission
+        // Fonction pour envoyer l'émission à la communication via AWS SES
+        async function sendEmissionToCommunication() {
+            const title = document.getElementById('emission-title').value;
+            const guests = document.getElementById('emission-guests').value || 'Aucun invité';
+            const content = document.getElementById('emission-content').value;
+            
+            if (!title || !content) {
+                alert('Veuillez remplir le titre et le contenu avant d\'envoyer');
+                return;
+            }
+            
+            // Afficher un message de traitement
+            const statusMessage = document.createElement('div');
+            statusMessage.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000;';
+            statusMessage.innerHTML = '⏳ Envoi en cours vers la communication...';
+            document.body.appendChild(statusMessage);
+            
+            try {
+                // Préparer les données de l'émission
+                const wordCount = document.getElementById('word-count').textContent;
+                const readingTime = document.getElementById('reading-time').textContent;
+                const totalTime = document.getElementById('total-time').textContent;
+                
+                // Formater la liste des musiques
+                let musicsText = 'Aucune musique';
+                if (musicsList.length > 0) {
+                    musicsText = musicsList.map((m, i) => 
+                        `  ${i+1}. ${m.title} - ${m.artist} (${m.duration})`
+                    ).join('\n');
+                }
+                
+                // S'assurer que AWS est configuré
+                if (!AWS.config.credentials) {
+                    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                        IdentityPoolId: IDENTITY_POOL_ID
+                    });
+                }
+                
+                // Rafraîchir les credentials
+                await new Promise((resolve, reject) => {
+                    AWS.config.credentials.refresh((error) => {
+                        if (error) {
+                            console.error('Erreur credentials:', error);
+                            reject(error);
+                        } else {
+                            console.log('Credentials OK');
+                            resolve();
+                        }
+                    });
+                });
+                
+                // Configuration SES
+                const ses = new AWS.SES({
+                    region: 'eu-west-3',
+                    credentials: AWS.config.credentials
+                });
+                
+                // Créer le contenu de l'email
+                const emailBody = `Bonjour Louise,
+
+Voici une nouvelle proposition d'émission pour relais communication :
+
+📝 ÉMISSION : ${title}
+================================
+• Auteur : ${currentUser}
+• Date de création : ${new Date().toLocaleDateString('fr-FR')}
+• Invité(s) : ${guests}
+
+📊 DURÉES :
+--------------------------------
+• Nombre de mots : ${wordCount}
+• Temps de lecture : ${readingTime}
+• Temps musiques : ${document.getElementById('music-time').textContent}
+• TEMPS TOTAL : ${totalTime}
+
+🎵 MUSIQUES :
+--------------------------------
+${musicsText}
+
+📝 CONTENU DE L'ÉMISSION :
+================================
+
+${content}
+
+================================
+
+Cordialement,
+${currentUser}
+
+---
+Envoyé automatiquement depuis l'espace bénévole Saint Esprit Radio`;
+
+                // Paramètres pour l'email
+                const params = {
+                    Destination: {
+                        ToAddresses: ['louise.rio@radio-fidelite.fr']
+                    },
+                    Message: {
+                        Body: {
+                            Text: {
+                                Data: emailBody,
+                                Charset: 'UTF-8'
+                            }
+                        },
+                        Subject: {
+                            Data: `[Émission] ${title} - ${currentUser}`,
+                            Charset: 'UTF-8'
+                        }
+                    },
+                    Source: 'benevoles@radio-fidelite.fr'
+                };
+                
+                // Envoyer l'email
+                ses.sendEmail(params, function(err, data) {
+                    document.body.removeChild(statusMessage);
+                    
+                    if (err) {
+                        console.error('Erreur SES:', err);
+                        alert('❌ Erreur lors de l\'envoi. Veuillez réessayer.');
+                    } else {
+                        console.log('Email envoyé:', data.MessageId);
+                        alert(`✅ Émission envoyée avec succès à Louise pour relais communication !\n\nTitre: ${title}\nDurée totale: ${totalTime}`);
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                if (statusMessage.parentNode) {
+                    document.body.removeChild(statusMessage);
+                }
+                alert('❌ Erreur lors de l\'envoi. Veuillez réessayer.');
+            }
+        }
+        
+        function exportEmission(type) {
+            const title = document.getElementById('emission-title').value || 'Sans titre';
+            const guests = document.getElementById('emission-guests').value || 'Aucun invité';
+            const content = document.getElementById('emission-content').value || '';
+            const wordCount = document.getElementById('word-count').textContent;
+            const readingTime = document.getElementById('reading-time').textContent;
+            const totalTime = document.getElementById('total-time').textContent;
+            
+            // Formater la liste des musiques
+            let musicsText = 'Aucune musique';
+            if (musicsList.length > 0) {
+                musicsText = musicsList.map((m, i) => 
+                    `  ${i+1}. ${m.title} - ${m.artist} (${m.duration})`
+                ).join('\n');
+            }
+            
+            const exportText = `ÉMISSION: ${title}
+================================
+Auteur: ${currentUser}
+Date: ${new Date().toLocaleDateString('fr-FR')}
+Invité(s): ${guests}
+
+DURÉES:
+--------------------------------
+Mots: ${wordCount}
+Temps de lecture: ${readingTime}
+Temps musiques: ${document.getElementById('music-time').textContent}
+TEMPS TOTAL: ${totalTime}
+
+MUSIQUES:
+--------------------------------
+${musicsText}
+
+CONTENU:
+================================
+${content}
+
+================================
+Généré par Saint-Esprit Radio`;
+            
+            switch(type) {
+                case 'email':
+                    const mailtoLink = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(exportText)}`;
+                    window.open(mailtoLink);
+                    break;
+                    
+                case 'download':
+                    const blob = new Blob([exportText], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `emission_${title.replace(/[^a-z0-9]/gi, '_')}.txt`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    break;
+                    
+                case 'print':
+                    const printWindow = window.open('', '_blank');
+                    printWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>${title}</title>
+                            <style>
+                                @page {
+                                    size: A4;
+                                    margin: 2cm;
+                                }
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    font-size: 12pt;
+                                    line-height: 1.6;
+                                    color: #333;
+                                    max-width: 100%;
+                                    margin: 0;
+                                    padding: 20px;
+                                }
+                                h1 {
+                                    font-size: 18pt;
+                                    border-bottom: 2px solid #333;
+                                    padding-bottom: 10px;
+                                    margin-bottom: 20px;
+                                }
+                                .section {
+                                    margin-bottom: 20px;
+                                }
+                                .section-title {
+                                    font-weight: bold;
+                                    font-size: 14pt;
+                                    margin-top: 15px;
+                                    margin-bottom: 10px;
+                                    color: #555;
+                                }
+                                .content {
+                                    white-space: pre-wrap;
+                                    word-wrap: break-word;
+                                    text-align: justify;
+                                }
+                                .metadata {
+                                    background: #f5f5f5;
+                                    padding: 10px;
+                                    border-radius: 5px;
+                                    margin-bottom: 20px;
+                                }
+                                .metadata p {
+                                    margin: 5px 0;
+                                }
+                                .music-list {
+                                    padding-left: 20px;
+                                }
+                                @media print {
+                                    body {
+                                        padding: 0;
+                                    }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <h1>${title}</h1>
+                            <div class="metadata">
+                                <p><strong>Auteur:</strong> ${currentUser}</p>
+                                <p><strong>Date:</strong> ${new Date().toLocaleDateString('fr-FR')}</p>
+                                <p><strong>Invité(s):</strong> ${guests}</p>
+                                <p><strong>Durée totale:</strong> ${totalTime}</p>
+                            </div>
+                            <div class="section">
+                                <div class="section-title">MUSIQUES (${document.getElementById('music-time').textContent})</div>
+                                <div class="music-list">${musicsText.replace(/\n/g, '<br>')}</div>
+                            </div>
+                            <div class="section">
+                                <div class="section-title">CONTENU (${readingTime})</div>
+                                <div class="content">${content}</div>
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                    setTimeout(() => {
+                        printWindow.print();
+                    }, 500);
+                    break;
+            }
+        }
+        
+        // Fonction pour gérer l'upload de fichier
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Vérifier que c'est bien un fichier audio
+            if (!file.type.startsWith('audio/')) {
+                alert('Veuillez sélectionner un fichier audio');
+                return;
+            }
+            
+            // Afficher le nom du fichier
+            const uploadStatus = document.getElementById('upload-status');
+            uploadStatus.innerHTML = `✅ Fichier sélectionné : <strong>${file.name}</strong>`;
+            uploadStatus.style.color = '#4CAF50';
+            
+            // Créer un blob à partir du fichier
+            audioBlob = file;
+            
+            // Créer une URL pour le lecteur audio
+            const audioUrl = URL.createObjectURL(file);
+            const player = document.getElementById('audio-player');
+            player.src = audioUrl;
+            
+            // Afficher les contrôles
+            document.getElementById('audio-controls').style.display = 'block';
+            
+            // Masquer le bouton d'enregistrement pour éviter la confusion
+            document.getElementById('record-button').disabled = true;
+            document.getElementById('record-button').style.opacity = '0.5';
+            
+            // Mettre à jour le titre si le fichier a un nom
+            const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+            if (!document.getElementById('audio-title').value) {
+                document.getElementById('audio-title').value = fileNameWithoutExt;
+            }
+        }
+        
+        // Enregistrement audio
+        async function toggleRecording() {
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        }
+        
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = () => {
+                    audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    document.getElementById('audio-player').src = audioUrl;
+                    document.getElementById('audio-controls').style.display = 'block';
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                recordingStartTime = Date.now();
+                
+                // UI updates
+                document.getElementById('record-button').classList.add('recording');
+                document.getElementById('record-button').innerHTML = '⏹️';
+                document.getElementById('recording-status').textContent = 'Enregistrement en cours...';
+                document.getElementById('recording-status').style.color = '#f44336';
+                
+                // Timer
+                recordingInterval = setInterval(updateRecordingTime, 100);
+                
+            } catch (err) {
+                alert('Erreur d\'accès au microphone : ' + err.message);
+            }
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                
+                // UI updates
+                document.getElementById('record-button').classList.remove('recording');
+                document.getElementById('record-button').innerHTML = '🎤';
+                document.getElementById('recording-status').textContent = 'Enregistrement terminé';
+                document.getElementById('recording-status').style.color = '#4CAF50';
+                
+                clearInterval(recordingInterval);
+            }
+        }
+        
+        function updateRecordingTime() {
+            if (recordingStartTime) {
+                const elapsed = Date.now() - recordingStartTime;
+                const minutes = Math.floor(elapsed / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                document.getElementById('recording-time').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+        
+        function saveAudio() {
+            alert('Chronique sauvegardée avec succès !');
+            resetRecording();
+        }
+        
+        function downloadAudio() {
+            const audioName = document.getElementById('audio-title').value || 'chronique';
+            if (audioChunks.length === 0) {
+                alert('Aucun enregistrement à télécharger');
+                return;
+            }
+            
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const url = URL.createObjectURL(audioBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${audioName}_${new Date().toISOString().slice(0,10)}.wav`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            alert('Chronique téléchargée avec succès !');
+        }
+        
+        function sendAudioByEmail() {
+            const audioName = document.getElementById('audio-title').value || 'chronique';
+            if (audioChunks.length === 0) {
+                alert('Aucun enregistrement à envoyer');
+                return;
+            }
+            
+            // Create the audio blob
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            
+            // For email, we'll create a download link and instructions
+            const subject = `Chronique: ${audioName}`;
+            const body = `Bonjour,\n\nVoici ma chronique "${audioName}" enregistrée le ${new Date().toLocaleDateString('fr-FR')}.\n\nPour l'écouter, veuillez d'abord la télécharger en utilisant le bouton de téléchargement, puis l'attacher manuellement à votre email.\n\nCordialement,\n${currentUser}`;
+            
+            // First download the file
+            const url = URL.createObjectURL(audioBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${audioName}_${new Date().toISOString().slice(0,10)}.wav`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            // Then open email client
+            setTimeout(() => {
+                const mailtoLink = `mailto:programmation@radio-fidelite.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                window.open(mailtoLink);
+            }, 500);
+            
+            alert('Fichier téléchargé ! Veuillez l\'attacher manuellement à l\'email qui va s\'ouvrir.');
+        }
+        
+        function resetRecording() {
+            document.getElementById('audio-controls').style.display = 'none';
+            document.getElementById('audio-player').src = '';
+            document.getElementById('record-button').classList.remove('recording');
+            document.getElementById('record-button').innerHTML = '🎤';
+            document.getElementById('record-button').disabled = false;
+            document.getElementById('record-button').style.opacity = '1';
+            document.getElementById('recording-time').textContent = '00:00';
+            document.getElementById('recording-status').textContent = 'Prêt à enregistrer';
+            document.getElementById('recording-status').style.color = '#666';
+            document.getElementById('upload-status').innerHTML = 'Formats acceptés : MP3, WAV, M4A, etc.';
+            document.getElementById('upload-status').style.color = '#666';
+            document.getElementById('audio-file-input').value = '';
+            audioChunks = [];
+            audioBlob = null;
+        }
+        
+        // Fonction pour envoyer à la programmation via AWS SES
+        async function sendToProgrammation() {
+            // Validation des champs
+            const title = document.getElementById('audio-title').value;
+            const type = document.getElementById('chronique-type').value;
+            const dateDiffusion = document.getElementById('date-diffusion').value;
+            const lancement = document.getElementById('lancement-text').value;
+            const desannonce = document.getElementById('desannonce-text').value;
+            
+            if (!title || !type || !dateDiffusion) {
+                alert('Veuillez remplir tous les champs obligatoires (*)');
+                return;
+            }
+            
+            if (!audioBlob) {
+                alert('Aucun enregistrement à envoyer');
+                return;
+            }
+            
+            // Afficher le statut
+            const statusDiv = document.getElementById('send-status');
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = '#d1ecf1';
+            statusDiv.style.color = '#0c5460';
+            statusDiv.innerHTML = '⏳ Envoi en cours via AWS...';
+            
+            try {
+                // Calculer la durée
+                const duration = document.getElementById('recording-time').textContent;
+                
+                // Créer un nom de fichier unique
+                const fileName = `chronique_${new Date().toISOString().slice(0,10)}_${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.wav`;
+                
+                // Convertir le blob en base64 pour l'envoi
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                
+                reader.onloadend = async function() {
+                    const base64Audio = reader.result.split(',')[1]; // Récupérer uniquement la partie base64
+                    
+                    // S'assurer que AWS est configuré
+                    if (!AWS.config.credentials) {
+                        AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                            IdentityPoolId: IDENTITY_POOL_ID
+                        });
+                    }
+                    
+                    // Rafraîchir les credentials
+                    await new Promise((resolve, reject) => {
+                        AWS.config.credentials.refresh((error) => {
+                            if (error) {
+                                console.error('Erreur credentials:', error);
+                                reject(error);
+                            } else {
+                                console.log('Credentials OK');
+                                resolve();
+                            }
+                        });
+                    });
+                    
+                    // Configuration SES avec les credentials
+                    const ses = new AWS.SES({
+                        region: 'eu-west-3',
+                        credentials: AWS.config.credentials
+                    });
+                    
+                    // Préparer le contenu de l'email
+                    const emailBody = `Bonjour Clara,
+
+Voici une nouvelle chronique enregistrée via l'espace bénévole :
+
+📝 INFORMATIONS DE LA CHRONIQUE
+================================
+• Titre : ${title}
+• Type : ${getTypeLabel(type)}
+• Chroniqueur : ${currentUser}
+• Date de diffusion souhaitée : ${new Date(dateDiffusion).toLocaleDateString('fr-FR')}
+• Durée : ${duration}
+
+🎙️ LANCEMENT (texte pour le journaliste) :
+${lancement || 'Non spécifié'}
+
+👋 DÉSANNONCE (texte après la chronique) :
+${desannonce || 'Non spécifié'}
+
+Date d'enregistrement : ${new Date().toLocaleString('fr-FR')}
+
+Cordialement,
+${currentUser}
+
+---
+Envoyé automatiquement depuis l'espace bénévole Saint Esprit Radio`;
+
+                    // Créer le message MIME avec pièce jointe
+                    const boundary = '----=_Part_' + Math.random().toString(36).substr(2, 9);
+                    
+                    const rawMessage = [
+                        `From: benevoles@radio-fidelite.fr`,
+                        `To: clara.bert@radio-fidelite.fr`,
+                        `Subject: [Chronique] ${title} - ${currentUser}`,
+                        `MIME-Version: 1.0`,
+                        `Content-Type: multipart/mixed; boundary="${boundary}"`,
+                        ``,
+                        `--${boundary}`,
+                        `Content-Type: text/plain; charset=UTF-8`,
+                        `Content-Transfer-Encoding: 7bit`,
+                        ``,
+                        emailBody,
+                        ``,
+                        `--${boundary}`,
+                        `Content-Type: audio/wav; name="${fileName}"`,
+                        `Content-Description: ${fileName}`,
+                        `Content-Disposition: attachment; filename="${fileName}"`,
+                        `Content-Transfer-Encoding: base64`,
+                        ``,
+                        base64Audio,
+                        ``,
+                        `--${boundary}--`
+                    ].join('\n');
+                    
+                    // Paramètres pour SES
+                    const params = {
+                        RawMessage: {
+                            Data: rawMessage
+                        },
+                        Source: 'benevoles@radio-fidelite.fr',
+                        Destinations: ['clara.bert@radio-fidelite.fr']
+                    };
+                    
+                    // Envoyer l'email via SES
+                    ses.sendRawEmail(params, function(err, data) {
+                        if (err) {
+                            console.error('Erreur SES:', err);
+                            statusDiv.style.background = '#f8d7da';
+                            statusDiv.style.color = '#721c24';
+                            statusDiv.innerHTML = '❌ Erreur lors de l\'envoi. Veuillez réessayer.';
+                        } else {
+                            console.log('Email envoyé:', data.MessageId);
+                            statusDiv.style.background = '#d4edda';
+                            statusDiv.style.color = '#155724';
+                            statusDiv.innerHTML = `
+                                ✅ <strong>Chronique envoyée avec succès !</strong><br>
+                                📧 Email envoyé à Clara avec le fichier audio en pièce jointe<br>
+                                <small>Date de diffusion souhaitée : ${new Date(dateDiffusion).toLocaleDateString('fr-FR')}</small>
+                            `;
+                            
+                            // Proposer de réinitialiser après 3 secondes
+                            setTimeout(() => {
+                                if (confirm('Votre chronique a été envoyée. Voulez-vous en enregistrer une nouvelle ?')) {
+                                    resetAll();
+                                }
+                            }, 3000);
+                        }
+                    });
+                };
+            } catch (error) {
+                console.error('Erreur:', error);
+                statusDiv.style.background = '#f8d7da';
+                statusDiv.style.color = '#721c24';
+                statusDiv.innerHTML = '❌ Erreur lors de l\'envoi. Veuillez réessayer.';
+            }
+        }
+        
+        // Fonction pour réinitialiser tout le formulaire
+        function resetAll() {
+            resetRecording();
+            document.getElementById('audio-title').value = '';
+            document.getElementById('chronique-type').value = '';
+            document.getElementById('date-diffusion').value = '';
+            document.getElementById('lancement-text').value = '';
+            document.getElementById('desannonce-text').value = '';
+            document.getElementById('send-status').style.display = 'none';
+        }
+        
+        // Fonction helper pour obtenir le label du type
+        function getTypeLabel(type) {
+            const types = {
+                'humeur': 'Billet d\'humeur',
+                'cinema': 'Cinéma',
+                'jardinage': 'Jardinage',
+                'culture': 'Culturelle',
+                'sport': 'Sport',
+                'cuisine': 'Cuisine',
+                'livre': 'Littéraire',
+                'musique': 'Musicale',
+                'autre': 'Autre'
+            };
+            return types[type] || type;
+        }
+        
+        // Fonction helper pour formater la date
+        function formatDate(dateStr) {
+            const date = new Date(dateStr + 'T12:00:00');
+            return date.toLocaleDateString('fr-FR', { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+    </script>
+</body>
+</html>

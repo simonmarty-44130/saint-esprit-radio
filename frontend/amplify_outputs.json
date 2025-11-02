@@ -1,0 +1,109 @@
+{
+  "version": "1",
+  "auth": {
+    "user_pool_id": "eu-west-3_oD1fm8OLs",
+    "aws_region": "eu-west-3",
+    "user_pool_client_id": "5jst6bnhl26ekdr5a7pu9ik2f5",
+    "identity_pool_id": "eu-west-3:3bffc600-c5a5-4d37-9fca-7277e64cc66d",
+    "oauth": {
+      "domain": "saint-esprit-radio-auth.auth.eu-west-3.amazoncognito.com",
+      "scope": ["email", "openid", "profile"],
+      "redirectSignIn": "https://saint-esprit.link/,http://localhost:8080/",
+      "redirectSignOut": "https://saint-esprit.link/logout,http://localhost:8080/logout",
+      "responseType": "code"
+    },
+    "standard_required_attributes": ["email"],
+    "username_attributes": ["email"],
+    "user_verification_types": ["email"],
+    "mfa_configuration": "OPTIONAL",
+    "mfa_methods": ["TOTP"],
+    "password_policy": {
+      "min_length": 8,
+      "require_lowercase": true,
+      "require_uppercase": true,
+      "require_numbers": true,
+      "require_symbols": true
+    }
+  },
+  "data": {
+    "url": "https://graphql.saint-esprit.link/graphql",
+    "aws_region": "eu-west-3",
+    "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
+    "authorization_types": ["AMAZON_COGNITO_USER_POOLS", "AWS_IAM"],
+    "model_introspection": {
+      "version": 1,
+      "models": {
+        "News": {
+          "name": "News",
+          "fields": {
+            "id": { "type": "ID", "isRequired": true },
+            "title": { "type": "String", "isRequired": true },
+            "content": { "type": "String" },
+            "author": { "type": "String" },
+            "status": { "type": "String" },
+            "userId": { "type": "String", "isRequired": true },
+            "createdAt": { "type": "AWSDateTime" },
+            "updatedAt": { "type": "AWSDateTime" }
+          }
+        },
+        "Animation": {
+          "name": "Animation",
+          "fields": {
+            "id": { "type": "ID", "isRequired": true },
+            "title": { "type": "String", "isRequired": true },
+            "content": { "type": "String" },
+            "author": { "type": "String" },
+            "userId": { "type": "String", "isRequired": true },
+            "createdAt": { "type": "AWSDateTime" },
+            "updatedAt": { "type": "AWSDateTime" }
+          }
+        },
+        "Recording": {
+          "name": "Recording",
+          "fields": {
+            "id": { "type": "ID", "isRequired": true },
+            "name": { "type": "String", "isRequired": true },
+            "sourceUrl": { "type": "String" },
+            "s3Key": { "type": "String" },
+            "s3Url": { "type": "String" },
+            "duration": { "type": "Int" },
+            "status": { "type": "String", "isRequired": true },
+            "scheduledDate": { "type": "AWSDateTime" },
+            "userId": { "type": "String", "isRequired": true },
+            "createdAt": { "type": "AWSDateTime" },
+            "updatedAt": { "type": "AWSDateTime" }
+          }
+        }
+      }
+    }
+  },
+  "storage": {
+    "aws_region": "eu-west-3",
+    "bucket_name": "amplify-saintespritaws-di-saintespritstoragebucket-91ui2ognukke",
+    "dangerously_connect_to_http_endpoint_for_testing": false
+  },
+  "analytics": {
+    "amazon_pinpoint": {
+      "aws_region": "eu-west-3",
+      "app_id": "saintesprit_analytics"
+    }
+  },
+  "geo": {
+    "amazon_location_service": {
+      "region": "eu-west-3",
+      "maps": {
+        "items": {
+          "saintespritMap": {
+            "style": "VectorEsriStreets"
+          }
+        },
+        "default": "saintespritMap"
+      }
+    }
+  },
+  "notifications": {
+    "amazon_pinpoint_app_id": "saintesprit_notifications",
+    "aws_region": "eu-west-3",
+    "channels": ["EMAIL", "SMS"]
+  }
+}

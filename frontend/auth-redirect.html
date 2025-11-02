@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saint-Esprit Radio - Authentification</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+        
+        .loading {
+            display: none;
+            color: #666;
+            margin: 2rem 0;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .error {
+            color: #dc3545;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8d7da;
+            border-radius: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ Saint-Esprit Radio</h1>
+        
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Traitement de votre authentification...</p>
+        </div>
+        
+        <div id="login-section">
+            <p style="color: #666; margin-bottom: 2rem;">
+                Connectez-vous pour accéder à l'application
+            </p>
+            <button class="btn" onclick="redirectToLogin()">
+                Se connecter avec Cognito
+            </button>
+        </div>
+        
+        <div id="error" class="error"></div>
+    </div>
+    
+    <script>
+        // Configuration Cognito
+        const cognitoConfig = {
+            domain: 'saint-esprit-radio-auth.auth.eu-west-3.amazoncognito.com',
+            clientId: '5jst6bnhl26ekdr5a7pu9ik2f5',
+            redirectUri: window.location.origin + '/',
+            logoutUri: window.location.origin + '/logout',
+            region: 'eu-west-3'
+        };
+        
+        // Fonction pour rediriger vers la page de login Cognito
+        function redirectToLogin() {
+            const loginUrl = `https://${cognitoConfig.domain}/login?` +
+                `client_id=${cognitoConfig.clientId}&` +
+                `response_type=code&` +
+                `scope=email+openid+profile&` +
+                `redirect_uri=${encodeURIComponent(cognitoConfig.redirectUri)}`;
+            
+            window.location.href = loginUrl;
+        }
+        
+        // Vérifier si on a un code d'autorisation dans l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+        
+        if (authCode) {
+            // On a un code, on doit le traiter
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            
+            // Stocker le code et marquer comme authentifié
+            localStorage.setItem('saint-esprit-auth-code', authCode);
+            localStorage.setItem('saint-esprit-authenticated', 'true');
+            
+            // Rediriger vers l'application principale
+            setTimeout(() => {
+                window.location.href = '/index.html';
+            }, 1000);
+        }
+        
+        // Vérifier si on est déjà authentifié
+        const isAuthenticated = localStorage.getItem('saint-esprit-authenticated');
+        if (isAuthenticated === 'true' && !authCode) {
+            // Déjà authentifié, rediriger vers l'app
+            window.location.href = '/index.html';
+        }
+    </script>
+</body>
+</html>

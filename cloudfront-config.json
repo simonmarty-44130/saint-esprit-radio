@@ -1,0 +1,70 @@
+{
+  "CallerReference": "saint-esprit-1732224340",
+  "Aliases": {
+    "Quantity": 2,
+    "Items": ["saint-esprit.link", "www.saint-esprit.link"]
+  },
+  "DefaultRootObject": "index.html",
+  "Comment": "Saint-Esprit Radio - Amplify Gen 2",
+  "Enabled": true,
+  "Origins": {
+    "Quantity": 1,
+    "Items": [{
+      "Id": "S3-amplify-saintespritaws",
+      "DomainName": "amplify-saintespritaws-di-saintespritstoragebucket-91ui2ognukke.s3.eu-west-3.amazonaws.com",
+      "S3OriginConfig": {
+        "OriginAccessIdentity": ""
+      }
+    }]
+  },
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "S3-amplify-saintespritaws",
+    "ViewerProtocolPolicy": "redirect-to-https",
+    "TrustedSigners": {
+      "Enabled": false,
+      "Quantity": 0
+    },
+    "ForwardedValues": {
+      "QueryString": false,
+      "Cookies": {"Forward": "none"},
+      "Headers": {
+        "Quantity": 0
+      }
+    },
+    "MinTTL": 0,
+    "DefaultTTL": 86400,
+    "MaxTTL": 31536000,
+    "Compress": true,
+    "AllowedMethods": {
+      "Quantity": 2,
+      "Items": ["GET", "HEAD"],
+      "CachedMethods": {
+        "Quantity": 2,
+        "Items": ["GET", "HEAD"]
+      }
+    }
+  },
+  "ViewerCertificate": {
+    "ACMCertificateArn": "arn:aws:acm:us-east-1:888577030217:certificate/81c4a4b2-6302-4fc5-a43f-0449d07bc81b",
+    "SSLSupportMethod": "sni-only",
+    "MinimumProtocolVersion": "TLSv1.2_2021"
+  },
+  "PriceClass": "PriceClass_100",
+  "CustomErrorResponses": {
+    "Quantity": 2,
+    "Items": [
+      {
+        "ErrorCode": 404,
+        "ResponsePagePath": "/index.html",
+        "ResponseCode": "200",
+        "ErrorCachingMinTTL": 300
+      },
+      {
+        "ErrorCode": 403,
+        "ResponsePagePath": "/index.html",
+        "ResponseCode": "200",
+        "ErrorCachingMinTTL": 300
+      }
+    ]
+  }
+}

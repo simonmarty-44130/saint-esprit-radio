@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Déconnexion - Saint-Esprit Radio</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logout-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="logout-container">
+        <h1>👋 Déconnexion réussie</h1>
+        <p>Vous avez été déconnecté de Saint-Esprit Radio.</p>
+        <p>À bientôt !</p>
+        <a href="/" class="btn">Se reconnecter</a>
+    </div>
+    
+    <script>
+        // Nettoyer le localStorage
+        localStorage.removeItem('saint-esprit-authenticated');
+        localStorage.removeItem('saint-esprit-auth-code');
+        localStorage.removeItem('saint-esprit-token');
+        localStorage.removeItem('saint-esprit-user');
+        localStorage.removeItem('saint-esprit-role');
+        localStorage.removeItem('saint-esprit-data');
+        
+        // Message de succès
+        console.log('✅ Déconnexion réussie');
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "stream-recorder-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function for StreamRecorder module",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.1462.0"
+  }
+}

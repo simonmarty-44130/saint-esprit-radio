@@ -1,0 +1,145 @@
+/* ===== DASHBOARD SECTION ===== */
+
+/* Container principal du dashboard */
+#dashboard-section {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    background-color: var(--bg-primary);
+    position: relative;
+    display: block;
+}
+
+#dashboard-section.active {
+    display: block !important;
+    visibility: visible;
+    opacity: 1;
+}
+
+.dashboard-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Titre principal */
+.dashboard-container h1 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    color: var(--text-primary);
+}
+
+/* Section de progression */
+.progress-section {
+    background: var(--bg-tertiary);
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.progress-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 40px;
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    transition: width 0.3s ease;
+}
+
+.progress-section p {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+}
+
+/* Section urgente */
+.urgent-section {
+    background: var(--bg-tertiary);
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.urgent-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.urgent-item {
+    padding: 1rem;
+    background: rgba(255, 107, 107, 0.1);
+    border-left: 4px solid var(--error);
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.urgent-item:hover {
+    background: rgba(255, 107, 107, 0.2);
+    transform: translateX(4px);
+}
+
+.urgent-item > div:first-child {
+    font-weight: bold;
+    color: var(--error);
+}
+
+.urgent-item > div:last-child {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+/* Bouton template */
+.dashboard-container .btn-primary {
+    font-size: 1.25rem;
+    padding: 1rem 2rem;
+    margin-top: 1rem;
+}
+
+/* Animation d'entrée */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    
+    .dashboard-container h1 {
+        font-size: 1.75rem;
+    }
+    
+    .progress-section,
+    .urgent-section {
+        padding: 1rem;
+    }
+    
+    .dashboard-container .btn-primary {
+        width: 100%;
+    }
+}

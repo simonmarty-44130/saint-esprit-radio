@@ -1,0 +1,231 @@
+/* ===== SAINT ESPRIT - SYSTÈME DE NEWSROOM PROFESSIONNEL ===== */
+/* Main CSS file - Imports all modules in correct order */
+
+/* 1. CORE - Foundation styles */
+@import 'core/reset.css?v=3.0';
+@import 'core/layout.css';
+@import 'core/utilities.css';
+
+/* 2. COMPONENTS - Reusable UI components */
+@import 'components/buttons.css';
+@import 'components/forms.css';
+@import 'components/modals.css';
+@import 'components/tables.css';
+@import 'components/sidebar.css';
+@import 'components/multitrack.css';
+
+/* 3. SECTIONS - Page-specific styles */
+@import 'sections/dashboard.css';
+@import 'sections/news.css';
+@import 'sections/animation.css';
+@import 'sections/blocks.css';
+@import 'sections/conductor.css';
+@import 'sections/onair.css';
+@import 'sections/audio_editor.css';
+@import 'sections/fridge.css';
+@import 'sections/settings.css';
+@import 'sections/template-builder.css';
+
+/* 4. THEMES - Color schemes and theme variations */
+/* Appliqué directement sans sélecteur data-theme */
+
+/* Default dark theme variables are already in reset.css */
+
+/* Additional theme-specific styles for white theme */
+.header {
+    background: var(--bg-primary);
+    border-bottom: 2px solid var(--primary);
+    box-shadow: var(--shadow);
+}
+
+.logo-icon {
+    background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+    box-shadow: var(--shadow-sm);
+}
+
+/* Settings scrollbar styles */
+#settings-section .content-area {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) var(--bg-secondary);
+}
+
+#settings-section .content-area::-webkit-scrollbar {
+    width: 8px;
+}
+
+#settings-section .content-area::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+#settings-section .content-area::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 4px;
+}
+
+#settings-section .content-area::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary);
+}
+
+/* Sync indicator styles */
+#sync-indicator {
+    transition: all 0.3s ease;
+}
+
+#sync-indicator.syncing {
+    animation: rotate 1s linear infinite;
+    color: var(--primary);
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.quick-action {
+    transition: background 0.2s, transform 0.2s;
+}
+
+.quick-action:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+/* Status colors */
+.status-draft {
+    color: var(--text-muted);
+}
+
+.status-ready {
+    color: var(--success);
+}
+
+.status-approved {
+    color: var(--primary);
+}
+
+/* Variance colors */
+.overtime {
+    color: var(--error);
+}
+
+.undertime {
+    color: var(--success);
+}
+
+/* News/Animation items active states */
+.news-item.active {
+    background: var(--primary) !important;
+    color: white !important;
+}
+
+.animation-item.active {
+    background: #9333ea !important;
+    color: white !important;
+}
+
+.block-item.active {
+    background: var(--primary) !important;
+    color: white !important;
+}
+
+/* ===== GLOBAL OVERRIDES AND FINAL ADJUSTMENTS ===== */
+
+/* Animation globale pour les transitions */
+* {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Performance optimizations */
+.news-list,
+.animation-list,
+.blocks-list,
+.rundown-wrapper {
+    contain: layout style paint;
+}
+
+/* Print styles */
+@media print {
+    .header,
+    .sidebar,
+    .modal,
+    .notification {
+        display: none !important;
+    }
+    
+    .content-area {
+        width: 100% !important;
+        max-width: none !important;
+    }
+    
+    * {
+        color: black !important;
+        background: white !important;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+    :root {
+        --border: #ffffff;
+        --border-light: #ffffff;
+        --text-muted: #ffffff;
+    }
+}
+
+/* Dark mode preference (système) */
+@media (prefers-color-scheme: dark) {
+    /* Les variables sont déjà définies pour le thème sombre */
+}
+
+/* Focus visible pour l'accessibilité */
+*:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Amélioration des performances pour les grandes listes */
+.news-list > *,
+.animation-list > *,
+.blocks-list > * {
+    will-change: transform;
+}
+
+/* Loading state global */
+.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* Status indicator global */
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.status-indicator.active {
+    background: var(--success);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* ===== FIN DU FICHIER PRINCIPAL ===== */

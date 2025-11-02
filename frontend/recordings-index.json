@@ -1,0 +1,22 @@
+{
+  "recordings": [
+    {
+      "key": "public/recordings/2025/08/27/kto_2025-08-27_20h00.mp3",
+      "name": "KTO",
+      "date": "2025-08-27T20:00:00.000Z",
+      "duration": 60,
+      "size": 961008,
+      "url": "https://d1e4y2k4u0hrs3.cloudfront.net/public/recordings/2025/08/27/kto_2025-08-27_20h00.mp3"
+    },
+    {
+      "key": "public/recordings/2025/08/28/invit__de_8h_2025-08-28_05h59.mp3", 
+      "name": "Invité de 8h",
+      "date": "2025-08-28T05:59:00.000Z",
+      "duration": 15,
+      "size": 14400903,
+      "url": "https://d1e4y2k4u0hrs3.cloudfront.net/public/recordings/2025/08/28/invit__de_8h_2025-08-28_05h59.mp3"
+    }
+  ],
+  "lastUpdated": "2025-08-28T08:15:00.000Z",
+  "version": 1
+}

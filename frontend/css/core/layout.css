@@ -1,0 +1,175 @@
+/* ===== LAYOUT GÉNÉRAL ===== */
+
+/* Container principal - mis à jour pour la nouvelle structure */
+body {
+    /* Le body est maintenant en flex row dans sidebar.css */
+}
+
+/* Main container */
+.main-container {
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - var(--header-height));
+    width: 100%;
+}
+
+/* Sections - Structure de base */
+.section {
+    display: none;
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+    background-color: var(--bg-primary);
+}
+
+.section.active {
+    display: block;
+}
+
+/* Sections qui utilisent flex (avec sidebar interne) */
+#news-section.active,
+#animation-section.active,
+#blocks-section.active,
+#fridge-section.active {
+    display: flex;
+}
+
+/* Sidebar commune DANS les sections (news, animation, blocks) */
+.section > .sidebar {
+    width: var(--sidebar-width);
+    background: var(--bg-tertiary);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.section > .sidebar .sidebar-header {
+    background: var(--bg-lighter);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem;
+}
+
+/* Content area */
+.content-area {
+    flex: 1;
+    background: var(--bg-primary);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Welcome screen */
+.welcome-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+}
+
+.welcome-content h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--primary);
+}
+
+.welcome-content p {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    max-width: 500px;
+}
+
+.welcome-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+/* Recovery notice */
+.recovery-notice {
+    position: fixed;
+    top: var(--header-height);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--info);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    box-shadow: var(--shadow);
+    z-index: var(--z-notification);
+    opacity: 0;
+    transform: translateX(-50%) translateY(-100%);
+    transition: var(--transition-slow);
+}
+
+.recovery-notice.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Hidden utility */
+.hidden {
+    display: none !important;
+}
+
+/* Logo (si utilisé ailleurs) */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+.logo-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: white;
+}
+
+/* Timer display (utilisé dans le header) */
+.timer-display {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+
+.timer-display.simple {
+    gap: 1rem;
+}
+
+.timer-item {
+    text-align: center;
+}
+
+.timer-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.timer-value {
+    font-size: 1.25rem;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    color: var(--text-primary);
+}
+
+.timer-value.positive {
+    color: var(--success);
+}
+
+.timer-value.negative {
+    color: var(--error);
+}

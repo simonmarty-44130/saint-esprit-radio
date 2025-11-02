@@ -1,0 +1,691 @@
+/**
+ * Styles pour le module Automation unifié
+ * Layout 40/60 avec players à gauche et prompteur à droite
+ */
+
+/* Container principal */
+.automation-container {
+    height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-dark, #1a1a1a);
+    color: var(--text-primary, #ffffff);
+}
+
+/* Header */
+.automation-header {
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    border-bottom: 2px solid var(--border, #333);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.automation-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.automation-controls {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Layout principal 40/60 */
+.automation-main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 40% 60%;
+    gap: 1rem;
+    overflow: hidden;
+    height: calc(100vh - 200px);
+}
+
+/* === PANNEAU GAUCHE (40%) === */
+.automation-left {
+    background: var(--bg-secondary, #222);
+    border-right: 2px solid var(--border, #333);
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+/* Players */
+.player-container {
+    background: var(--bg-dark, #1a1a1a);
+    border: 1px solid var(--border, #333);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.player-container h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary, #999);
+}
+
+.player-display {
+    background: #000;
+    border-radius: 4px;
+    padding: 0.75rem;
+    min-height: 60px;
+}
+
+.player-status {
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+    color: #666;
+}
+
+.player-status.playing {
+    color: #ff0000;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.player-title {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-time {
+    font-family: monospace;
+    font-size: 1.2rem;
+    color: #00ff00;
+}
+
+/* Player A spécifique */
+.player-a {
+    border-left: 3px solid #00B4D8;
+}
+
+/* Player B spécifique */
+.player-b {
+    border-left: 3px solid #FFC107;
+}
+
+/* Contrôles des players */
+.player-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border, #333);
+}
+
+.player-controls button {
+    flex: 1;
+    padding: 0.5rem;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.2rem;
+}
+
+.player-controls .btn-play {
+    background: #00B4D8;
+}
+
+.player-controls .btn-play:hover {
+    background: #0090a8;
+}
+
+.player-controls .btn-stop {
+    background: #666;
+}
+
+.player-controls .btn-stop:hover {
+    background: #888;
+}
+
+/* Conducteur */
+.conductor-container {
+    flex: 1;
+    background: var(--bg-dark, #1a1a1a);
+    border: 1px solid var(--border, #333);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 200px;
+}
+
+/* Header du conducteur */
+.conductor-header {
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border, #333);
+}
+
+.conductor-header h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary, #999);
+}
+
+.conductor-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-marker {
+    padding: 0.5rem 1rem;
+    background: #444;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.btn-marker:hover {
+    background: #555;
+}
+
+/* Table du conducteur */
+.conducteur-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #0a0a0a;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.conducteur-table thead {
+    background: #000;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 2px solid #00ff9f;
+}
+
+.conducteur-table th {
+    padding: 10px;
+    text-align: left;
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    font-weight: normal;
+    letter-spacing: 1px;
+}
+
+.conducteur-table tbody {
+    background: #1a1a1a;
+}
+
+/* Lignes du conducteur */
+.conducteur-item {
+    border-bottom: 1px solid #333;
+    transition: background 0.2s;
+}
+
+.conducteur-item:hover {
+    background: #252525;
+}
+
+.conducteur-item.is-playing {
+    background: linear-gradient(90deg, #00ff9f20 0%, transparent 100%);
+    border-left: 3px solid #00ff9f;
+}
+
+.conducteur-item.is-next {
+    background: rgba(255, 159, 0, 0.05);
+}
+
+.conducteur-item.is-played {
+    opacity: 0.6;
+}
+
+.conducteur-item td {
+    padding: 8px 10px;
+    font-size: 12px;
+    color: #ddd;
+}
+
+.conducteur-item .time {
+    font-family: monospace;
+    color: #00ff9f;
+    font-weight: bold;
+}
+
+.conducteur-item .title {
+    cursor: pointer;
+}
+
+.conducteur-item .title:hover {
+    color: white;
+}
+
+.conducteur-item .duration {
+    font-family: monospace;
+    color: #999;
+}
+
+/* Marqueurs temporels */
+.time-marker {
+    background: rgba(255, 107, 53, 0.15) !important;
+    font-weight: bold;
+}
+
+.time-marker .time {
+    color: #ff9f00 !important;
+}
+
+.time-marker .title {
+    color: #ff9f00;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* Badges de retard */
+.delay-badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.delay-badge.late {
+    background: #ff4444;
+    color: white;
+}
+
+.delay-badge.early {
+    background: #44ff44;
+    color: black;
+}
+
+/* Badges de type */
+.type-badge {
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.type-badge.news {
+    background: #e74c3c;
+    color: white;
+}
+
+.type-badge.animation {
+    background: #3498db;
+    color: white;
+}
+
+.type-badge.jingle {
+    background: #f39c12;
+    color: white;
+}
+
+.type-badge.musique {
+    background: #4a90e2;
+    color: white;
+}
+
+.type-badge.pub {
+    background: #9b59b6;
+    color: white;
+}
+
+.type-badge.block {
+    background: #34495e;
+    color: white;
+}
+
+.type-badge.custom {
+    background: #95a5a6;
+    color: white;
+}
+
+/* Boutons d'action dans la table */
+.actions {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-action {
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: #333;
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-action:hover {
+    background: #444;
+    transform: scale(1.1);
+}
+
+.btn-action.btn-play:hover {
+    background: #00ff9f;
+    color: black;
+}
+
+.btn-action.btn-chain {
+    background: #444;
+}
+
+.btn-action.btn-chain.active {
+    background: rgba(0, 255, 159, 0.2);
+    border: 1px solid #00ff9f;
+}
+
+.btn-action.btn-chain:not(.active) {
+    opacity: 0.5;
+}
+
+.btn-action.btn-cue:hover {
+    background: #FFC107;
+    color: black;
+}
+
+.btn-action.btn-delete:hover {
+    background: #ff4444;
+    color: white;
+}
+
+/* === PANNEAU DROIT (60%) === */
+.automation-right {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary, #1a1a1a);
+    overflow: hidden;
+}
+
+/* Container prompteur */
+.prompter-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tabs du prompteur */
+.prompter-tabs {
+    display: flex;
+    background: var(--bg-secondary, #222);
+    border-bottom: 2px solid var(--border, #333);
+}
+
+.prompter-tab {
+    flex: 1;
+    padding: 1rem;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary, #999);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.prompter-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.prompter-tab.active {
+    background: var(--primary, #00B4D8);
+    color: white;
+    font-weight: bold;
+}
+
+/* Contenu du prompteur */
+.prompter-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    font-size: 1.2rem;
+    line-height: 1.8;
+    background: #000;
+}
+
+.prompter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border, #333);
+}
+
+.prompter-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--primary, #00B4D8);
+}
+
+.prompter-duration {
+    background: rgba(0, 180, 216, 0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: #00B4D8;
+}
+
+.prompter-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-primary, #fff);
+}
+
+.prompter-empty {
+    text-align: center;
+    color: var(--text-secondary, #666);
+    font-style: italic;
+    padding: 3rem;
+}
+
+/* Navigation prompteur */
+.prompter-navigation {
+    padding: 1rem;
+    background: var(--bg-secondary, #222);
+    border-top: 2px solid var(--border, #333);
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+/* Scrollbar personnalisée */
+.conductor-list::-webkit-scrollbar,
+.prompter-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.conductor-list::-webkit-scrollbar-track,
+.prompter-content::-webkit-scrollbar-track {
+    background: #111;
+}
+
+.conductor-list::-webkit-scrollbar-thumb,
+.prompter-content::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+
+.conductor-list::-webkit-scrollbar-thumb:hover,
+.prompter-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Bouton pop-out */
+.btn-popout {
+    padding: 0.5rem 1rem;
+    background: #555;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+}
+
+.btn-popout:hover {
+    background: #666;
+    transform: scale(1.05);
+}
+
+/* Pop-up du conducteur */
+.conductor-popout {
+    position: fixed;
+    background: #1a1a1a;
+    border: 2px solid #00ff9f;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 255, 159, 0.3);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    min-width: 400px;
+    min-height: 300px;
+}
+
+.conductor-popout.minimized {
+    height: auto !important;
+}
+
+.conductor-popout.minimized .popout-content {
+    display: none;
+}
+
+.conductor-popout.maximized {
+    transition: all 0.3s ease;
+}
+
+/* Header de la pop-up */
+.popout-header {
+    background: linear-gradient(135deg, #00ff9f 0%, #00b874 100%);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 6px 6px 0 0;
+    user-select: none;
+}
+
+.popout-header h3 {
+    margin: 0;
+    color: #000;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+/* Contrôles de la pop-up */
+.popout-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.popout-controls button {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: rgba(0, 0, 0, 0.2);
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.popout-controls button:hover {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.btn-minimize {
+    font-weight: bold;
+}
+
+.btn-maximize {
+    font-size: 18px;
+}
+
+.btn-reattach {
+    font-size: 16px;
+}
+
+/* Contenu de la pop-up */
+.popout-content {
+    flex: 1;
+    overflow: auto;
+    background: #0a0a0a;
+}
+
+.popout-content .conductor-container {
+    height: 100%;
+    border: none;
+    border-radius: 0;
+}
+
+.popout-content .conductor-header {
+    display: none; /* Masquer le header original dans la pop-up */
+}
+
+/* Poignée de redimensionnement */
+.popout-resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 50%, #00ff9f 50%);
+    border-radius: 0 0 6px 0;
+}
+
+.popout-resize-handle:hover {
+    background: linear-gradient(135deg, transparent 40%, #00ff9f 40%);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .automation-main {
+        grid-template-columns: 35% 65%;
+    }
+}
+
+@media (max-width: 768px) {
+    .automation-main {
+        grid-template-columns: 1fr;
+        grid-template-rows: 40% 60%;
+    }
+    
+    .automation-left {
+        border-right: none;
+        border-bottom: 2px solid var(--border, #333);
+    }
+}

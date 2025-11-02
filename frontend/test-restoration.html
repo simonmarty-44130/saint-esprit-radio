@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Restauration - Saint-Esprit</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            padding: 2rem;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-result {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .test-success {
+            background: #004d00;
+            border: 1px solid #008000;
+        }
+        .test-error {
+            background: #4d0000;
+            border: 1px solid #800000;
+        }
+        .test-info {
+            background: #003d4d;
+            border: 1px solid #0080ff;
+        }
+        .status {
+            font-weight: bold;
+        }
+        .log {
+            background: #333;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Test de Restauration Saint-Esprit</h1>
+        <p>Validation des corrections apportées suite aux rapports techniques</p>
+
+        <div id="test-results"></div>
+        
+        <h3>Console Log</h3>
+        <div id="console-log" class="log"></div>
+        
+        <button onclick="runTests()" style="padding: 1rem 2rem; background: #0080ff; color: white; border: none; border-radius: 4px; margin-top: 1rem; cursor: pointer;">🔄 Relancer les tests</button>
+    </div>
+
+    <script>
+        const log = [];
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn
+        };
+
+        // Capturer les logs console
+        function captureConsole() {
+            console.log = (...args) => {
+                log.push(`[LOG] ${args.join(' ')}`);
+                originalConsole.log(...args);
+                updateConsoleDisplay();
+            };
+            
+            console.error = (...args) => {
+                log.push(`[ERROR] ${args.join(' ')}`);
+                originalConsole.error(...args);
+                updateConsoleDisplay();
+            };
+            
+            console.warn = (...args) => {
+                log.push(`[WARN] ${args.join(' ')}`);
+                originalConsole.warn(...args);
+                updateConsoleDisplay();
+            };
+        }
+
+        function updateConsoleDisplay() {
+            const logDiv = document.getElementById('console-log');
+            logDiv.innerHTML = log.map(entry => `<div>${entry}</div>`).join('');
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function addTestResult(name, status, details) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result test-${status}`;
+            resultDiv.innerHTML = `
+                <span>${name}</span>
+                <span class="status">${status === 'success' ? '✅ OK' : status === 'error' ? '❌ FAIL' : 'ℹ️ INFO'}</span>
+            `;
+            if (details) {
+                resultDiv.innerHTML += `<div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.5rem;">${details}</div>`;
+            }
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        async function runTests() {
+            // Clear previous results
+            document.getElementById('test-results').innerHTML = '';
+            log.length = 0;
+            
+            captureConsole();
+            
+            console.log('🚀 Démarrage des tests de restauration...');
+
+            // Test 1: Vérifier que safeGetElement est définie
+            try {
+                if (typeof safeGetElement === 'function') {
+                    addTestResult('1. Fonction safeGetElement', 'success', 'Fonction globale accessible');
+                } else {
+                    addTestResult('1. Fonction safeGetElement', 'error', 'Fonction non définie');
+                }
+            } catch (e) {
+                addTestResult('1. Fonction safeGetElement', 'error', e.message);
+            }
+
+            // Test 2: Vérifier que Utils est défini
+            try {
+                if (typeof Utils === 'object' && Utils.safeGetElement) {
+                    addTestResult('2. Object Utils', 'success', 'Utils correctement chargé depuis utils.js');
+                } else {
+                    addTestResult('2. Object Utils', 'error', 'Utils non accessible');
+                }
+            } catch (e) {
+                addTestResult('2. Object Utils', 'error', e.message);
+            }
+
+            // Test 3: Test de récupération d'élément DOM
+            try {
+                const testElement = safeGetElement('test-results');
+                if (testElement) {
+                    addTestResult('3. Récupération DOM', 'success', 'safeGetElement fonctionne correctement');
+                } else {
+                    addTestResult('3. Récupération DOM', 'error', 'Élément DOM non trouvé');
+                }
+            } catch (e) {
+                addTestResult('3. Récupération DOM', 'error', e.message);
+            }
+
+            // Test 4: Vérifier les classes principales
+            const classesToCheck = [
+                'SaintEspritApp',
+                'Storage', 
+                'ContentManager',
+                'BlockManager'
+            ];
+
+            for (let className of classesToCheck) {
+                try {
+                    if (typeof window[className] === 'function') {
+                        addTestResult(`4.${className}`, 'success', `Classe ${className} accessible`);
+                    } else {
+                        addTestResult(`4.${className}`, 'error', `Classe ${className} non définie`);
+                    }
+                } catch (e) {
+                    addTestResult(`4.${className}`, 'error', e.message);
+                }
+            }
+
+            // Test 5: Test d'initialisation de l'app (simulation)
+            try {
+                console.log('Test simulation initialisation...');
+                addTestResult('5. Initialisation app', 'info', 'Prêt pour initialisation réelle');
+            } catch (e) {
+                addTestResult('5. Initialisation app', 'error', e.message);
+            }
+
+            console.log('✅ Tests de restauration terminés');
+        }
+
+        // Auto-run tests on load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(runTests, 500);
+        });
+    </script>
+
+    <!-- Charger les scripts dans le bon ordre comme dans index.html -->
+    <script src="js/utils/utils.js?v=2.1.2"></script>
+    <script src="js/core/constants.js?v=2.1.2"></script>
+    <script src="js/core/storage.js?v=2.1.2"></script>
+    <script src="js/core/sync-wrapper.js?v=2.1.2"></script>
+    <script src="js/managers/ContentManager.js?v=1755899484"></script>
+    <script src="js/managers/BlockManager.js?v=1755899484"></script>
+    <!-- Script de test final -->
+    <script>
+        console.log('📋 Scripts chargés, safeGetElement disponible:', typeof safeGetElement);
+    </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "userPool": {
+    "id": "eu-west-3_wlQrKtvCn",
+    "name": "saint-esprit-benevoles",
+    "region": "eu-west-3",
+    "arn": "arn:aws:cognito-idp:eu-west-3:888577030217:userpool/eu-west-3_wlQrKtvCn"
+  },
+  "appClient": {
+    "id": "62i42njgieq7ocg63crjfnopet",
+    "name": "saint-esprit-benevoles-client"
+  },
+  "hostedUI": {
+    "domain": "saint-esprit-benevoles.auth.eu-west-3.amazoncognito.com",
+    "loginUrl": "https://saint-esprit-benevoles.auth.eu-west-3.amazoncognito.com/login",
+    "callbackUrls": [
+      "https://saint-esprit.link/benevoles.html",
+      "http://localhost:3000/benevoles.html"
+    ],
+    "logoutUrls": [
+      "https://saint-esprit.link/logout.html",
+      "http://localhost:3000/logout.html"
+    ]
+  },
+  "users": {
+    "benevole@radio-fidelite.fr": {
+      "password": "Benevoler@diofidelite44",
+      "created": "2025-09-21T16:28:06"
+    }
+  }
+}

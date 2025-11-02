@@ -1,0 +1,108 @@
+/* ===== RESET & VARIABLES CSS ===== */
+
+/* CSS Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Variables CSS */
+:root {
+    /* Colors - Action de Grâce palette */
+    --primary: #00B4D8;          /* Accent bleu cyan du logo Saint-Esprit */
+    --primary-dark: #003459;     /* Bleu foncé du logo pour hover */
+    --secondary: #00ffdd;         /* Cyan secondaire */
+    --success: #00ff00;
+    --warning: #ffaa00;           /* Ambre pour warnings */
+    --error: #ff6b6b;             /* Rouge plus doux */
+    --info: #0099ff;
+    
+    --bg-dark: #1a1a1a;           /* Fond principal moins noir */
+    --bg-darker: #0f0f0f;         /* Éléments sombres */
+    --bg-light: #252525;          /* Panneaux */
+    --bg-lighter: #3a3a3a;        /* Panneaux légers */
+    --bg-modal: rgba(0, 0, 0, 0.8);
+    
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;    /* Texte secondaire plus clair */
+    --text-muted: #888888;        /* Texte atténué */
+    --text-dark: #666666;
+    
+    --border: #333333;
+    --border-light: #5a5a5a;      /* Bordures plus visibles */
+    --border-active: var(--primary);
+    
+    /* Shadows */
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.5);
+    
+    /* Sizes */
+    --header-height: 80px;
+    --sidebar-width: 320px;
+    --border-radius: 8px;
+    --border-radius-sm: 4px;
+    
+    /* Transitions */
+    --transition: all 0.2s ease;
+    --transition-slow: all 0.3s ease;
+    
+    /* Z-index layers */
+    --z-header: 100;
+    --z-modal: 1000;
+    --z-tooltip: 1001;
+    --z-notification: 1002;
+}
+
+/* Base styles */
+html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    line-height: 1.5;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+*:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-light);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--border-light);
+}
+/* Hover effects with dark blue */
+.btn:hover,
+.toolbar-btn:hover,
+.tool-btn:hover,
+.nav-item:hover {
+    background: var(--primary-dark) !important;
+    border-color: var(--primary-dark);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark) !important;
+}
+
+button:hover {
+    transition: all 0.2s ease;
+}
+

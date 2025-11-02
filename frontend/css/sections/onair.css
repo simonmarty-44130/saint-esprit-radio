@@ -1,0 +1,530 @@
+/* ===== SECTION ON AIR ===== */
+
+/* ON AIR container */
+.onair-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 100%;
+    background: var(--bg-primary);
+    gap: 0;
+}
+
+.onair-left {
+    border-right: 2px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-tertiary);
+    overflow: hidden;
+}
+
+.onair-right {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    overflow: hidden;
+}
+
+/* Header du rundown */
+.onair-rundown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+}
+
+.onair-rundown-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+/* Table wrapper */
+.onair-rundown-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* ON AIR rundown table */
+#onair-rundown-table {
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    table-layout: auto;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#onair-rundown-table thead {
+    position: sticky;
+    top: 0;
+    background: var(--bg-lighter);
+    z-index: 10;
+}
+
+#onair-rundown-table th {
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+}
+
+#onair-rundown-table td {
+    padding: 0.5rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border-light);
+}
+
+#onair-rundown-table .col-pg {
+    width: 50px;
+}
+
+#onair-rundown-table .col-format {
+    width: 60px;
+}
+
+#onair-rundown-table .col-name {
+    text-align: left;
+    padding-left: 1rem;
+    min-width: 200px;
+}
+
+#onair-rundown-table .col-duration {
+    width: 70px;
+    font-family: 'Courier New', monospace;
+}
+
+#onair-rundown-table .col-hit-time {
+    width: 80px;
+    font-family: 'Courier New', monospace;
+}
+
+#onair-rundown-table tbody tr {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+#onair-rundown-table tbody tr:hover {
+    background: var(--bg-lighter);
+}
+
+/* État actif dans ON AIR */
+.on-air-active {
+    background: var(--success) !important;
+    color: var(--bg-dark) !important;
+    font-weight: bold;
+    box-shadow: 0 0 0 2px rgba(0, 255, 0, 0.5);
+}
+
+.on-air-active td {
+    color: var(--bg-dark) !important;
+}
+
+/* Content area */
+.onair-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    background: var(--bg-primary);
+}
+
+/* Item header */
+.onair-item-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.onair-title {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin: 0 0 1rem 0;
+    line-height: 1.2;
+}
+
+.onair-metadata {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.onair-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    padding: 0.25rem 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--border);
+}
+
+/* Script content */
+.onair-script {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-primary);
+    max-width: 800px;
+}
+
+.onair-content-text {
+    font-family: Georgia, 'Times New Roman', serif;
+}
+
+.onair-content-text strong {
+    color: var(--primary);
+    font-weight: bold;
+}
+
+.onair-content-text em {
+    color: var(--warning);
+    font-style: italic;
+}
+
+.onair-content-text u {
+    color: var(--info);
+    text-decoration: underline;
+}
+
+/* Prompter notes */
+.prompter-note {
+    background: rgba(0, 204, 255, 0.1);
+    border-left: 4px solid var(--primary);
+    padding: 0.75rem;
+    margin: 1rem 0;
+    border-radius: var(--border-radius-sm);
+    font-style: italic;
+    color: var(--primary);
+    font-size: 0.95rem;
+}
+
+/* Pause markers */
+.pause-marker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: var(--warning);
+    color: var(--bg-dark);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin: 0 0.25rem;
+}
+
+/* Sound elements */
+.onair-sound-element {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    margin: 1rem 0;
+    color: var(--success);
+    font-weight: bold;
+}
+
+.onair-sound-element::before {
+    content: "🔊";
+    font-size: 1.2rem;
+}
+
+/* Package elements */
+.onair-package-element {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    margin: 1rem 0;
+    color: var(--info);
+    font-weight: bold;
+}
+
+.onair-package-element::before {
+    content: "📦";
+    font-size: 1.2rem;
+}
+
+/* Audio controls */
+.onair-controls {
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-top: 2px solid var(--border);
+}
+
+.audio-controls-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.audio-control-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.audio-control-item:hover {
+    background: var(--bg-lighter);
+    border-color: var(--border-light);
+}
+
+.audio-control-item.playing {
+    border-color: var(--success);
+    background: rgba(0, 255, 0, 0.05);
+}
+
+.audio-play-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    background: var(--success);
+    border: 2px solid var(--success);
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.audio-play-btn:hover {
+    background: #00dd00;
+    border-color: #00dd00;
+    transform: scale(1.05);
+}
+
+.audio-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.audio-name {
+    font-weight: bold;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.audio-duration {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: var(--success);
+    font-size: 1.1rem;
+}
+
+/* Timer display in ON AIR */
+.onair-timer {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.9);
+    color: var(--success);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    font-family: 'Courier New', monospace;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border: 2px solid var(--success);
+    z-index: 50;
+}
+
+/* Live indicator */
+.onair-live-indicator {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    background: var(--error);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    font-weight: bold;
+    font-size: 0.875rem;
+    z-index: 50;
+    animation: pulse 2s infinite;
+    border: 2px solid var(--error);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.onair-live-indicator::before {
+    content: "🔴";
+    margin-right: 0.5rem;
+}
+
+/* Progress indicator */
+.onair-progress {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--bg-primary);
+    z-index: 50;
+}
+
+.onair-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success), var(--primary));
+    width: 0%;
+    transition: width 1s ease;
+}
+
+/* Teleprompter mode */
+.onair-teleprompter {
+    background: black;
+    color: white;
+    font-size: 1.8rem;
+    line-height: 2.2;
+    padding: 3rem;
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.onair-teleprompter .onair-title {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: 2rem;
+}
+
+.onair-teleprompter .prompter-note {
+    background: rgba(0, 204, 255, 0.2);
+    color: var(--primary);
+    font-size: 1.6rem;
+    border-radius: var(--border-radius);
+    margin: 2rem 0;
+}
+
+/* Next up indicator */
+.next-up {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.9);
+    color: var(--warning);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border: 2px solid var(--warning);
+    z-index: 50;
+    max-width: 300px;
+}
+
+.next-up-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.next-up-title {
+    font-weight: bold;
+    color: var(--warning);
+    margin-bottom: 0.25rem;
+}
+
+.next-up-time {
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Responsive ON AIR */
+@media (max-width: 1200px) {
+    .onair-container {
+        grid-template-columns: 45% 55%;
+    }
+    
+    .onair-title {
+        font-size: 1.5rem;
+    }
+    
+    .onair-script {
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+}
+
+@media (max-width: 768px) {
+    .onair-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: 300px 1fr;
+    }
+    
+    .onair-left {
+        border-right: none;
+        border-bottom: 2px solid var(--border);
+    }
+    
+    .onair-content {
+        padding: 1rem;
+    }
+    
+    .onair-title {
+        font-size: 1.25rem;
+    }
+    
+    .onair-metadata {
+        gap: 0.75rem;
+    }
+    
+    .onair-meta-item {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+    }
+    
+    .audio-control-item {
+        padding: 0.75rem;
+    }
+    
+    .audio-play-btn {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 1rem;
+    }
+    
+    .onair-timer {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin-bottom: 1rem;
+        font-size: 1.25rem;
+    }
+    
+    .onair-live-indicator {
+        position: relative;
+        top: auto;
+        left: auto;
+        margin-bottom: 1rem;
+        display: inline-block;
+    }
+    
+    .next-up {
+        position: relative;
+        bottom: auto;
+        right: auto;
+        margin-top: 1rem;
+        max-width: none;
+    }
+}

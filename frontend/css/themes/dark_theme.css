@@ -1,0 +1,382 @@
+/* ===== THÈME SOMBRE (DÉFAUT) ===== */
+
+/* Variables du thème sombre */
+:root {
+    /* Colors principales */
+    --primary: #00ccff;
+    --secondary: #0080ff;
+    --success: #00ff00;
+    --warning: #ffff00;
+    --error: #ff0000;
+    --info: #0080ff;
+    
+    /* Backgrounds */
+    --bg-dark: #0a0a0a;
+    --bg-darker: #000000;
+    --bg-light: #1a1a1a;
+    --bg-lighter: #222222;
+    --bg-modal: rgba(0, 0, 0, 0.8);
+    
+    /* Text colors */
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --text-muted: #999999;
+    --text-dark: #666666;
+    
+    /* Borders */
+    --border: #333333;
+    --border-light: #444444;
+    --border-active: var(--primary);
+}
+
+/* Theme-specific adjustments */
+body[data-theme="dark"] {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+}
+
+/* Header theme adjustments */
+body[data-theme="dark"] .header {
+    background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-light) 100%);
+    border-bottom-color: var(--primary);
+}
+
+body[data-theme="dark"] .logo-icon {
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
+}
+
+/* Navigation theme */
+body[data-theme="dark"] .nav-tab {
+    background: var(--bg-light);
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+body[data-theme="dark"] .nav-tab:hover {
+    background: var(--bg-lighter);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+body[data-theme="dark"] .nav-tab.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Buttons theme */
+body[data-theme="dark"] .btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+body[data-theme="dark"] .btn-secondary {
+    background-color: var(--bg-light);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+/* Forms theme */
+body[data-theme="dark"] input,
+body[data-theme="dark"] textarea,
+body[data-theme="dark"] select {
+    background: var(--bg-light);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+body[data-theme="dark"] input:focus,
+body[data-theme="dark"] textarea:focus,
+body[data-theme="dark"] select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0, 204, 255, 0.2);
+}
+
+/* Tables theme */
+body[data-theme="dark"] .rundown-table {
+    background: var(--bg-dark);
+}
+
+body[data-theme="dark"] .rundown-table th {
+    background: var(--bg-light);
+    color: var(--text-secondary);
+    border-bottom-color: var(--border);
+}
+
+body[data-theme="dark"] .rundown-table td {
+    border-bottom-color: var(--border);
+    color: var(--text-primary);
+}
+
+body[data-theme="dark"] .rundown-table tr:hover {
+    background: var(--bg-light);
+}
+
+body[data-theme="dark"] .rundown-table tr.selected {
+    background: var(--primary);
+    color: white;
+}
+
+/* Modals theme */
+body[data-theme="dark"] .modal {
+    background: var(--bg-modal);
+}
+
+body[data-theme="dark"] .modal-content {
+    background: var(--bg-light);
+    border-color: var(--border);
+}
+
+body[data-theme="dark"] .modal-header,
+body[data-theme="dark"] .modal-footer {
+    background: var(--bg-lighter);
+    border-color: var(--border);
+}
+
+/* Sidebar theme */
+body[data-theme="dark"] .sidebar {
+    background: var(--bg-light);
+    border-right-color: var(--border);
+}
+
+body[data-theme="dark"] .sidebar-header {
+    background: var(--bg-lighter);
+    border-bottom-color: var(--border);
+}
+
+/* Content areas theme */
+body[data-theme="dark"] .content-area {
+    background: var(--bg-dark);
+}
+
+/* Editor theme */
+body[data-theme="dark"] .editor-toolbar {
+    background: var(--bg-lighter);
+    border-bottom-color: var(--border);
+}
+
+body[data-theme="dark"] .text-format-toolbar {
+    background: var(--bg-light);
+    border-color: var(--border);
+}
+
+/* News/Animation items theme */
+body[data-theme="dark"] .news-item,
+body[data-theme="dark"] .animation-item,
+body[data-theme="dark"] .block-item {
+    background: var(--bg-dark);
+    border-color: var(--border);
+}
+
+body[data-theme="dark"] .news-item:hover,
+body[data-theme="dark"] .animation-item:hover,
+body[data-theme="dark"] .block-item:hover {
+    background: var(--bg-light);
+    border-color: var(--border-light);
+}
+
+body[data-theme="dark"] .news-item.active {
+    background: var(--primary);
+    color: white;
+}
+
+body[data-theme="dark"] .animation-item.active {
+    background: #9333ea;
+    color: white;
+}
+
+body[data-theme="dark"] .block-item.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Conductor theme */
+body[data-theme="dark"] .conductor-header {
+    background: var(--bg-light);
+    border-bottom-color: var(--border);
+}
+
+body[data-theme="dark"] .conductor-timer-value {
+    color: var(--text-primary);
+}
+
+body[data-theme="dark"] .conductor-timer-value.overtime {
+    color: var(--error);
+}
+
+body[data-theme="dark"] .conductor-timer-value.undertime {
+    color: var(--success);
+}
+
+/* ON AIR theme */
+body[data-theme="dark"] .onair-left {
+    background: var(--bg-light);
+    border-right-color: var(--border);
+}
+
+body[data-theme="dark"] .onair-content {
+    background: var(--bg-dark);
+}
+
+body[data-theme="dark"] .onair-title {
+    color: var(--text-primary);
+}
+
+body[data-theme="dark"] .prompter-note {
+    background: rgba(0, 204, 255, 0.1);
+    border-left-color: var(--primary);
+    color: var(--primary);
+}
+
+body[data-theme="dark"] .onair-sound-element {
+    background: var(--bg-light);
+    border-color: var(--border);
+    color: var(--success);
+}
+
+/* Audio Editor theme */
+body[data-theme="dark"] .audio-editor-toolbar {
+    background: var(--bg-light);
+    border-bottom-color: var(--border);
+}
+
+body[data-theme="dark"] .audio-editor-sidebar {
+    background: var(--bg-light);
+    border-right-color: var(--border);
+}
+
+body[data-theme="dark"] .audio-editor-workspace {
+    background: var(--bg-dark);
+}
+
+body[data-theme="dark"] .waveform-container {
+    background: var(--bg-darker);
+}
+
+body[data-theme="dark"] .timeline-ruler {
+    background: var(--bg-light);
+    border-bottom-color: var(--border);
+}
+
+/* Scrollbars theme */
+body[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: var(--bg-light);
+}
+
+body[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: var(--border);
+}
+
+body[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-light);
+}
+
+/* Status colors theme */
+body[data-theme="dark"] .status-draft {
+    color: var(--text-muted);
+}
+
+body[data-theme="dark"] .status-ready {
+    color: var(--success);
+}
+
+body[data-theme="dark"] .status-approved {
+    color: var(--primary);
+}
+
+/* Variance colors theme */
+body[data-theme="dark"] .overtime {
+    color: var(--error);
+}
+
+body[data-theme="dark"] .undertime {
+    color: var(--success);
+}
+
+/* Notifications theme */
+body[data-theme="dark"] .notification.success {
+    background: var(--success);
+    color: var(--bg-dark);
+}
+
+body[data-theme="dark"] .notification.warning {
+    background: var(--warning);
+    color: var(--bg-dark);
+}
+
+body[data-theme="dark"] .notification.error {
+    background: var(--error);
+    color: white;
+}
+
+body[data-theme="dark"] .notification.info {
+    background: var(--info);
+    color: white;
+}
+
+/* Context menu theme */
+body[data-theme="dark"] .context-menu {
+    background: var(--bg-light);
+    border-color: var(--border);
+}
+
+body[data-theme="dark"] .context-menu-item {
+    color: var(--text-secondary);
+}
+
+body[data-theme="dark"] .context-menu-item:hover {
+    background: var(--bg-lighter);
+    color: var(--text-primary);
+}
+
+/* Progress bars theme */
+body[data-theme="dark"] .progress {
+    background: var(--bg-light);
+}
+
+body[data-theme="dark"] .progress-bar {
+    background: var(--primary);
+}
+
+/* Waveform theme */
+body[data-theme="dark"] .waveform {
+    background: var(--bg-darker);
+    border-color: var(--border);
+}
+
+body[data-theme="dark"] .waveform-bar {
+    background: var(--primary);
+}
+
+body[data-theme="dark"] .waveform-bar:hover {
+    background: var(--secondary);
+}
+
+/* Selection theme */
+body[data-theme="dark"] .selection-overlay {
+    background: rgba(37, 99, 235, 0.3);
+    border-color: rgba(37, 99, 235, 0.8);
+}
+
+/* Playhead theme */
+body[data-theme="dark"] .playhead {
+    background: #ff0000;
+    box-shadow: 0 0 4px rgba(255, 0, 0, 0.5);
+}
+
+/* Settings theme */
+body[data-theme="dark"] .settings-card {
+    background: var(--bg-light);
+    border-color: var(--border);
+}
+
+body[data-theme="dark"] .settings-item {
+    background: var(--bg-dark);
+    border-color: var(--border);
+}
+
+body[data-theme="dark"] .settings-item:hover {
+    background: var(--bg-darker);
+    border-color: var(--border-light);
+}

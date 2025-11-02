@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saint Esprit - Système de Newsroom Pro (AWS Edition)</title>
+    <script>
+        // Capturer le code d'autorisation dès qu'il arrive
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            if (code) {
+                console.log('🎯 Code capturé immédiatement:', code.substring(0, 20) + '...');
+                sessionStorage.setItem('auth-code', code);
+            }
+        })();
+    </script>
+    
+    <!-- Auth avec Cognito Hosted UI -->
+    <script>
+        // Configuration Cognito
+        const cognitoConfig = {
+            domain: 'saint-esprit-radio-auth.auth.eu-west-3.amazoncognito.com',
+            clientId: '5jst6bnhl26ekdr5a7pu9ik2f5',
+            redirectUri: window.location.origin + '/',
+            logoutUri: window.location.origin + '/logout.html',
+            region: 'eu-west-3'
+        };
+        
+        // Vérifier si on a un code d'autorisation dans l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+        
+        if (authCode) {
+            // On a reçu un code de Cognito, échanger contre des tokens
+            localStorage.setItem('saint-esprit-auth-code', authCode);
+            
+            // Échanger le code contre les tokens
+            fetch(`https://${cognitoConfig.domain}/oauth2/token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    grant_type: 'authorization_code',
+                    client_id: cognitoConfig.clientId,
+                    code: authCode,
+                    redirect_uri: cognitoConfig.redirectUri
+                }).toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id_token) {
+                    // Parser le JWT pour obtenir les infos utilisateur
+                    const payload = JSON.parse(atob(data.id_token.split('.')[1]));
+                    
+                    // Stocker les infos utilisateur
+                    localStorage.setItem('cognito_id_token', data.id_token);
+                    localStorage.setItem('cognito_access_token', data.access_token);
+                    localStorage.setItem('cognito_refresh_token', data.refresh_token);
+                    localStorage.setItem('saint-esprit-authenticated', 'true');
+                    
+                    // Stocker les infos de l'utilisateur - Utiliser l'email pour déterminer le prénom
+                    const email = payload.email || '';
+                    const firstName = payload.given_name || payload.family_name || email.split('@')[0].split('.')[0] || '';
+                    const lastName = payload.family_name || email.split('@')[0].split('.')[1] || '';
+                    const userName = `${firstName} ${lastName}`.trim() || email.split('@')[0] || payload['cognito:username'] || email;
+                    
+                    // Pour l'ID utilisateur, utiliser le prénom en minuscules (comme les dossiers existants)
+                    // Si on a simon.marty@radio-fidelite.fr, on prend "simon"
+                    const userId = firstName.toLowerCase() || email.split('@')[0].split('.')[0].toLowerCase() || 'anonymous';
+                    
+                    localStorage.setItem('saint-esprit-user', userId);
+                    localStorage.setItem('saint-esprit-user-name', userName);
+                    localStorage.setItem('saint-esprit-user-email', payload.email);
+                    localStorage.setItem('saint-esprit-user-firstname', firstName);
+                    localStorage.setItem('saint-esprit-user-lastname', lastName);
+                    
+                    console.log('✅ Authentification réussie pour:', userName, '(ID:', userId, ')');
+                    
+                    // Nettoyer l'URL et recharger
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erreur lors de l\'échange du code:', error);
+            });
+        } else {
+            // Pas de code dans l'URL, vérifier si on a déjà des tokens
+            const isAuthenticated = localStorage.getItem('saint-esprit-authenticated');
+            const idToken = localStorage.getItem('cognito_id_token');
+            
+            // Vérifier si le token est encore valide
+            let tokenValid = false;
+            if (idToken) {
+                try {
+                    const payload = JSON.parse(atob(idToken.split('.')[1]));
+                    const exp = payload.exp * 1000; // Convertir en millisecondes
+                    tokenValid = Date.now() < exp;
+                    
+                    if (tokenValid) {
+                        // Re-stocker les infos utilisateur au cas où
+                        const email = payload.email || '';
+                        const firstName = payload.given_name || payload.family_name || email.split('@')[0].split('.')[0] || '';
+                        const lastName = payload.family_name || email.split('@')[0].split('.')[1] || '';
+                        const userName = `${firstName} ${lastName}`.trim() || email.split('@')[0] || payload['cognito:username'] || email;
+                        const userId = firstName.toLowerCase() || email.split('@')[0].split('.')[0].toLowerCase() || 'anonymous';
+                        
+                        localStorage.setItem('saint-esprit-user', userId);
+                        localStorage.setItem('saint-esprit-user-name', userName);
+                        localStorage.setItem('saint-esprit-user-email', payload.email);
+                        localStorage.setItem('saint-esprit-user-firstname', firstName);
+                        localStorage.setItem('saint-esprit-user-lastname', lastName);
+                        localStorage.setItem('saint-esprit-authenticated', 'true');
+                    }
+                } catch (e) {
+                    console.error('Token invalide:', e);
+                    tokenValid = false;
+                }
+            }
+            
+            // Si pas de token valide, rediriger vers Cognito
+            if (!tokenValid) {
+                const loginUrl = `https://${cognitoConfig.domain}/login?` +
+                    `client_id=${cognitoConfig.clientId}&` +
+                    `response_type=code&` +
+                    `scope=email+openid+profile&` +
+                    `redirect_uri=${encodeURIComponent(cognitoConfig.redirectUri)}`;
+                
+                window.location.href = loginUrl;
+            }
+        }
+        
+        // Fonction de déconnexion globale
+        window.cognitoLogout = function() {
+            // Nettoyer tous les tokens et infos
+            localStorage.removeItem('saint-esprit-authenticated');
+            localStorage.removeItem('saint-esprit-auth-code');
+            localStorage.removeItem('saint-esprit-user');
+            localStorage.removeItem('saint-esprit-user-name');
+            localStorage.removeItem('saint-esprit-user-email');
+            localStorage.removeItem('saint-esprit-user-firstname');
+            localStorage.removeItem('saint-esprit-user-lastname');
+            localStorage.removeItem('cognito_id_token');
+            localStorage.removeItem('cognito_access_token');
+            localStorage.removeItem('cognito_refresh_token');
+            
+            // URL de logout Cognito correcte
+            const logoutUrl = `https://${cognitoConfig.domain}/logout?` +
+                `client_id=${cognitoConfig.clientId}&` +
+                `logout_uri=${encodeURIComponent(cognitoConfig.logoutUri)}`;
+            
+            window.location.href = logoutUrl;
+        }
+        
+        // Créer authManager pour compatibilité
+        window.authManager = {
+            logout: () => window.cognitoLogout()
+        };
+    </script>
+    
+    <!-- AWS SDK - AJOUT POUR MIGRATION S3 -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1000.0.min.js?v=1755899484"></script>
+    
+    <!-- Updated CSS import - now using modular structure -->
+    <link rel="stylesheet" href="css/main.css?v=1.1">
+    <link rel="stylesheet" href="css/components/template-modal.css?v=1.1">
+    <link rel="stylesheet" href="css/components/locks.css?v=1.1">
+    <link rel="stylesheet" href="css/components/conductor-selector.css?v=1.1">
+    <link rel="stylesheet" href="css/sections/news-optimized.css?v=1.1">
+    <link rel="stylesheet" href="css/sections/blocks-optimized.css?v=1.1">
+    <link rel="stylesheet" href="css/sections/cross-user.css?v=1.2">
+    <!-- Volunteer mode CSS -->
+    <link rel="stylesheet" href="css/volunteer-mode.css?v=1.0">
+    <!-- Debug CSS pour forcer l'affichage des sections -->
+    <link rel="stylesheet" href="css/debug-force.css?v=1.1">
+    
+    <!-- Logo switching CSS for sidebar -->
+    <style>
+        /* Par défaut (sidebar rétractée) */
+        .sidebar .logo-expanded {
+            display: none !important;
+        }
+        .sidebar .logo-collapsed {
+            display: block !important;
+        }
+        
+        /* Quand la sidebar est étendue (expanded ou hover) */
+        .sidebar.expanded .logo-expanded,
+        .sidebar:hover .logo-expanded {
+            display: block !important;
+        }
+        .sidebar.expanded .logo-collapsed,
+        .sidebar:hover .logo-collapsed {
+            display: none !important;
+        }
+
+        /* Styles pour Stream Recorder */
+        .stream-recorder-container {
+            padding: 2rem;
+            background: #1a1a1a;
+            min-height: calc(100vh - 100px);
+        }
+
+        .recorder-header {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .recorder-header h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+        }
+
+        .recorder-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .recorder-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #222;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00ff9f;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.875rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .recording-calendar {
+            background: #222;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            background: #333;
+            padding: 2px;
+            border-radius: 8px;
+        }
+
+        .calendar-day {
+            background: #1a1a1a;
+            padding: 1rem;
+            text-align: center;
+            min-height: 80px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .calendar-day:hover {
+            background: #2a2a2a;
+        }
+
+        .calendar-day.has-recording {
+            background: #1a3a2a;
+            border-left: 3px solid #00ff9f;
+        }
+
+        .recordings-list {
+            background: #222;
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .recording-item {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .recording-info h3 {
+            margin: 0 0 0.5rem 0;
+            color: #00ff9f;
+        }
+
+        .recording-meta {
+            display: flex;
+            gap: 2rem;
+            color: #888;
+            font-size: 0.875rem;
+        }
+
+        .recording-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .recording-actions button {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar avec logos -->
+    <div class="sidebar" id="sidebar">
+        <div class="nav-toggle" onclick="window.app?.toggleSidebar()">☰</div>
+        <div class="logo-container" onclick="window.app?.showDashboard()">
+            <img class="logo logo-expanded" src="images/saints-esprit-logo-full.png" alt="Saint Esprit Radio">
+            <img class="logo logo-collapsed" src="images/saints-esprit-logo-mini.png" alt="SE">
+        </div>
+        <nav>
+            <div class="nav-item" data-section="dashboard">
+                <span class="icon">🏠</span>
+                <span class="label">Dashboard</span>
+            </div>
+            <div class="nav-item" data-section="news">
+                <span class="icon">📰</span>
+                <span class="label">Journaux</span>
+            </div>
+            <div class="nav-item" data-section="blocks">
+                <span class="icon">📦</span>
+                <span class="label">Blocks</span>
+            </div>
+            <div class="nav-item" data-section="animation">
+                <span class="icon">🎤</span>
+                <span class="label">Animation</span>
+            </div>
+            <div class="nav-item" data-section="fridge">
+                <span class="icon">❄️</span>
+                <span class="label">Frigo</span>
+            </div>
+            <div class="nav-item" data-section="archives">
+                <span class="icon">📚</span>
+                <span class="label">Archives</span>
+            </div>
+            <div class="nav-item" data-section="audio-editor">
+                <span class="icon">✂️</span>
+                <span class="label">Éditeur</span>
+            </div>
+            <div class="nav-item" data-section="multitrack">
+                <span class="icon">🎛️</span>
+                <span class="label">Multipistes</span>
+            </div>
+            <div class="nav-item" data-section="stream-recorder">
+                <span class="icon">⏺️</span>
+                <span class="label">Stream Recorder</span>
+            </div>
+            <div class="nav-item" data-section="conductor">
+                <span class="icon">🎼</span>
+                <span class="label">Conducteur</span>
+            </div>
+            <div class="nav-item" data-section="onair">
+                <span class="icon">📡</span>
+                <span class="label">OnAir</span>
+            </div>
+            <div class="nav-item" data-section="settings">
+                <span class="icon">⚙️</span>
+                <span class="label">Paramètres</span>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sync-status" id="sync-status">⚡ Connecté</div>
+            <div class="storage-info" id="storage-info">AWS S3</div>
+            <button class="logout-btn" onclick="authManager.logout()">🚪 Déconnexion</button>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-content" id="main-content">
+        <header>
+            <h1 id="header-title">Saint Esprit - Newsroom Pro</h1>
+            <div class="header-actions">
+                <span id="user-info"></span>
+                <button id="export-btn" class="export-btn">📥 Export</button>
+            </div>
+        </header>
+
+        <div class="content" id="content">
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="section">
+                <div class="dashboard-container">
+                    <h2>🎯 Tableau de bord</h2>
+                    <div class="stats-container">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-news">0</div>
+                            <div class="stat-label">News</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-animations">0</div>
+                            <div class="stat-label">Animations</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-blocks">0</div>
+                            <div class="stat-label">Blocks</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-conductor">0</div>
+                            <div class="stat-label">Conducteur</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Section -->
+            <div id="news-section" class="section" style="display: none;">
+                <div class="news-container" id="news-container"></div>
+            </div>
+
+            <!-- Blocks Section -->
+            <div id="blocks-section" class="section" style="display: none;">
+                <div class="blocks-container" id="blocks-container"></div>
+            </div>
+
+            <!-- Animation Section -->
+            <div id="animation-section" class="section" style="display: none;">
+                <div class="animation-container" id="animation-container"></div>
+            </div>
+
+            <!-- Fridge Section -->
+            <div id="fridge-section" class="section" style="display: none;">
+                <div class="fridge-container" id="fridge-container">
+                    <h2>❄️ Frigo</h2>
+                    <p>Section Frigo - En cours de développement</p>
+                </div>
+            </div>
+
+            <!-- Archives Section -->
+            <div id="archives-section" class="section" style="display: none;">
+                <div class="archives-container" id="archives-container">
+                    <h2>📚 Archives</h2>
+                    <p>Section Archives - En cours de développement</p>
+                </div>
+            </div>
+
+            <!-- Audio Editor Section -->
+            <div id="audio-editor-section" class="section" style="display: none;">
+                <div class="audio-editor-container" id="audio-editor-container"></div>
+            </div>
+
+            <!-- Multitrack Section -->
+            <div id="multitrack-section" class="section" style="display: none;">
+                <div class="multitrack-container" id="multitrack-container"></div>
+            </div>
+
+            <!-- Stream Recorder Section -->
+            <div id="stream-recorder-section" class="section" style="display: none;">
+                <div class="stream-recorder-container" id="stream-recorder-container"></div>
+            </div>
+
+            <!-- Conductor Section -->
+            <div id="conductor-section" class="section" style="display: none;">
+                <div class="conductor-container" id="conductor-container"></div>
+            </div>
+
+            <!-- OnAir Section -->
+            <div id="onair-section" class="section" style="display: none;">
+                <div class="onair-container" id="onair-container"></div>
+            </div>
+
+            <!-- Settings Section -->
+            <div id="settings-section" class="section" style="display: none;">
+                <div class="settings-container" id="settings-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core files - REACTIVATE (AWS Edition) -->
+    <script src="js/utils/utils.js?v=2.1.2"></script>
+    <script src="js/core/constants.js?v=2.1.2"></script>
+    <script src="js/core/storage.js?v=2.1.2"></script>
+    <script src="js/core/sync-wrapper.js?v=2.1.2"></script>
+    
+    <!-- Audio files -->
+    <!-- Scripts audio retirés car dossier js/audio n'existe pas -->
+    
+    <!-- Managers -->
+    <script src="js/managers/ContentManager.js?v=1755899484"></script>
+    <script src="js/managers/ConductorManager.js?v=1755899484"></script>
+    <script src="js/managers/ConductorTemplateManager.js?v=1755899484"></script>
+    <script src="js/managers/AudioManager.js?v=1755899484"></script>
+    <script src="js/managers/BlockManager.js?v=1755899484"></script>
+    <script src="js/managers/RecurrenceManager.js?v=1755899484"></script>
+    <script src="js/managers/ExportManager.js?v=1755899484"></script>
+    <script src="js/managers/AudioS3Manager.js?v=1755899484"></script>
+    
+    <!-- Components -->
+    <script src="js/components/AudioEditor.js?v=1755899484"></script>
+    <script src="js/components/MultitrackEditor.js?v=1755899484"></script>
+    <script src="js/components/OnAir.js?v=1755899484"></script>
+    <script src="js/components/Settings.js?v=1755899484"></script>
+    <script src="js/components/Fridge.js?v=1755899484"></script>
+    
+    <!-- Optional modules -->
+    <script src="js/modules/EmissionEditor.js?v=1755899484"></script>
+    <script src="js/modules/StudiosCalendar.js?v=1755899484"></script>
+    <script src="js/modules/VolunteerOptimizations.js?v=1755899484"></script>
+    <script src="js/modules/StreamRecorder.js?v=1755899484"></script>
+    
+    <!-- Main application file -->
+    <script src="js/app.js?v=2.1.2"></script>
+    
+    <!-- Initialize the application ONLY after all modules are loaded -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            // Configuration AWS publique (pas de credentials)
+            AWS.config.update({
+                region: 'eu-west-3',
+                credentials: null
+            });
+            
+            console.log('DOM loaded, initializing app...');
+            window.app = new SaintEspritApp();
+            window.app.init();
+        });
+    </script>
+</body>
+</html>

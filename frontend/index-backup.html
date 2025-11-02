@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saint Esprit - Système de Newsroom Pro v2.1.1 (AWS Edition)</title>
+    <script>
+        // Capturer le code d'autorisation dès qu'il arrive
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            if (code) {
+                console.log('🎯 Code capturé immédiatement:', code.substring(0, 20) + '...');
+                sessionStorage.setItem('auth-code', code);
+            }
+        })();
+    </script>
+    
+    <!-- Auth avec Cognito Hosted UI -->
+    <script>
+        // Configuration Cognito
+        const cognitoConfig = {
+            domain: 'saint-esprit-radio-auth.auth.eu-west-3.amazoncognito.com',
+            clientId: '5jst6bnhl26ekdr5a7pu9ik2f5',
+            redirectUri: window.location.origin + '/',
+            logoutUri: window.location.origin + '/logout.html',
+            region: 'eu-west-3'
+        };
+        
+        // Vérifier si on a un code d'autorisation dans l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+        
+        if (authCode) {
+            // On a reçu un code de Cognito, on est authentifié
+            localStorage.setItem('saint-esprit-authenticated', 'true');
+            localStorage.setItem('saint-esprit-auth-code', authCode);
+            
+            // Nettoyer l'URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        
+        // Vérifier l'authentification
+        const isAuthenticated = localStorage.getItem('saint-esprit-authenticated');
+        
+        if (!isAuthenticated || isAuthenticated !== 'true') {
+            // Pas authentifié, rediriger vers Cognito
+            const loginUrl = `https://${cognitoConfig.domain}/login?` +
+                `client_id=${cognitoConfig.clientId}&` +
+                `response_type=code&` +
+                `scope=email+openid+profile&` +
+                `redirect_uri=${encodeURIComponent(cognitoConfig.redirectUri)}`;
+            
+            window.location.href = loginUrl;
+        }
+        
+        // Fonction de déconnexion globale
+        window.cognitoLogout = function() {
+            localStorage.removeItem('saint-esprit-authenticated');
+            localStorage.removeItem('saint-esprit-auth-code');
+            localStorage.removeItem('saint-esprit-user');
+            
+            // URL de logout Cognito correcte (seulement logout_uri, pas de response_type pour logout)
+            const logoutUrl = `https://${cognitoConfig.domain}/logout?` +
+                `client_id=${cognitoConfig.clientId}&` +
+                `logout_uri=${encodeURIComponent(cognitoConfig.logoutUri)}`;
+            
+            window.location.href = logoutUrl;
+        }
+    </script>
+    
+    <!-- AWS SDK - AJOUT POUR MIGRATION S3 -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1000.0.min.js?v=1755899484"></script>
+    
+    <!-- Updated CSS import - now using modular structure -->
+    <link rel="stylesheet" href="css/main.css?v=1.1">
+    <link rel="stylesheet" href="css/components/template-modal.css?v=1.1">
+    <link rel="stylesheet" href="css/components/locks.css?v=1.1">
+    <link rel="stylesheet" href="css/components/conductor-selector.css?v=1.1">
+    <link rel="stylesheet" href="css/sections/news-optimized.css?v=1.1">
+    <link rel="stylesheet" href="css/sections/blocks-optimized.css?v=1.1">
+    <link rel="stylesheet" href="css/sections/cross-user.css?v=1.2">
+    <!-- StreamRecorder CSS -->
+    <link rel="stylesheet" href="css/stream-recorder.css?v=1.2">
+    <!-- Volunteer mode CSS -->
+    <link rel="stylesheet" href="css/volunteer-mode.css?v=1.0">
+    <!-- Debug CSS pour forcer l'affichage des sections -->
+    <link rel="stylesheet" href="css/debug-force.css?v=1.1">
+    <!-- Fix global pour les scrollbars -->
+    <link rel="stylesheet" href="css/fixes/scrollbar-fix.css?v=1.0">
+    <!-- Fix layout éditeur -->
+    <link rel="stylesheet" href="css/fixes/editor-layout-fix.css?v=1.0">
+    <!-- Fix layout principal -->
+    <link rel="stylesheet" href="css/fixes/layout-fix.css?v=1.0">
+    <!-- Fix panneau sound elements -->
+    <link rel="stylesheet" href="css/fixes/sound-panel-fix.css?v=1.0">
+    <!-- Fix panneau blocks/journal -->
+    <link rel="stylesheet" href="css/fixes/blocks-panel-fix.css?v=1.0">
+    
+    <!-- Logo switching CSS for sidebar -->
+    <style>
+        /* Animations pour On Air notifications */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        /* Par défaut (sidebar rétractée) */
+        .sidebar .logo-expanded {
+            display: none !important;
+        }
+        .sidebar .logo-collapsed {
+            display: block !important;
+        }
+        
+        /* Quand la sidebar est étendue (expanded ou hover) */
+        .sidebar.expanded .logo-expanded,
+        .sidebar:hover .logo-expanded {
+            display: block !important;
+        }
+        .sidebar.expanded .logo-collapsed,
+        .sidebar:hover .logo-collapsed {
+            display: none !important;
+        }
+
+        /* Styles pour Stream Recorder */
+        .stream-recorder-container {
+            padding: 2rem;
+            background: #1a1a1a;
+            min-height: calc(100vh - 100px);
+        }
+
+        .recorder-header {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .recorder-header h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+        }
+
+        .recorder-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .recorder-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #222;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00B4D8;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #999;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .recorder-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .recorder-calendar-section,
+        .recorder-list-section {
+            background: #222;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .recordings-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .recorder-btn {
+            padding: 0.75rem 1.5rem;
+            background: #00B4D8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .recorder-btn:hover {
+            background: #0090a8;
+            transform: translateY(-2px);
+        }
+
+        .recorder-calendar {
+            background: #222;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #333;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+
+        .calendar-day {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 0.75rem;
+            min-height: 100px;
+            border: 1px solid #333;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-day:hover {
+            background: #333;
+            border-color: #00B4D8;
+        }
+
+        .calendar-day.has-recording {
+            border-color: #e74c3c;
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.1) 0%, rgba(192, 57, 43, 0.1) 100%);
+        }
+
+        .recorder-list {
+            background: #222;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .recording-item {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .recording-item:hover {
+            background: #333;
+            transform: translateX(5px);
+        }
+
+        .recording-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-scheduled {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .status-recording {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            animation: pulse 2s infinite;
+        }
+
+        .status-completed {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        /* Modal pour Stream Recorder - utilise les classes existantes */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .recorder-modal-content {
+            background: #222;
+            border-radius: 12px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .recorder-form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .recorder-form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .recorder-form-group input,
+        .recorder-form-group select,
+        .recorder-form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .recorder-form-group input:focus,
+        .recorder-form-group select:focus,
+        .recorder-form-group textarea:focus {
+            outline: none;
+            border-color: #00B4D8;
+        }
+
+        .recorder-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .recorder-cancel-btn {
+            padding: 0.75rem 1.5rem;
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .recorder-cancel-btn:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toggle Button for mobile -->
+    <button class="sidebar-toggle" id="sidebar-toggle" onclick="app.toggleSidebar()">☰</button>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header" style="padding: 20px 15px; display: flex; justify-content: center; align-items: center; min-height: 100px;">
+            <img src="logo-saint-esprit-clair.png" alt="Saint-Esprit" class="logo-expanded" style="height: 110px; width: auto; display: block; max-width: 90%;">
+            <img src="logo-saint-esprit-clair-icon-hd.png" alt="Saint-Esprit" class="logo-collapsed" style="height: 55px; width: auto; display: none;">
+        </div>
+
+        <div class="nav-container">
+            <div class="nav-section">
+                <div class="nav-section-title">Accueil</div>
+                <button class="nav-item active" data-tab="dashboard">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Dashboard</span>
+                    <span class="nav-shortcut">F1</span>
+                </button>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">📝 Contenu</div>
+                <button class="nav-item" data-tab="news">
+                    <span class="nav-icon">📰</span>
+                    <span class="nav-text">News</span>
+                    <span class="nav-shortcut">F2</span>
+                </button>
+                <button class="nav-item" data-tab="blocks">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">Journaux</span>
+                    <span class="nav-shortcut">F3</span>
+                </button>
+                <button class="nav-item" data-tab="animation">
+                    <span class="nav-icon">🎙️</span>
+                    <span class="nav-text">Animation</span>
+                    <span class="nav-shortcut">F4</span>
+                </button>
+                <button class="nav-item" data-tab="fridge">
+                    <span class="nav-icon">🧊</span>
+                    <span class="nav-text">Frigo</span>
+                    <span class="nav-shortcut">F5</span>
+                </button>
+                <button class="nav-item" data-tab="archives">
+                    <span class="nav-icon">📚</span>
+                    <span class="nav-text">Archives</span>
+                    <span class="nav-shortcut">F6</span>
+                </button>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">🎵 Audio</div>
+                <button class="nav-item" data-tab="audio-editor">
+                    <span class="nav-icon">🎵</span>
+                    <span class="nav-text">Éditeur Audio</span>
+                    <span class="nav-shortcut">F7</span>
+                </button>
+                <button class="nav-item" data-tab="multitrack" onclick="app.openMultitrackFromNav()">
+                    <span class="nav-icon">📼</span>
+                    <span class="nav-text">Multipistes</span>
+                    <span class="nav-shortcut">F8</span>
+                </button>
+                <button class="nav-item" data-tab="stream-recorder">
+                    <span class="nav-icon">📻</span>
+                    <span class="nav-text">Enregistrements</span>
+                    <span class="nav-shortcut">Ctrl+R</span>
+                </button>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">📡 Diffusion</div>
+                <button class="nav-item" data-tab="conductor">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">Conducteur</span>
+                    <span class="nav-shortcut">F9</span>
+                </button>
+                <button class="nav-item live" data-tab="onair">
+                    <span class="nav-icon">🔴</span>
+                    <span class="nav-text">ON AIR</span>
+                    <span class="nav-shortcut">Shift+F9</span>
+                </button>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Configuration</div>
+                <button class="nav-item" data-tab="flash-info">
+                    <span class="nav-icon">📻</span>
+                    <span class="nav-text">Flash Info FTP</span>
+                    <span class="nav-shortcut">Ctrl+F</span>
+                </button>
+                <button class="nav-item" data-tab="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Paramètres</span>
+                    <span class="nav-shortcut">F10</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header with centered timers -->
+        <header class="header" style="background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%); border-bottom: 2px solid #00B4D8;">
+            <!-- Timer Display - Now centered! -->
+            <div class="timer-display" id="main-timer-display">
+                <div class="timer-item">
+                    <div class="timer-label">ON AIR</div>
+                    <div class="timer-value positive" id="on-air-timer">00:00:00</div>
+                </div>
+                <div class="timer-item">
+                    <div class="timer-label">TIME</div>
+                    <div class="timer-value" id="current-time">00:00:00</div>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <span class="connection-status" id="connection-indicator" title="État de connexion">
+                    <span id="connection-dot" style="color: #888;">⚪</span>
+                    <span id="user-display" style="font-size: 0.9em; margin-left: 5px;"></span>
+                </span>
+                <button class="quick-action logout" title="Déconnexion" id="logout-button" onclick="window.authManager.logout()">🚪</button>
+                <button class="quick-action" title="Plein écran" onclick="app.toggleFullscreen()">⛶</button>
+            </div>
+        </header>
+
+    <!-- Recovery notice -->
+    <div class="recovery-notice" id="recovery-notice">
+        📥 Backup recovered from <span id="recovery-time"></span>
+        <button class="btn btn-secondary" style="margin-left: 1rem; padding: 0.25rem 0.5rem;" onclick="app.dismissRecoveryNotice()">OK</button>
+    </div>
+
+        <!-- Main Container -->
+        <div class="main-container">
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="section active">
+            <!-- Content will be dynamically generated by showDashboard() -->
+        </div>
+
+        <!-- News Section -->
+        <div id="news-section" class="section">
+            <aside class="sidebar">
+                <div class="sidebar-header" style="padding: 1rem; border-bottom: 1px solid #333;">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 style="font-size: 1.25rem; color: white;">Éléments News</h2>
+                        <button class="btn btn-primary" onclick="app.newsManager.create()" style="padding: 0.4rem 0.8rem; font-size: 0.875rem;">+ Nouveau</button>
+                    </div>
+                    <div id="news-author-filter-container" style="margin-bottom: 0.5rem;">
+                        <!-- Author filter will be injected here -->
+                    </div>
+                    <input type="text" placeholder="Rechercher..." id="news-search" style="font-size: 0.875rem;">
+                </div>
+                <div id="news-list" class="news-list">
+                    <!-- Virtual list will render items here -->
+                </div>
+            </aside>
+            <main class="content-area" id="news-content-area">
+                <!-- Welcome screen or editor will be shown here -->
+                <div class="welcome-screen" id="news-welcome">
+                    <div class="welcome-content">
+                        <h2>Bienvenue dans la section News</h2>
+                        <p>Sélectionnez une news existante dans la liste ou créez une nouvelle news pour commencer la rédaction.</p>
+                        <div class="welcome-actions">
+                            <button class="btn btn-primary" onclick="app.newsManager.create()">📝 Créer une news</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="editor-container hidden" id="news-editor">
+                    <!-- Editor content will be injected by JavaScript -->
+                </div>
+            </main>
+        </div>
+
+        <!-- Animation Section -->
+        <div id="animation-section" class="section">
+            <aside class="sidebar">
+                <div class="sidebar-header" style="padding: 1rem; border-bottom: 1px solid #333;">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 style="font-size: 1.25rem; color: white;">Éléments Animation</h2>
+                        <button class="btn btn-primary" onclick="app.animationManager.create()" style="padding: 0.4rem 0.8rem; font-size: 0.875rem;">+ Nouveau</button>
+                    </div>
+                    <div id="animation-author-filter-container" style="margin-bottom: 0.5rem;">
+                        <!-- Author filter will be injected here -->
+                    </div>
+                    <input type="text" placeholder="Rechercher..." id="animation-search" style="font-size: 0.875rem;">
+                </div>
+                <div id="animation-list" class="animation-list">
+                    <!-- Virtual list will render items here -->
+                </div>
+            </aside>
+            <main class="content-area" id="animation-content-area">
+                <!-- Welcome screen or editor will be shown here -->
+                <div class="welcome-screen" id="animation-welcome">
+                    <div class="welcome-content">
+                        <h2>Bienvenue dans la section Animation</h2>
+                        <p>Sélectionnez une animation existante dans la liste ou créez une nouvelle animation pour commencer la rédaction.</p>
+                        <div class="welcome-actions">
+                            <button class="btn btn-primary" onclick="app.animationManager.create()">🎙️ Créer une animation</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="editor-container hidden" id="animation-editor">
+                    <!-- Editor content will be injected by JavaScript -->
+                </div>
+            </main>
+        </div>
+
+        <!-- Journaux Section -->
+        <div id="blocks-section" class="section">
+            <aside class="sidebar">
+                <div class="sidebar-header" style="padding: 1rem; border-bottom: 1px solid #333;">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 style="font-size: 1.25rem; color: white;">Liste des Journaux</h2>
+                        <button class="btn btn-primary" onclick="app.blockManager.create()" style="padding: 0.4rem 0.8rem; font-size: 0.875rem;">+ Nouveau</button>
+                    </div>
+                    <input type="text" placeholder="Rechercher des journaux..." id="blocks-search" style="font-size: 0.875rem;">
+                </div>
+                <div id="blocks-list" class="blocks-list">
+                    <!-- Block list will be rendered here -->
+                </div>
+            </aside>
+            <main class="content-area" id="blocks-content-area">
+                <!-- Welcome screen or editor will be shown here -->
+                <div class="welcome-screen" id="blocks-welcome">
+                    <div class="welcome-content">
+                        <h2>Bienvenue dans la section Journaux</h2>
+                        <p>Créez et gérez des journaux pour organiser votre conducteur. Les journaux peuvent contenir des news, animations et autres segments.</p>
+                        <div class="welcome-actions">
+                            <button class="btn btn-primary" onclick="app.blockManager.create()">📰 Créer un Journal</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="editor-container hidden" id="blocks-editor">
+                    <!-- Block editor will be injected here -->
+                </div>
+            </main>
+        </div>
+
+
+        <!-- Conductor Section - Professional Rundown -->
+        <div id="conductor-section" class="section">
+            <div class="conductor-container">
+                <!-- Conductor Selector -->
+                <div class="conductor-selector-bar">
+                    <div class="conductor-selector">
+                        <label>Conducteur actif:</label>
+                        <select id="conductor-select" onchange="app.switchConductor(this.value)">
+                            <option value="">-- Sélectionner un conducteur --</option>
+                        </select>
+                        <button class="btn btn-sm" onclick="app.showNewConductorModal()">+ Nouveau</button>
+                        <button class="btn btn-sm" onclick="app.manageConductors()">⚙️ Gérer</button>
+                    </div>
+                    <div class="conductor-info">
+                        <span id="conductor-owner"></span>
+                        <span id="conductor-status"></span>
+                    </div>
+                </div>
+                
+                <div class="conductor-header">
+                    <div class="conductor-timers">
+                        <div class="conductor-timer-block">
+                            <div class="conductor-timer-label">Durée Émission</div>
+                            <div class="conductor-timer-value" id="show-duration">00:00:00</div>
+                        </div>
+                        <div class="conductor-timer-block">
+                            <div class="conductor-timer-label">Backtime</div>
+                            <div class="conductor-timer-value" id="show-backtime">59:32:00</div>
+                        </div>
+                        <div class="conductor-timer-block">
+                            <div class="conductor-timer-label">Over/Under</div>
+                            <div class="conductor-timer-value overtime" id="show-variance">+00:28</div>
+                        </div>
+                    </div>
+                    <div class="conductor-actions">
+                        <button class="conductor-btn btn-add" onclick="app.addSegmentModal()">+ Ajouter</button>
+                        <button class="conductor-btn btn-ad" onclick="app.conductorManager.openAdPlaceholderModal()">📺 Publicité</button>
+                        <button class="conductor-btn btn-template" onclick="app.showTemplateMenu()">📋 Templates</button>
+                        <button class="conductor-btn btn-refresh" onclick="app.refreshRundown()">↻ Actualiser</button>
+                        <button class="conductor-btn btn-danger" onclick="app.clearAllConductor()">🗑️ Tout effacer</button>
+                        <div class="show-start-time">
+                            <label>DÉBUT:</label>
+                            <input type="time" id="show-start-time" value="18:00" onchange="app.updateShowStartTime()">
+                        </div>
+                        <button class="conductor-btn primary" onclick="app.goLive()">● ON AIR</button>
+                    </div>
+                </div>
+                
+                <div class="rundown-wrapper">
+                    <table class="rundown-table" id="rundown-table">
+                        <thead>
+                            <tr>
+                                <th class="col-pg">Pg</th>
+                                <th class="col-move"></th>
+                                <th class="col-lock">Lck</th>
+                                <th class="col-format">Format</th>
+                                <th class="col-name">Name</th>
+                                <th class="col-duration">Plan dur</th>
+                                <th class="col-duration">Real dur</th>
+                                <th class="col-variance">+/-</th>
+                                <th class="col-cm-dur">Cm dur</th>
+                                <th class="col-hit-time">Hit time</th>
+                                <th class="col-backtime">Backtime</th>
+                                <th class="col-mos">MOS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rundown-body">
+                            <!-- Dynamic content will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ON AIR Section -->
+        <div id="onair-section" class="section">
+            <div class="onair-container">
+                <div class="onair-left">
+                    <div class="onair-rundown-header">
+                        <h3>Rundown</h3>
+                        <span id="master-indicator" style="font-weight: bold; padding: 5px 10px; border-radius: 5px; background: #333;">📡 SLAVE</span>
+                    </div>
+                    <div class="onair-rundown-wrapper">
+                        <table class="rundown-table" id="onair-rundown-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-pg">Pg</th>
+                                    <th class="col-format">Format</th>
+                                    <th class="col-name">Name</th>
+                                    <th class="col-duration">Plan dur</th>
+                                    <th class="col-duration">Real dur</th>
+                                    <th class="col-hit-time">Hit time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="onair-rundown-body">
+                                <!-- Dynamic content will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="onair-right">
+                    <div class="onair-content" id="onair-content">
+                        <div style="text-align: center; color: #999; padding: 3rem;">
+                            <h2>Select an item from the rundown</h2>
+                            <p>Click on any news or animation item to display its content here</p>
+                        </div>
+                    </div>
+                    <div class="onair-controls">
+                        <div class="audio-controls" id="audio-controls">
+                            <!-- Audio controls will be inserted here -->
+                        </div>
+                        <div class="onair-navigation" id="onair-navigation" style="padding: 1rem; text-align: center; display: flex; gap: 1rem; justify-content: center; background: var(--bg-light); border-top: 1px solid var(--border);">
+                            <button onclick="if(app.onAirComponent) app.onAirComponent.refresh()" class="btn btn-secondary" title="Rafraîchir">🔄 Refresh</button>
+                            <button class="btn btn-secondary" onclick="window.app.onAirComponent?.previousItem()" style="min-width: 120px; padding: 0.5rem 1rem;">
+                                ⬅️ Previous
+                            </button>
+                            <button class="btn btn-primary" onclick="window.app.onAirComponent?.nextItem()" style="min-width: 120px; padding: 0.5rem 1rem;">
+                                Next ➡️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Audio Editor Section -->
+        <div id="audio-editor-section" class="section">
+            <div class="audio-editor-container">
+                <!-- Toolbar -->
+                <div class="audio-editor-toolbar">
+                    <div class="audio-editor-tools">
+                        <!-- File actions -->
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="app.audioEditor.newProject()" title="New Project">📄</button>
+                            <button class="tool-btn" onclick="app.audioEditor.openFile()" title="Open File">📂</button>
+                            <button class="tool-btn" onclick="app.audioEditor.save()" title="Save/Export">💾</button>
+                        </div>
+                        <!-- Edit actions -->
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="app.audioEditor.undo()" title="Undo (Ctrl+Z)">↩️</button>
+                            <button class="tool-btn" onclick="app.audioEditor.redo()" title="Redo (Ctrl+Y)">↪️</button>
+                        </div>
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="app.audioEditor.cut()" title="Cut (Ctrl+X)">✂️</button>
+                            <button class="tool-btn" onclick="app.audioEditor.copy()" title="Copy (Ctrl+C)">📋</button>
+                            <button class="tool-btn" onclick="app.audioEditor.paste()" title="Paste (Ctrl+V)">📄</button>
+                            <button class="tool-btn" onclick="app.audioEditor.delete()" title="Delete">🗑️</button>
+                        </div>
+                        <!-- In/Out points -->
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="app.audioEditor.setInPoint()" title="Set In Point (I)">I⟵</button>
+                            <button class="tool-btn" onclick="app.audioEditor.setOutPoint()" title="Set Out Point (O)">⟶O</button>
+                            <button class="tool-btn" onclick="app.audioEditor.clearInOutPoints()" title="Clear In/Out">✖</button>
+                        </div>
+                        <!-- View/Zoom -->
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="app.audioEditor.zoomIn()" title="Zoom In">🔍+</button>
+                            <button class="tool-btn" onclick="app.audioEditor.zoomOut()" title="Zoom Out">🔍-</button>
+                            <button class="tool-btn" onclick="app.audioEditor.zoomFit()" title="Fit to Window">⟷</button>
+                        </div>
+                        <!-- Envelope toggle -->
+                        <div class="tool-group">
+                            <button class="tool-btn toggle" id="envelope-toggle" onclick="app.audioEditor.toggleEnvelope()" title="Toggle Volume Envelope">📈</button>
+                        </div>
+                    </div>
+                    <div class="audio-editor-transport">
+                        <button class="transport-btn" onclick="app.audioEditor.goToStart()" title="Go to start">⏮️</button>
+                        <button class="transport-btn play" onclick="app.audioEditor.play()" title="Play/Pause (Space)">▶️</button>
+                        <button class="transport-btn" onclick="app.audioEditor.stop()" title="Stop">⏹️</button>
+                        <button class="transport-btn record" onclick="app.audioEditor.record()" title="Record">🔴</button>
+                        <span class="time-display" id="audio-editor-time">00:00.00</span>
+                    </div>
+                </div>
+                
+                <!-- Main editing area -->
+                <div class="audio-editor-main">
+                    <!-- Track list sidebar -->
+                    <div class="audio-editor-sidebar">
+                        <div class="track-controls">
+                            <h3>Audio Library</h3>
+                            <div id="audio-library-list"></div>
+                        </div>
+                        <div class="effects-panel">
+                            <h3>Effects</h3>
+                            <button class="effect-btn" onclick="app.audioEditor.fadeIn()">Fade In</button>
+                            <button class="effect-btn" onclick="app.audioEditor.fadeOut()">Fade Out</button>
+                            <button class="effect-btn" onclick="app.audioEditor.normalize()">Normalize</button>
+                            <button class="effect-btn" onclick="app.audioEditor.amplify()">Amplify</button>
+                            <button class="effect-btn" onclick="app.audioEditor.silence()">Silence</button>
+                        </div>
+                        <div class="effects-panel" id="envelope-panel" style="display: none;">
+                            <h3>Volume Envelope</h3>
+                            <button class="effect-btn" onclick="app.audioEditor.applyEnvelope()" title="Apply envelope to audio">Apply Envelope</button>
+                            <button class="effect-btn" onclick="app.audioEditor.resetEnvelope()" title="Reset envelope points">Reset Points</button>
+                            <p style="font-size: 0.75rem; color: #999; padding: 0.5rem; margin: 0;">
+                                Click to add points<br>
+                                Drag to move points<br>
+                                Right-click to delete
+                            </p>
+                        </div>
+                        <div class="effects-panel">
+                            <h3>Navigation</h3>
+                            <button class="effect-btn" onclick="app.audioEditor.goToInPoint()" title="Go to In Point (Shift+I)">→ Go to In</button>
+                            <button class="effect-btn" onclick="app.audioEditor.goToOutPoint()" title="Go to Out Point (Shift+O)">→ Go to Out</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Waveform display -->
+                    <div class="audio-editor-workspace">
+                        <div class="timeline-ruler" id="audio-timeline"></div>
+                        <div class="waveform-container" id="audio-waveform">
+                            <canvas id="waveform-canvas"></canvas>
+                            <div class="playhead" id="audio-playhead"></div>
+                            <div class="selection-overlay" id="audio-selection"></div>
+                        </div>
+                        <div class="audio-info-bar">
+                            <span id="audio-duration">Duration: 0:00</span>
+                            <span id="audio-selection-info">Selection: None</span>
+                            <span id="audio-format">Format: --</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Export modal -->
+                <div id="audio-export-modal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Export Audio</h3>
+                            <button class="icon-btn" onclick="app.closeModal('audio-export-modal')">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <label>Export to:</label>
+                            <select id="audio-export-target" onchange="app.audioEditor.updateExportOptions()">
+                                <option value="file">File</option>
+                                <option value="news">News Item</option>
+                                <option value="animation">Animation Item</option>
+                            </select>
+                            <div id="export-options-file">
+                                <label>Format:</label>
+                                <select id="audio-export-format">
+                                    <option value="mp3">MP3</option>
+                                    <option value="wav">WAV</option>
+                                </select>
+                                <label>Quality:</label>
+                                <select id="audio-export-quality">
+                                    <option value="128">128 kbps</option>
+                                    <option value="192">192 kbps</option>
+                                    <option value="320">320 kbps</option>
+                                </select>
+                            </div>
+                            <div id="export-options-content" style="display: none;">
+                                <label>Select item:</label>
+                                <select id="audio-export-item"></select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" onclick="app.closeModal('audio-export-modal')">Cancel</button>
+                            <button class="btn btn-primary" onclick="app.audioEditor.executeExport()">Export</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Multitrack Editor Section -->
+        <div id="multitrack-section" class="section">
+            <div class="multitrack-container">
+                <!-- Multitrack Header -->
+                <div class="multitrack-header">
+                    <div class="multitrack-toolbar">
+                        <!-- Transport controls -->
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().goToStart()" title="Retour au début (Home)">⏮️</button>
+                            <button class="tool-btn" id="multitrack-stop-btn" onclick="app.getMultitrackEditor().stop()" title="Stop">⏹️</button>
+                            <button class="tool-btn" id="multitrack-play-btn" onclick="app.getMultitrackEditor().play()" title="Play/Pause (Espace)" style="border: 2px solid #00ff00;">▶️</button>
+                            <button class="tool-btn" id="multitrack-rec-btn" onclick="app.getMultitrackEditor().record()" title="Enregistrer (R)" style="border: 2px solid #ff0000;">⏺️</button>
+                        </div>
+                        
+                        <!-- In/Out points controls -->
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().setInPoint()" title="Définir point In (I)">[ I</button>
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().goToInPoint()" title="Aller au point In (Shift+I)">⏪I</button>
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().setOutPoint()" title="Définir point Out (O)">O ]</button>
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().goToOutPoint()" title="Aller au point Out (Shift+O)">O⏩</button>
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().clearInOutPoints()" title="Effacer In/Out">✖️</button>
+                        </div>
+                        
+                        <!-- Edit tools -->
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().undo()" title="Annuler (Ctrl+Z)">↩️</button>
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().redo()" title="Refaire (Ctrl+Y)">↪️</button>
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().cut()" title="Couper (Ctrl+X)">✂️</button>
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().copy()" title="Copier (Ctrl+C)">📋</button>
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().paste()" title="Coller (Ctrl+V)">📄</button>
+                        </div>
+                        
+                        <!-- Edit modes -->
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().setEditMode('normal')" title="Mode Normal">👆</button>
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().setEditMode('razor')" title="Mode Rasoir (B)">🔪</button>
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().splitAtPlayhead()" title="Diviser au curseur (S)">✂️|</button>
+                        </div>
+                        
+                        <!-- Fade controls -->
+                        <div class="tool-group">
+                            <button class="tool-btn" id="fade-handles-btn" onclick="app.getMultitrackEditor().toggleFadeHandles()" title="Activer/Désactiver les poignées de fade" style="background: rgba(255,165,0,0.2);">🎚️</button>
+                        </div>
+                        
+                        <!-- Zoom controls -->
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().zoomIn()" title="Zoom In">🔍+</button>
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().zoomOut()" title="Zoom Out">🔍-</button>
+                            <button class="tool-btn" onclick="app.getMultitrackEditor().zoomFit()" title="Zoom to Fit">🔍</button>
+                        </div>
+                        
+                        <!-- Snap and grid -->
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="app.multitrackEditor.toggleSnap()" title="Toggle Snap">🧲</button>
+                            <button class="tool-btn" onclick="app.multitrackEditor.toggleGrid()" title="Toggle Grid">⊞</button>
+                        </div>
+                        
+                        <!-- Export -->
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="app.multitrackEditor.exportMix()" title="Export Mix">💾</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Time display -->
+                    <div class="multitrack-time">
+                        <span id="multitrack-time-display">00:00.00</span>
+                        <span id="multitrack-inout-display" style="margin-left: 20px; color: #888; font-size: 12px;"></span>
+                    </div>
+                </div>
+                
+                <div class="multitrack-workspace">
+                    <!-- Left panel: Track headers and Chutier -->
+                    <div class="multitrack-left-panel">
+                        <!-- Track headers -->
+                        <div class="track-headers" id="track-headers">
+                            <!-- Track headers will be generated here -->
+                        </div>
+                        
+                        <!-- Chutier (Audio Library) -->
+                        <div class="multitrack-library">
+                            <div class="library-header">
+                                <h3>🎵 Chutier</h3>
+                                <button class="tool-btn small" onclick="document.getElementById('multitrack-file-input').click()" title="Ajouter des sons">➕</button>
+                                <input type="file" id="multitrack-file-input" accept="audio/*" multiple style="display: none;" onchange="app.multitrackEditor.handleFileSelect(event)">
+                            </div>
+                            <div class="library-content" id="multitrack-library">
+                                <!-- Library items will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right panel: Timeline and tracks -->
+                    <div class="multitrack-right-panel">
+                        <!-- Timeline -->
+                        <canvas id="multitrack-timeline" class="multitrack-timeline"></canvas>
+                        
+                        <!-- Tracks canvas -->
+                        <div class="multitrack-canvas-container">
+                            <canvas id="multitrack-canvas" class="multitrack-canvas"></canvas>
+                        </div>
+                        
+                        <!-- Horizontal scrollbar -->
+                        <div class="multitrack-scrollbar">
+                            <input type="range" id="multitrack-scroll" min="0" max="100" value="0" 
+                                   onchange="app.multitrackEditor.setScroll(this.value)">
+                        </div>
+                        
+                        <!-- News text editor (shown when linked to news) -->
+                        <div id="multitrack-news-editor">
+                            <div class="multitrack-resize-handle" id="multitrack-resize-handle"></div>
+                            <div class="news-editor-header">
+                                <span class="news-editor-title">Texte de la news</span>
+                                <div>
+                                    <button class="tool-btn" onclick="if(app.multitrackEditor) app.multitrackEditor.saveNewsText()" title="Sauvegarder le texte">💾 Sauvegarder texte</button>
+                                    <button class="tool-btn" onclick="if(app.multitrackEditor) app.multitrackEditor.exportToNews()" title="Exporter vers la news" style="background: #00B4D8; color: #fff;">📤 Exporter vers la news</button>
+                                </div>
+                            </div>
+                            <textarea id="multitrack-news-text" 
+                                      placeholder="Tapez ici le texte de votre news..."
+                                      onchange="if(app.multitrackEditor) app.multitrackEditor.saveNewsText()"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fridge Section -->
+        <div id="fridge-section" class="section">
+            <div class="fridge-container">
+                <div class="fridge-header">
+                    <h2>🧊 Frigo - Contenus planifiés</h2>
+                    <div class="fridge-filters">
+                        <button class="filter-btn active" data-filter="all" onclick="app.fridgeComponent.filterByPeriod('all')">Tous</button>
+                        <button class="filter-btn" data-filter="today" onclick="app.fridgeComponent.filterByPeriod('today')">Aujourd'hui</button>
+                        <button class="filter-btn" data-filter="tomorrow" onclick="app.fridgeComponent.filterByPeriod('tomorrow')">Demain</button>
+                        <button class="filter-btn" data-filter="week" onclick="app.fridgeComponent.filterByPeriod('week')">Cette semaine</button>
+                        <div style="margin-left: 1rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                            <label style="color: #999; font-size: 0.875rem;">Auteur :</label>
+                            <select id="fridge-author-filter" onchange="app.fridgeComponent.filterByAuthor(this.value)" style="padding: 0.25rem 0.5rem; background: #1a1a1a; border: 1px solid #333; border-radius: 4px; color: #fff;">
+                                <option value="">Tous les auteurs</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="fridge-week-view" id="fridge-week-view">
+                    <!-- Vue semaine générée par JS -->
+                </div>
+                
+                <div class="fridge-items-container" id="fridge-items-container">
+                    <!-- Liste des éléments générée par JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Archives Section -->
+        <div id="archives-section" class="section">
+            <div class="content-area" style="width: 100%; height: calc(100vh - 100px); display: flex; flex-direction: column;">
+                <!-- Archives Header -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 8px 8px 0 0;">
+                    <h2 style="color: white; font-size: 1.5rem; margin: 0;">📚 Archives des News</h2>
+                    <p style="color: rgba(255,255,255,0.8); margin-top: 0.5rem; font-size: 0.9rem;">
+                        Recherchez dans les archives et réutilisez les contenus passés
+                    </p>
+                </div>
+
+                <!-- Search Section -->
+                <div style="background: #222; padding: 1.5rem; border-bottom: 2px solid #333;">
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 300px;">
+                            <input 
+                                type="text" 
+                                id="archives-search-input" 
+                                placeholder="🔍 Rechercher par mots-clés, titre, auteur..." 
+                                style="width: 100%; padding: 0.75rem; background: #1a1a1a; border: 1px solid #444; border-radius: 6px; color: white; font-size: 1rem;"
+                                onkeyup="if(event.key === 'Enter') window.archivesManager?.search()"
+                            >
+                        </div>
+                        
+                        <!-- Filters -->
+                        <select id="archives-category-filter" style="padding: 0.75rem; background: #1a1a1a; border: 1px solid #444; border-radius: 6px; color: white;">
+                            <option value="">Toutes catégories</option>
+                            <option value="actualite">Actualité</option>
+                            <option value="sport">Sport</option>
+                            <option value="culture">Culture</option>
+                            <option value="musique">Musique</option>
+                            <option value="economie">Économie</option>
+                        </select>
+                        
+                        <select id="archives-period-filter" style="padding: 0.75rem; background: #1a1a1a; border: 1px solid #444; border-radius: 6px; color: white;">
+                            <option value="">Toutes périodes</option>
+                            <option value="7">7 derniers jours</option>
+                            <option value="30">30 derniers jours</option>
+                            <option value="90">3 derniers mois</option>
+                            <option value="365">Dernière année</option>
+                        </select>
+                        
+                        <button 
+                            class="btn btn-primary" 
+                            onclick="window.archivesManager?.search()"
+                            style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer;"
+                        >
+                            🔍 Rechercher
+                        </button>
+                        
+                        <button 
+                            class="btn btn-secondary" 
+                            onclick="window.archivesManager?.clearSearch()"
+                            style="padding: 0.75rem 1.5rem; background: #444; border: none; border-radius: 6px; color: white; cursor: pointer;"
+                        >
+                            ✖️ Effacer
+                        </button>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div id="archives-stats" style="margin-top: 1rem; color: #aaa; font-size: 0.9rem;"></div>
+                </div>
+
+                <!-- Results Section -->
+                <div style="flex: 1; overflow-y: auto; padding: 1rem; background: #1a1a1a;">
+                    <div id="archives-results" style="display: grid; gap: 1rem;">
+                        <!-- Results will be loaded here -->
+                        <div style="text-align: center; padding: 3rem; color: #666;">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
+                            <p style="font-size: 1.1rem;">Effectuez une recherche pour afficher les archives</p>
+                            <p style="font-size: 0.9rem; margin-top: 0.5rem;">Les news sont automatiquement archivées 24h après leur date d'expiration</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div id="archives-pagination" style="display: none; margin-top: 2rem; text-align: center;">
+                        <!-- Pagination controls will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Info Section -->
+        <div id="flash-info-section" class="section">
+            <div id="flash-info-container" style="width: 100%; height: calc(100vh - 100px); overflow-y: auto;">
+                <!-- Flash Info Manager will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+<!-- Section Settings simplifiée -->
+<div id="settings-section" class="section">
+    <div class="content-area" style="width: 100%; max-width: 800px; margin: 0 auto; height: calc(100vh - 100px); overflow-y: auto; padding: 1rem;">
+        <div style="background-color: #222; border-radius: 8px; padding: 2rem; box-shadow: var(--shadow);">
+            <h2 style="font-size: 1.5rem; margin-bottom: 2rem; color: white;">Settings</h2>
+            
+            <div class="mb-4">
+                <h3 class="mb-2" style="color: white;">Station Information</h3>
+                <input type="text" id="radio-name" placeholder="Station name" class="mb-2" value="Saint Esprit">
+                <input type="text" id="radio-slogan" placeholder="Slogan" class="mb-2" value="Professional Broadcasting">
+            </div>
+
+
+            <div class="mb-4">
+                <h3 class="mb-2" style="color: white;">👤 Gestion utilisateur</h3>
+                <div class="flex gap-2">
+                    <button class="btn btn-secondary" id="user-switch-button" onclick="app.switchUser()">🔄 Changer d'utilisateur</button>
+                    <button class="btn btn-secondary" id="role-switch-button" onclick="app.switchRole()">👔 Changer de rôle</button>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h3 class="mb-2" style="color: white;">💾 Data Management</h3>
+                <div class="flex gap-2">
+                    <button class="btn btn-secondary" onclick="app.exportData()">📤 Export</button>
+                    <button class="btn btn-secondary" onclick="app.importData()">📥 Import</button>
+                    <button class="btn btn-danger" onclick="app.clearAllData()">🗑️ Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <!-- Add Segment Modal -->
+    <div id="add-segment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Rundown Item</h3>
+                <button class="icon-btn" onclick="app.closeModal('add-segment-modal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <select id="segment-type" class="mb-2" onchange="app.updateSegmentForm()">
+                    <option value="block">📁 BLOCK</option>
+                    <option value="news">📰 NEWS</option>
+                    <option value="animation">🎙️ ANIMATION</option>
+                    <option value="break">🔷 BREAK</option>
+                    <option value="jingle">🎵 JINGLE</option>
+                    <option value="pub">📺 COMMERCIAL</option>
+                    <option value="ad_placeholder">📺 AD PLACEHOLDER (Open Radio)</option>
+                    <option value="meteo">☁️ WEATHER</option>
+                    <option value="package">📹 PACKAGE</option>
+                    <option value="live">🔴 LIVE</option>
+                    <option value="custom">✏️ CUSTOM</option>
+                </select>
+                <div id="segment-form">
+                    <!-- Dynamic form content -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeModal('add-segment-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="app.addSegment()">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sound Modal -->
+    <div id="sound-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Sound Element</h3>
+                <button class="icon-btn" onclick="app.closeModal('sound-modal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <label class="file-upload-btn mb-2">
+                    <input type="file" id="sound-file" accept="audio/mp3,audio/mpeg" onchange="app.handleSoundFileUpload(event)">
+                    📁 Choose MP3 file
+                </label>
+                <div id="sound-file-info" class="mb-2" style="color: #999; font-size: 0.875rem;"></div>
+                <input type="text" id="sound-name" placeholder="Sound name (e.g. Vox pop market)" class="mb-2">
+                <select id="sound-type" class="mb-2">
+                    <option value="microtrottoir">🎤 Vox pop</option>
+                    <option value="interview">🎙️ Interview</option>
+                    <option value="ambiance">🌆 Ambience</option>
+                    <option value="musique">🎵 Music</option>
+                    <option value="autre">📻 Other</option>
+                </select>
+                <input type="text" id="sound-duration" placeholder="Duration (auto-filled)" class="mb-2" readonly>
+                <div id="sound-waveform" class="waveform-container" style="display: none;">
+                    <div class="waveform" id="waveform"></div>
+                </div>
+                <textarea id="sound-description" placeholder="Description / Notes..." rows="2"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeModal('sound-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="app.addSound()" id="add-sound-btn" disabled>Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animation Sound Modal -->
+    <div id="animation-sound-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Sound Element</h3>
+                <button class="icon-btn" onclick="app.closeModal('animation-sound-modal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <label class="file-upload-btn mb-2">
+                    <input type="file" id="animation-sound-file" accept="audio/mp3,audio/mpeg" onchange="app.handleAnimationSoundFileUpload(event)">
+                    📁 Choose MP3 file
+                </label>
+                <div id="animation-sound-file-info" class="mb-2" style="color: #999; font-size: 0.875rem;"></div>
+                <input type="text" id="animation-sound-name" placeholder="Sound name (e.g. Jingle morning)" class="mb-2">
+                <select id="animation-sound-type" class="mb-2">
+                    <option value="jingle">🎵 Jingle</option>
+                    <option value="musique">🎶 Music</option>
+                    <option value="effet">🎺 Sound effect</option>
+                    <option value="transition">🔄 Transition</option>
+                    <option value="autre">📻 Other</option>
+                </select>
+                <input type="text" id="animation-sound-duration" placeholder="Duration (auto-filled)" class="mb-2" readonly>
+                <div id="animation-sound-waveform" class="waveform-container" style="display: none;">
+                    <div class="waveform" id="animation-waveform"></div>
+                </div>
+                <textarea id="animation-sound-description" placeholder="Description / Notes..." rows="2"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeModal('animation-sound-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="app.addAnimationSound()" id="add-animation-sound-btn" disabled>Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Package Modal -->
+    <div id="package-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Package</h3>
+                <button class="icon-btn" onclick="app.closeModal('package-modal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="package-name" placeholder="Package name" class="mb-2">
+                <select id="package-type" class="mb-2">
+                    <option value="audio">🎵 Audio</option>
+                    <option value="video">🎬 Video</option>
+                </select>
+                <input type="text" id="package-duration" placeholder="Duration (MM:SS)" class="mb-2">
+                <textarea id="package-description" placeholder="Description..." rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeModal('package-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="app.addPackage()">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animation Package Modal -->
+    <div id="animation-package-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Package</h3>
+                <button class="icon-btn" onclick="app.closeModal('animation-package-modal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="animation-package-name" placeholder="Package name" class="mb-2">
+                <select id="animation-package-type" class="mb-2">
+                    <option value="audio">🎵 Audio</option>
+                    <option value="video">🎬 Video</option>
+                </select>
+                <input type="text" id="animation-package-duration" placeholder="Duration (MM:SS)" class="mb-2">
+                <textarea id="animation-package-description" placeholder="Description..." rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeModal('animation-package-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="app.addAnimationPackage()">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Block Assign Modal -->
+    <div id="block-assign-modal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>Assign Items to Block</h3>
+                <button class="icon-btn" onclick="app.closeModal('block-assign-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="assign-section mb-3">
+                    <h4 class="mb-2">📰 Available News</h4>
+                    <div class="assign-items-list" id="block-assign-news">
+                        <!-- News items will be listed here -->
+                    </div>
+                </div>
+                <div class="assign-section">
+                    <h4 class="mb-2">🎙️ Available Animations</h4>
+                    <div class="assign-items-list" id="block-assign-animations">
+                        <!-- Animation items will be listed here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeModal('block-assign-modal')">Close</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Template Modal -->
+    <div id="template-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📋 Gestion des Templates de Conducteur</h3>
+                <button class="icon-btn" onclick="app.closeModal('template-modal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="template-tabs">
+                    <button class="template-tab active" onclick="app.switchTemplateTab('apply')">Appliquer un Template</button>
+                    <button class="template-tab" onclick="app.switchTemplateTab('create')">Créer un Template</button>
+                    <button class="template-tab" onclick="app.switchTemplateTab('manage')">Gérer les Templates</button>
+                </div>
+                
+                <!-- Apply Template Tab -->
+                <div id="template-apply-tab" class="template-tab-content">
+                    <div class="template-list">
+                        <h4>Sélectionner un template :</h4>
+                        <div id="template-list-container">
+                            <!-- Templates will be listed here -->
+                        </div>
+                        <div class="template-date-selector">
+                            <label>Date cible :</label>
+                            <input type="date" id="template-target-date" value="">
+                        </div>
+                        <div class="template-preview" id="template-preview">
+                            <!-- Preview will be shown here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Create Template Tab -->
+                <div id="template-create-tab" class="template-tab-content" style="display: none;">
+                    <div class="template-creator">
+                        <label>Nom du template :</label>
+                        <input type="text" id="template-name" placeholder="Ex: Journal du matin">
+                        <label>Description :</label>
+                        <textarea id="template-description" placeholder="Description du template"></textarea>
+                        <div class="template-from-conductor">
+                            <button class="btn btn-secondary" onclick="app.createTemplateFromCurrent()">
+                                📋 Créer depuis le conducteur actuel
+                            </button>
+                            <p class="hint">Créera un template basé sur la structure du conducteur actuel</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Manage Templates Tab -->
+                <div id="template-manage-tab" class="template-tab-content" style="display: none;">
+                    <div class="template-manager">
+                        <div id="template-manage-list">
+                            <!-- Template management list -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Daily Status Display -->
+                <div class="daily-status" id="daily-status" style="margin-top: 20px;">
+                    <h4>📊 Statut du jour</h4>
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <span class="status-label">Date :</span>
+                            <span class="status-value" id="status-date">--</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Segments prêts :</span>
+                            <span class="status-value" id="status-ready">0/0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Progression :</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="status-progress" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Segments manquants :</span>
+                            <div class="status-value" id="status-missing">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeModal('template-modal')">Fermer</button>
+                <button class="btn btn-primary" id="template-apply-btn" onclick="app.applySelectedTemplate()">Appliquer le Template</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stream Recorder Section -->
+    <div id="stream-recorder-section" class="section">
+        <!-- Le contenu sera généré dynamiquement par StreamRecorder.js -->
+    </div>
+
+    <!-- Scripts - dans le bon ordre -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1462.0.min.js"></script>
+    <script src="js/config/aws-config.js?v=1.0"></script>
+    <script src="js/core/utils.js?v=1.1"></script>
+    <script src="js/utils/audio-url-fixer.js?v=1.0"></script>
+    <script src="js/core/constants.js?v=2.1.0"></script>
+    <!-- DynamoDB Client -->
+    <script src="js/core/dynamodb-client.js?v=1.1"></script>
+    <!-- Storage avec DynamoDB (remplace storage.js) -->
+    <script src="js/core/storage-dynamodb.js?v=1756482113"></script>
+    <script src="js/core/audio-storage.js?v=1.1"></script>
+    <script src="js/core/conductor-storage.js?v=1.1"></script>
+    <script src="js/core/sync-wrapper.js?v=1755899484"></script>
+    <script src="js/core/cross-user-manager.js?v=1.2"></script>
+    <!-- SyncManager remplacé par sync-wrapper pour compatibilité AWS -->
+    <script src="js/managers/ContentManagerHelpers.js?v=1755899484"></script>
+    <script src="js/managers/ContentManager.js?v=1756486244"></script>
+    
+    <!-- Synchronisation temps réel AWS désactivée temporairement (nécessite configuration Amplify) -->
+    <script src="js/managers/BlockManager.js?v=1756697800"></script>
+    <script src="js/managers/ConductorManager.js?v=1756484402"></script>
+    <script src="js/managers/ConductorTemplateManager.js?v=1755899484"></script>
+    <script src="js/managers/AudioManager.js?v=1755899484"></script>
+    <!-- AudioSyncManager et AudioSyncFix supprimés - Migration vers AWS Amplify Storage -->
+    <script src="js/managers/AudioS3Manager.js?v=1755899484"></script>
+    <script src="js/managers/AudioUrlManager.js?v=1755899484"></script>
+    <script src="js/components/Editor.js?v=1755899484"></script>
+    <script src="js/components/Rundown.js?v=1755899484"></script>
+    <script src="js/components/OnAir.js?v=1756493963"></script>
+    <script src="js/components/Settings.js?v=1755899484"></script>
+    <script src="js/components/Blocks.js?v=1755899484"></script>
+    <script src="js/components/UserFilter.js?v=1.0"></script>
+    <script src="js/components/AudioEditor.js?v=1756417514"></script>
+    <script src="js/components/MultitrackEditor.js?v=1755899484"></script>
+    <script src="js/components/Fridge.js?v=1755899484"></script>
+    <script src="js/components/FlashInfoManager.js?v=1.0"></script>
+    <script src="js/managers/RecurrenceManager.js?v=1755899484"></script>
+    <script src="js/managers/ExportManager.js?v=1755899484"></script>
+    <script src="js/managers/ArchivesManager.js?v=1756492980"></script>
+    <!-- Modules additionnels -->
+    <script src="js/modules/StudiosCalendar.js?v=1.0"></script>
+    <script src="js/modules/EmissionEditor.js?v=1.0"></script>
+    <script src="js/modules/VolunteerOptimizations.js?v=1.0"></script>
+    <script src="js/modules/StreamRecorder.js?v=1756459047"></script>
+    <!-- Module d'authentification Cognito -->
+    <script src="js/core/cognito-auth.js?v=1.2"></script>
+    <script src="js/app.js?v=1756990000"></script>
+    <script src="js/migrate-to-dynamodb.js?v=1.0"></script>
+    <script src="js/migrate-all-users.js?v=1.0"></script>
+    
+    <!-- Modal pour nouveau conducteur -->
+    <div id="new-conductor-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Créer un nouveau conducteur</h3>
+                <button class="icon-btn" onclick="app.closeModal('new-conductor-modal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nom du conducteur:</label>
+                    <input type="text" id="new-conductor-name" placeholder="Ex: Journal 18h">
+                </div>
+                <div class="form-group">
+                    <label>Template (optionnel):</label>
+                    <select id="new-conductor-template">
+                        <option value="">-- Vide --</option>
+                        <option value="news">📰 Journal type</option>
+                        <option value="morning">☀️ Matinale</option>
+                        <option value="hourly">⏰ Top horaire</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="new-conductor-public">
+                        Partager avec tous les utilisateurs
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeModal('new-conductor-modal')">Annuler</button>
+                <button class="btn btn-primary" onclick="app.createNewConductor()">Créer</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal pour gérer les conducteurs -->
+    <div id="manage-conductors-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3>Gérer les conducteurs</h3>
+                <button class="icon-btn" onclick="app.closeModal('manage-conductors-modal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="conductors-list" id="conductors-list">
+                    <!-- Liste dynamique des conducteurs -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeModal('manage-conductors-modal')">Fermer</button>
+            </div>
+        </div>
+    </div>
+    
+</body>
+</html>

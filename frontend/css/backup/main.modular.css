@@ -1,0 +1,127 @@
+/* ===== SAINT ESPRIT - SYSTÈME DE NEWSROOM PROFESSIONNEL ===== */
+/* Main CSS file - Imports all modules in correct order */
+
+/* 1. CORE - Foundation styles */
+@import './core/reset.css';
+@import './core/layout.css';
+@import './core/utilities.css';
+
+/* 2. COMPONENTS - Reusable UI components */
+@import './components/buttons.css';
+@import './components/forms.css';
+@import './components/modals.css';
+@import './components/tables.css';
+
+/* 3. SECTIONS - Page-specific styles */
+@import './sections/news.css';
+@import './sections/animation.css';
+@import './sections/blocks.css';
+@import './sections/conductor.css';
+@import './sections/onair.css';
+@import './sections/audio_editor.css';
+@import './sections/settings.css';
+
+/* 4. THEMES - Color schemes and theme variations */
+@import './themes/dark_theme.css';
+@import './themes/light_theme.css';
+
+/* ===== GLOBAL OVERRIDES AND FINAL ADJUSTMENTS ===== */
+
+/* Animation globale pour les transitions */
+* {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Performance optimizations */
+.news-list,
+.animation-list,
+.blocks-list,
+.rundown-wrapper {
+    contain: layout style paint;
+}
+
+/* Print styles */
+@media print {
+    .header,
+    .sidebar,
+    .modal,
+    .notification {
+        display: none !important;
+    }
+    
+    .content-area {
+        width: 100% !important;
+        max-width: none !important;
+    }
+    
+    * {
+        color: black !important;
+        background: white !important;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+    :root {
+        --border: #ffffff;
+        --border-light: #ffffff;
+        --text-muted: #ffffff;
+    }
+}
+
+/* Dark mode preference (système) */
+@media (prefers-color-scheme: dark) {
+    /* Les variables sont déjà définies pour le thème sombre */
+}
+
+/* Focus visible pour l'accessibilité */
+*:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Amélioration des performances pour les grandes listes */
+.news-list > *,
+.animation-list > *,
+.blocks-list > * {
+    will-change: transform;
+}
+
+/* Loading state global */
+.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* Status indicator global */
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.status-indicator.active {
+    background: var(--success);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* ===== FIN DU FICHIER PRINCIPAL ===== */

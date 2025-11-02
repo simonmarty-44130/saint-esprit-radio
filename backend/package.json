@@ -1,0 +1,12 @@
+{
+  "name": "saint-esprit-sync-api",
+  "version": "1.0.0",
+  "description": "Lambda function for Saint-Esprit multi-user synchronization",
+  "main": "sync.js",
+  "dependencies": {
+    "aws-sdk": "^2.1000.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

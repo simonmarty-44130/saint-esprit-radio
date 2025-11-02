@@ -1,0 +1,14 @@
+/* CSS Cognito Saint-Esprit - Version finale optimisée */
+.background-customizable{background:#f8f9fa}
+.banner-customizable{background:linear-gradient(135deg,#2a2a2a,#1a1a1a);padding:45px 20px;border-bottom:3px solid #00ff9f}
+.logo-customizable{max-width:180px}
+.label-customizable{font-weight:500;color:#333;font-size:13px;margin-bottom:5px}
+.textDescription-customizable{color:#666;font-size:13px}
+.inputField-customizable{border:1px solid #ddd;border-radius:5px;padding:11px 14px;font-size:14px;background:#fff;transition:border .2s}
+.inputField-customizable:focus{border-color:#00ff9f;outline:0}
+.submitButton-customizable{background:#00ff9f;color:#1a1a1a;font-weight:600;padding:12px;border:0;border-radius:5px;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;width:100%;cursor:pointer;transition:all .2s;margin-top:10px}
+.submitButton-customizable:hover{background:#00e590;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,255,159,.3)}
+.redirect-customizable{color:#667eea;text-decoration:none;font-size:13px}
+.errorMessage-customizable{background:#fff5f5;border-left:3px solid #f56565;color:#c53030;padding:10px;margin:10px 0;font-size:13px}
+.socialButton-customizable{background:#fff;border:1px solid #e0e0e0;color:#333;padding:10px;border-radius:5px;font-size:13px;width:100%;margin-bottom:8px;cursor:pointer}
+.legalText-customizable{color:#999;font-size:11px}

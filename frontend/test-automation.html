@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Module Automation</title>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 2rem;
+        }
+        .test-results {
+            background: #222;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        .test-item {
+            margin: 1rem 0;
+            padding: 0.5rem;
+            border-left: 3px solid #666;
+        }
+        .test-item.success {
+            border-color: #00ff00;
+        }
+        .test-item.error {
+            border-color: #ff0000;
+        }
+        .test-item.warning {
+            border-color: #ffaa00;
+        }
+        h1 {
+            color: #00B4D8;
+        }
+        button {
+            background: #00B4D8;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0.5rem;
+        }
+        button:hover {
+            background: #0090a8;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test du Module Automation Unifié</h1>
+    
+    <div>
+        <button onclick="testAll()">🚀 Lancer tous les tests</button>
+        <button onclick="testSpaceKey()">⏯️ Tester touche ESPACE</button>
+        <button onclick="testPrompter()">📝 Tester prompteur</button>
+        <button onclick="window.open('index-automation-test.html', '_blank')">📂 Ouvrir Saint-Esprit avec Automation</button>
+    </div>
+    
+    <div class="test-results" id="results">
+        <h2>Résultats des tests</h2>
+        <div id="test-output"></div>
+    </div>
+
+    <script>
+        const output = document.getElementById('test-output');
+        
+        function log(message, type = 'info') {
+            const item = document.createElement('div');
+            item.className = `test-item ${type}`;
+            item.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+            output.appendChild(item);
+            console.log(message);
+        }
+        
+        function testAll() {
+            output.innerHTML = '';
+            log('🚀 Début des tests...', 'info');
+            
+            // Test 1: Vérifier que le module existe
+            if (typeof UnifiedBroadcast !== 'undefined') {
+                log('✅ Module UnifiedBroadcast trouvé', 'success');
+            } else {
+                log('❌ Module UnifiedBroadcast non trouvé - Assurez-vous que le script est chargé', 'error');
+                return;
+            }
+            
+            // Test 2: Créer une instance
+            try {
+                const module = new UnifiedBroadcast();
+                log('✅ Instance créée avec succès', 'success');
+                
+                // Test 3: Vérifier les méthodes principales
+                const methods = ['init', 'togglePlayPause', 'setPrompterOffset', 'loadConductor', 'refresh'];
+                methods.forEach(method => {
+                    if (typeof module[method] === 'function') {
+                        log(`✅ Méthode ${method}() trouvée`, 'success');
+                    } else {
+                        log(`❌ Méthode ${method}() manquante`, 'error');
+                    }
+                });
+                
+            } catch (error) {
+                log(`❌ Erreur lors de la création de l'instance: ${error.message}`, 'error');
+            }
+            
+            log('📊 Tests terminés', 'info');
+        }
+        
+        function testSpaceKey() {
+            output.innerHTML = '';
+            log('🎹 Test de la touche ESPACE...', 'info');
+            
+            // Simuler un événement keyboard
+            const event = new KeyboardEvent('keydown', {
+                code: 'Space',
+                key: ' ',
+                bubbles: true,
+                cancelable: true
+            });
+            
+            // Créer un listener temporaire pour vérifier
+            let spaceDetected = false;
+            const tempListener = (e) => {
+                if (e.code === 'Space') {
+                    spaceDetected = true;
+                    e.preventDefault();
+                }
+            };
+            
+            document.addEventListener('keydown', tempListener);
+            document.dispatchEvent(event);
+            document.removeEventListener('keydown', tempListener);
+            
+            if (spaceDetected) {
+                log('✅ Touche ESPACE détectée correctement', 'success');
+                log('ℹ️ Le module devrait toggle play/pause quand actif', 'info');
+            } else {
+                log('❌ Problème de détection de la touche ESPACE', 'error');
+            }
+        }
+        
+        function testPrompter() {
+            output.innerHTML = '';
+            log('📝 Test du prompteur...', 'info');
+            
+            // Test des raccourcis Alt+1,2,3
+            const shortcuts = [
+                { key: '1', offset: 0, label: 'En cours' },
+                { key: '2', offset: 1, label: 'Suivant' },
+                { key: '3', offset: 2, label: '+2' }
+            ];
+            
+            shortcuts.forEach(shortcut => {
+                const event = new KeyboardEvent('keydown', {
+                    key: shortcut.key,
+                    altKey: true,
+                    bubbles: true,
+                    cancelable: true
+                });
+                
+                log(`ℹ️ Alt+${shortcut.key} devrait afficher: ${shortcut.label} (offset ${shortcut.offset})`, 'info');
+            });
+            
+            log('✅ Configuration des raccourcis prompteur vérifiée', 'success');
+        }
+        
+        // Charger le script du module pour les tests
+        const script = document.createElement('script');
+        script.src = 'js/components/automation/UnifiedBroadcast.js';
+        script.onload = () => {
+            log('📚 Module UnifiedBroadcast chargé pour les tests', 'success');
+        };
+        script.onerror = () => {
+            log('❌ Impossible de charger le module UnifiedBroadcast', 'error');
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

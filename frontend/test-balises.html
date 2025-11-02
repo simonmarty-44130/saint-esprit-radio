@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Balises OnAir</title>
+</head>
+<body>
+    <h1>Test Extraction Balises OnAir</h1>
+    
+    <div style="padding: 20px;">
+        <h2>Contenu original:</h2>
+        <textarea id="original" style="width: 100%; height: 300px;">
+[LANCEMENT]
+Le ministre LR de l'Intérieur Bruno Retailleau a mis en garde mardi contre un vote le 8 septembre qui ferait chuter le gouvernement de François Bayrou et serait contraire "aux intérêts de la France", portant notamment le risque d'"une crise financière majeure".
+[/LANCEMENT]
+
+"Nous sommes entrés au gouvernement pour éviter le chaos et l'extrême gauche, il serait irresponsable de précipiter le pays dans une crise financière majeure dont les conséquences atteindraient d'abord les plus fragiles. Voter pour la chute du gouvernement, ce serait voter contre les intérêts de la France", a-t-il dit dans un communiqué publié en sa qualité de président du parti Les Républicains.
+
+"Cohérente et constante, la droite française ne peut pas s'associer au cartel du déni et aux démagogues qui refusent de voir la réalité en face", a ajouté le ministre, alors que toutes les oppositions de gauche et d'extrême droite ont fait savoir qu'elles ne voteraient pas la confiance le 8 septembre, rendant très probable la chute du gouvernement.
+
+Le Premier ministre François Bayrou a annoncé lundi son intention d'engager ce jour-là devant l'Assemblée nationale la responsabilité de son gouvernement sur une déclaration de politique générale établissant la gravité de la situation des finances publiques.
+
+Il souhaite dans un deuxième temps en venir à une discussion sur le détail des mesures. Ses propositions de réduction du déficit public pour 2026, présentées le 15 juillet, avaient été massivement rejetées par les oppositions et dans l'opinion, notamment l'idée d'une "année blanche" fiscale et la suppression de deux jours fériés.
+
+Dans son communiqué, publié après une réunion mardi matin des ministres et responsables parlementaires LR, Bruno Retailleau prend ses distances avec ces propositions.
+
+[DESANNONCE]
+Un vote de confiance des LR le 8 septembre "ne veut pas dire pour autant que toutes les mesures budgétaires proposées par François Bayrou nous convenaient", dit-il. "La France des honnêtes gens ne peut consentir à de nouveaux efforts qu'à la condition que ceux-ci soient justes", a-t-il ajouté.
+[/DESANNONCE]
+        </textarea>
+        
+        <button onclick="testExtraction()">Tester l'extraction</button>
+        
+        <h2>Résultat extrait (ce qui devrait apparaître dans OnAir):</h2>
+        <div id="result" style="border: 1px solid #ccc; padding: 10px; background: #f5f5f5; white-space: pre-wrap;"></div>
+        
+        <h2>Debug:</h2>
+        <div id="debug" style="border: 1px solid #ccc; padding: 10px; background: #ffe; font-family: monospace; font-size: 12px;"></div>
+    </div>
+    
+    <script>
+        function testExtraction() {
+            const content = document.getElementById('original').value;
+            const debugDiv = document.getElementById('debug');
+            const resultDiv = document.getElementById('result');
+            
+            debugDiv.innerHTML = '';
+            
+            // Test fonction actuelle
+            let extractedText = '';
+            
+            debugDiv.innerHTML += 'Contenu a des balises [LANCEMENT]: ' + content.includes('[LANCEMENT]') + '<br>';
+            debugDiv.innerHTML += 'Contenu a des balises [/LANCEMENT]: ' + content.includes('[/LANCEMENT]') + '<br>';
+            debugDiv.innerHTML += 'Contenu a des balises [DESANNONCE]: ' + content.includes('[DESANNONCE]') + '<br>';
+            debugDiv.innerHTML += 'Contenu a des balises [/DESANNONCE]: ' + content.includes('[/DESANNONCE]') + '<br><br>';
+            
+            // Extraire le texte entre [LANCEMENT] et [/LANCEMENT]
+            const launchRegex = /\[LANCEMENT\]([\s\S]*?)\[\/LANCEMENT\]/;
+            const launchMatch = content.match(launchRegex);
+            
+            debugDiv.innerHTML += 'Regex LANCEMENT: ' + launchRegex + '<br>';
+            debugDiv.innerHTML += 'Match trouvé: ' + (launchMatch ? 'OUI' : 'NON') + '<br>';
+            
+            if (launchMatch) {
+                debugDiv.innerHTML += 'Match complet: <textarea style="width:100%; height:60px;">' + launchMatch[0] + '</textarea><br>';
+                debugDiv.innerHTML += 'Groupe capturé (index 1): <textarea style="width:100%; height:60px;">' + launchMatch[1] + '</textarea><br>';
+                
+                if (launchMatch[1]) {
+                    extractedText += launchMatch[1].trim() + '\n\n';
+                }
+            }
+            
+            debugDiv.innerHTML += '<br>';
+            
+            // Extraire le texte entre [DESANNONCE] et [/DESANNONCE]
+            const desannonceRegex = /\[DESANNONCE\]([\s\S]*?)\[\/DESANNONCE\]/;
+            const desannonceMatch = content.match(desannonceRegex);
+            
+            debugDiv.innerHTML += 'Regex DESANNONCE: ' + desannonceRegex + '<br>';
+            debugDiv.innerHTML += 'Match trouvé: ' + (desannonceMatch ? 'OUI' : 'NON') + '<br>';
+            
+            if (desannonceMatch) {
+                debugDiv.innerHTML += 'Match complet: <textarea style="width:100%; height:60px;">' + desannonceMatch[0] + '</textarea><br>';
+                debugDiv.innerHTML += 'Groupe capturé (index 1): <textarea style="width:100%; height:60px;">' + desannonceMatch[1] + '</textarea><br>';
+                
+                if (desannonceMatch[1]) {
+                    extractedText += desannonceMatch[1].trim();
+                }
+            }
+            
+            // Afficher le résultat
+            if (extractedText.trim()) {
+                resultDiv.textContent = extractedText.trim();
+                debugDiv.innerHTML += '<br><strong style="color:green;">✅ Extraction réussie</strong>';
+            } else {
+                resultDiv.textContent = content;
+                debugDiv.innerHTML += '<br><strong style="color:red;">❌ Pas de balises trouvées, contenu original retourné</strong>';
+            }
+        }
+        
+        // Test au chargement
+        testExtraction();
+    </script>
+</body>
+</html>

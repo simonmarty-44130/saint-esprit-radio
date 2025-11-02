@@ -1,0 +1,391 @@
+/* ===== STYLES DES TABLEAUX ===== */
+
+/* Table de base */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-primary);
+}
+
+/* Headers */
+th {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    padding: 0.75rem 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Cells */
+td {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    vertical-align: middle;
+}
+
+/* Rundown table spécifique */
+.rundown-table {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    table-layout: fixed;
+}
+
+.rundown-table th,
+.rundown-table td {
+    padding: 0.375rem 0.25rem;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Colonnes du rundown */
+.col-pg { width: 35px; }
+.col-move { width: 30px; }
+.col-lock { width: 35px; }
+.col-format { width: 50px; }
+.col-name { 
+    width: auto; 
+    max-width: 250px;
+    text-align: left;
+    white-space: normal;
+    word-wrap: break-word;
+}
+.col-duration { width: 65px; }
+.col-variance { width: 50px; }
+.col-hit-time { width: 70px; }
+.col-backtime { width: 70px; }
+.col-mos { width: 110px; min-width: 110px; }
+
+/* Styles des lignes du rundown */
+.rundown-table tr:hover {
+    background: var(--bg-tertiary);
+}
+
+.rundown-table tr.selected {
+    background: var(--primary);
+    color: white;
+}
+
+.rundown-table tr.on-air-active {
+    background: var(--success);
+    color: var(--bg-dark);
+    font-weight: bold;
+}
+
+/* Types de segments - Thème blanc */
+.row-block {
+    background-color: rgba(0, 180, 216, 0.05);
+    border-left: 4px solid var(--primary);
+}
+
+.row-news {
+    background-color: rgba(220, 53, 69, 0.05);
+    border-left: 4px solid var(--error);
+}
+
+.row-animation {
+    background-color: rgba(147, 51, 234, 0.05);
+    border-left: 4px solid #9333ea;
+}
+
+.row-jingle {
+    background-color: rgba(255, 255, 0, 0.1);
+    border-left: 4px solid var(--warning);
+}
+
+.row-pub {
+    background-color: rgba(255, 153, 0, 0.1);
+    border-left: 4px solid #ff9900;
+}
+
+.row-meteo {
+    background-color: rgba(0, 255, 0, 0.1);
+    border-left: 4px solid var(--success);
+}
+
+.row-package {
+    background-color: rgba(0, 255, 0, 0.1);
+    border-left: 4px solid var(--success);
+}
+
+.row-live {
+    background-color: rgba(204, 153, 255, 0.1);
+    border-left: 4px solid #cc99ff;
+}
+
+.row-break {
+    background-color: rgba(0, 128, 255, 0.1);
+    border-left: 4px solid var(--secondary);
+}
+
+.row-custom {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-left: 4px solid white;
+}
+
+/* Segments enfants */
+.child-segment {
+    background: var(--bg-lighter);
+}
+
+.child-segment td {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+/* Variance colors */
+.overtime {
+    color: var(--error);
+    font-weight: bold;
+}
+
+.undertime {
+    color: var(--success);
+    font-weight: bold;
+}
+
+/* Wrapper pour scroll horizontal */
+.rundown-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
+    height: calc(100vh - 200px);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+}
+
+.rundown-wrapper::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.rundown-wrapper::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+}
+
+.rundown-wrapper::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+/* Table responsive */
+@media (max-width: 1200px) {
+    .rundown-table {
+        font-size: 0.75rem;
+    }
+    
+    .rundown-table th,
+    .rundown-table td {
+        padding: 0.25rem 0.125rem;
+    }
+    
+    .col-backtime {
+        display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .col-move,
+    .col-lock,
+    .col-variance {
+        display: none;
+    }
+}
+
+/* Table de données génériques */
+.data-table {
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.data-table th {
+    background: var(--bg-lighter);
+    font-size: 0.875rem;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.data-table tr:nth-child(even) {
+    background: var(--bg-tertiary);
+}
+
+.data-table tr:hover {
+    background: var(--bg-lighter);
+}
+
+/* Table condensée */
+.table-condensed th,
+.table-condensed td {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Table avec bordures */
+.table-bordered {
+    border: 1px solid var(--border);
+}
+
+.table-bordered th,
+.table-bordered td {
+    border: 1px solid var(--border);
+}
+
+/* Table striped */
+.table-striped tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Table hover */
+.table-hover tr:hover {
+    background: var(--bg-tertiary);
+}
+
+/* Caption */
+caption {
+    padding: 0.75rem;
+    color: var(--text-muted);
+    text-align: left;
+    caption-side: bottom;
+    font-size: 0.875rem;
+}
+
+/* Drag and drop pour les tables */
+.rundown-table tr[draggable="true"] {
+    cursor: move;
+}
+
+.rundown-table tr.dragging {
+    opacity: 0.5;
+}
+
+.rundown-table tr.drop-target {
+    border-top: 2px solid var(--primary);
+}
+
+/* États des cellules */
+.cell-locked {
+    color: var(--warning);
+}
+
+.cell-error {
+    background: rgba(255, 0, 0, 0.1);
+    color: var(--error);
+}
+
+.cell-success {
+    background: rgba(0, 255, 0, 0.1);
+    color: var(--success);
+}
+
+.cell-warning {
+    background: rgba(255, 255, 0, 0.1);
+    color: var(--warning);
+}
+
+/* Loading state pour les tables */
+.table-loading {
+    position: relative;
+}
+
+.table-loading::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Empty state */
+.table-empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Pagination pour les tables */
+.table-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: between;
+    padding: 1rem;
+    border-top: 1px solid var(--border);
+    background: var(--bg-tertiary);
+}
+
+.table-pagination .pagination-info {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.table-pagination .pagination-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Filtres de table */
+.table-filters {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border);
+}
+
+.table-search {
+    flex: 1;
+    max-width: 300px;
+}
+
+/* Actions de table */
+.table-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.table-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* Tri des colonnes */
+.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.sortable:hover {
+    background: var(--bg-secondary);
+}
+
+.sortable::after {
+    content: " ↕️";
+    opacity: 0.5;
+    font-size: 0.7rem;
+}
+
+.sortable.asc::after {
+    content: " ↑";
+    opacity: 1;
+}
+
+.sortable.desc::after {
+    content: " ↓";
+    opacity: 1;
+}

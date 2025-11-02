@@ -1,0 +1,99 @@
+/* ===== FIX POUR LES PANNEAUX DE LA SECTION JOURNAL ===== */
+
+/* Assigned items list - hauteur adaptative */
+.assigned-items-list {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    min-height: 100px;
+    max-height: 400px; /* Augmenté de 300px à 400px */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Block item entry avec hauteur suffisante */
+.block-item-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    min-height: 50px;
+    border-bottom: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+/* Assign items list dans les modals */
+.assign-items-list {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    min-height: 150px;
+    max-height: 300px; /* Augmenté de 200px à 300px */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Fix pour les éléments audio dans les blocks */
+.block-item-entry audio,
+.block-item-entry .audio-player {
+    max-width: 250px;
+    height: 32px;
+    margin: 0.5rem 0;
+}
+
+/* S'assurer que les contrôles sont visibles */
+.block-item-entry .controls,
+.block-item-entry .btn-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Conteneur pour les segments de blocks */
+.block-segments,
+.segments-container {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.5rem;
+}
+
+/* Fix scrollbar pour ces listes */
+.assigned-items-list::-webkit-scrollbar,
+.assign-items-list::-webkit-scrollbar,
+.block-segments::-webkit-scrollbar {
+    width: 8px;
+}
+
+.assigned-items-list::-webkit-scrollbar-track,
+.assign-items-list::-webkit-scrollbar-track,
+.block-segments::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.assigned-items-list::-webkit-scrollbar-thumb,
+.assign-items-list::-webkit-scrollbar-thumb,
+.block-segments::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.5);
+    border-radius: 4px;
+}
+
+.assigned-items-list::-webkit-scrollbar-thumb:hover,
+.assign-items-list::-webkit-scrollbar-thumb:hover,
+.block-segments::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.7);
+}
+
+/* Fix pour le conteneur principal des blocks */
+.blocks-editor .editor-content {
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+/* S'assurer que le contenu ne dépasse pas */
+.block-item-entry > * {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}

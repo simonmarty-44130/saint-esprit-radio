@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Assign Items Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #ddd;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #2a2a2a;
+            border-radius: 8px;
+        }
+        h2 {
+            color: #00ff9f;
+        }
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #333;
+            border-left: 3px solid #00ff9f;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        .status.ok {
+            background: #00ff9f;
+            color: #000;
+        }
+        .status.error {
+            background: #ff5555;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Tests des corrections - Assign Items to Block</h1>
+    
+    <div class="test-section">
+        <h2>📝 Résumé des corrections</h2>
+        <div class="test-item">
+            <strong>Problème identifié :</strong> Les items dans le modal "Assign Items" n'avaient pas de feedback visuel et étaient difficiles à identifier comme cliquables.
+        </div>
+        <div class="test-item">
+            <strong>Corrections apportées :</strong>
+            <ul>
+                <li>✅ Ajout de styles visuels pour les items (bordures, hover effects)</li>
+                <li>✅ Ajout de boutons "+ Ajouter" visibles</li>
+                <li>✅ Notification de succès après ajout</li>
+                <li>✅ Sauvegarde automatique après ajout</li>
+                <li>✅ Rafraîchissement de la liste après ajout</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔍 Points de test</h2>
+        <div class="test-item">
+            <strong>1. Ouvrir un journal (block)</strong>
+            <span class="status ok">À TESTER</span>
+        </div>
+        <div class="test-item">
+            <strong>2. Cliquer sur "📎 Assign Items"</strong>
+            <span class="status ok">À TESTER</span>
+        </div>
+        <div class="test-item">
+            <strong>3. Vérifier l'apparence des items :</strong>
+            <ul>
+                <li>Bordure visible</li>
+                <li>Changement de couleur au survol</li>
+                <li>Bouton "+ Ajouter" visible</li>
+                <li>Curseur en forme de main</li>
+            </ul>
+            <span class="status ok">À TESTER</span>
+        </div>
+        <div class="test-item">
+            <strong>4. Cliquer sur un item pour l'ajouter</strong>
+            <span class="status ok">À TESTER</span>
+        </div>
+        <div class="test-item">
+            <strong>5. Vérifier :</strong>
+            <ul>
+                <li>Notification de succès apparaît</li>
+                <li>L'item disparaît de la liste disponible</li>
+                <li>L'item apparaît dans le journal</li>
+                <li>Les changements sont sauvegardés</li>
+            </ul>
+            <span class="status ok">À TESTER</span>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🚀 Instructions de test</h2>
+        <div class="test-item">
+            <ol>
+                <li>Lancer le serveur local : <code>python3 test-local.py</code></li>
+                <li>Ouvrir <code>http://localhost:8080</code></li>
+                <li>Se connecter à l'application</li>
+                <li>Aller dans la section "Blocks" (Journaux)</li>
+                <li>Créer ou ouvrir un journal</li>
+                <li>Cliquer sur "📎 Assign Items"</li>
+                <li>Tester l'ajout de news et animations</li>
+            </ol>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>✨ Améliorations visuelles</h2>
+        <div class="test-item">
+            <strong>News :</strong>
+            <ul>
+                <li>Bordure verte (#00ff9f) au survol</li>
+                <li>Bouton vert pour ajouter</li>
+                <li>Transition fluide de 0.2s</li>
+            </ul>
+        </div>
+        <div class="test-item">
+            <strong>Animations :</strong>
+            <ul>
+                <li>Bordure bleue (#00b4d8) au survol</li>
+                <li>Bouton bleu pour ajouter</li>
+                <li>Transition fluide de 0.2s</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        console.log('🧪 Page de test chargée');
+        console.log('📝 Fichiers modifiés :');
+        console.log('  - /frontend/js/managers/BlockManager.js');
+        console.log('  - Lignes 415-423 : Ajout notification et sauvegarde');
+        console.log('  - Lignes 847-864 : Amélioration visuelle des news');
+        console.log('  - Lignes 872-889 : Amélioration visuelle des animations');
+    </script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+/* Conductor Selector Styles - Saint-Esprit Theme */
+
+.conductor-selector-bar {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    padding: 1rem 2rem;
+    border-bottom: 2px solid var(--primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+}
+
+.conductor-selector-bar::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+    opacity: 0.5;
+}
+
+.conductor-selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.conductor-selector label {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.conductor-selector select {
+    padding: 0.5rem 1rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    min-width: 250px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.conductor-selector select:hover {
+    border-color: var(--primary);
+    background: var(--bg-secondary);
+}
+
+.conductor-selector select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0, 255, 159, 0.1);
+}
+
+.conductor-selector .btn-sm {
+    padding: 0.5rem 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: var(--transition);
+    white-space: nowrap;
+    backdrop-filter: blur(10px);
+}
+
+.conductor-selector .btn-sm:hover {
+    background: rgba(0, 255, 159, 0.2);
+    color: var(--primary);
+    border-color: var(--primary);
+    transform: none;
+}
+
+.conductor-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.75rem;
+}
+
+.conductor-info span {
+    padding: 0.25rem 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+/* Conductor List in Modal */
+.conductors-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+.conductor-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 0.5rem;
+    background: var(--bg-tertiary);
+    transition: var(--transition);
+}
+
+.conductor-item:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary);
+    box-shadow: none;
+}
+
+.conductor-item-info {
+    flex: 1;
+}
+
+.conductor-item-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+}
+
+.conductor-item-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.conductor-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.conductor-item-actions button {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: var(--transition);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+}
+
+.conductor-item-actions .btn-load {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.conductor-item-actions .btn-load:hover {
+    background: var(--success);
+    color: var(--bg-primary);
+}
+
+.conductor-item-actions .btn-share {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.conductor-item-actions .btn-share:hover {
+    background: var(--primary);
+    color: var(--bg-primary);
+}
+
+.conductor-item-actions .btn-duplicate {
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+.conductor-item-actions .btn-duplicate:hover {
+    background: var(--warning);
+    color: var(--bg-primary);
+}
+
+.conductor-item-actions .btn-delete {
+    border-color: var(--error);
+    color: var(--error);
+}
+
+.conductor-item-actions .btn-delete:hover {
+    background: var(--error);
+    color: white;
+}
+
+.conductor-item-actions button:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Conductor Type Badge */
+.conductor-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    border: 1px solid;
+}
+
+.conductor-badge.personal {
+    background: rgba(0, 255, 159, 0.1);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.conductor-badge.shared {
+    background: rgba(139, 92, 246, 0.1);
+    color: var(--secondary);
+    border-color: var(--secondary);
+}
+
+/* Empty State */
+.conductors-empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+}
+
+.conductors-empty h4 {
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.conductors-empty p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Scrollbar styling */
+.conductors-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.conductors-list::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.conductors-list::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 4px;
+}
+
+.conductors-list::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary);
+}

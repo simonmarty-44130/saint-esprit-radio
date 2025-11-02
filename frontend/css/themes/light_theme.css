@@ -1,0 +1,380 @@
+/* ===== THÈME CLAIR (NEWS/ANIMATION) ===== */
+
+/* Variables du thème clair */
+body[data-theme="light"] {
+    /* Colors principales */
+    --primary: #0066cc;
+    --secondary: #004499;
+    --success: #008800;
+    --warning: #cc8800;
+    --error: #cc0000;
+    --info: #0066cc;
+    
+    /* Backgrounds */
+    --bg-dark: #ffffff;
+    --bg-darker: #f8f9fa;
+    --bg-light: #f1f3f5;
+    --bg-lighter: #e9ecef;
+    --bg-modal: rgba(0, 0, 0, 0.5);
+    
+    /* Text colors */
+    --text-primary: #212529;
+    --text-secondary: #495057;
+    --text-muted: #6c757d;
+    --text-dark: #343a40;
+    
+    /* Borders */
+    --border: #dee2e6;
+    --border-light: #adb5bd;
+    --border-active: var(--primary);
+}
+
+/* Application du thème clair uniquement aux sections News et Animation */
+#news-section[data-theme="light"],
+#animation-section[data-theme="light"] {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Sidebar dans le thème clair */
+#news-section[data-theme="light"] .sidebar,
+#animation-section[data-theme="light"] .sidebar {
+    background: var(--bg-tertiary);
+    border-right-color: var(--border);
+}
+
+#news-section[data-theme="light"] .sidebar-header,
+#animation-section[data-theme="light"] .sidebar-header {
+    background: var(--bg-lighter);
+    border-bottom-color: var(--border);
+}
+
+/* Content area dans le thème clair */
+#news-section[data-theme="light"] .content-area,
+#animation-section[data-theme="light"] .content-area {
+    background: var(--bg-primary);
+}
+
+/* Items dans le thème clair */
+#news-section[data-theme="light"] .news-item,
+#animation-section[data-theme="light"] .animation-item {
+    background: var(--bg-primary);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+#news-section[data-theme="light"] .news-item:hover,
+#animation-section[data-theme="light"] .animation-item:hover {
+    background: var(--bg-secondary);
+    border-color: var(--border-light);
+}
+
+#news-section[data-theme="light"] .news-item.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+#animation-section[data-theme="light"] .animation-item.active {
+    background: #7c3aed;
+    color: white;
+    border-color: #7c3aed;
+}
+
+#news-section[data-theme="light"] .news-item.active .meta,
+#animation-section[data-theme="light"] .animation-item.active .meta {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+#news-section[data-theme="light"] .news-item .meta,
+#animation-section[data-theme="light"] .animation-item .meta {
+    color: var(--text-muted);
+}
+
+/* Editor dans le thème clair */
+#news-section[data-theme="light"] .editor-toolbar,
+#animation-section[data-theme="light"] .editor-toolbar {
+    background: var(--bg-lighter);
+    border-bottom-color: var(--border);
+}
+
+#news-section[data-theme="light"] .editor-content,
+#animation-section[data-theme="light"] .editor-content {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Text format toolbar */
+#news-section[data-theme="light"] .text-format-toolbar,
+#animation-section[data-theme="light"] .text-format-toolbar {
+    background: var(--bg-tertiary);
+    border-color: var(--border);
+}
+
+/* Formulaires dans le thème clair */
+#news-section[data-theme="light"] input,
+#news-section[data-theme="light"] textarea,
+#news-section[data-theme="light"] select,
+#animation-section[data-theme="light"] input,
+#animation-section[data-theme="light"] textarea,
+#animation-section[data-theme="light"] select {
+    background: var(--bg-primary);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+#news-section[data-theme="light"] input:focus,
+#news-section[data-theme="light"] textarea:focus,
+#news-section[data-theme="light"] select:focus,
+#animation-section[data-theme="light"] input:focus,
+#animation-section[data-theme="light"] textarea:focus,
+#animation-section[data-theme="light"] select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+/* Titre principal de l'éditeur */
+#news-section[data-theme="light"] .editor-content input[type="text"]:first-child,
+#animation-section[data-theme="light"] .editor-content input[type="text"]:first-child {
+    color: var(--text-primary);
+    border-bottom-color: var(--border);
+}
+
+#news-section[data-theme="light"] .editor-content input[type="text"]:first-child:focus,
+#animation-section[data-theme="light"] .editor-content input[type="text"]:first-child:focus {
+    border-bottom-color: var(--primary);
+}
+
+/* Boutons dans le thème clair */
+#news-section[data-theme="light"] .btn-primary,
+#animation-section[data-theme="light"] .btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+#news-section[data-theme="light"] .btn-primary:hover,
+#animation-section[data-theme="light"] .btn-primary:hover {
+    background-color: var(--secondary);
+    border-color: var(--secondary);
+}
+
+#news-section[data-theme="light"] .btn-secondary,
+#animation-section[data-theme="light"] .btn-secondary,
+#news-section[data-theme="light"] .toolbar-btn,
+#animation-section[data-theme="light"] .toolbar-btn {
+    background: var(--bg-tertiary);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+#news-section[data-theme="light"] .btn-secondary:hover,
+#animation-section[data-theme="light"] .btn-secondary:hover,
+#news-section[data-theme="light"] .toolbar-btn:hover,
+#animation-section[data-theme="light"] .toolbar-btn:hover {
+    background: var(--bg-lighter);
+    border-color: var(--border-light);
+}
+
+/* Format buttons */
+#news-section[data-theme="light"] .format-btn,
+#animation-section[data-theme="light"] .format-btn {
+    background: var(--bg-tertiary);
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+#news-section[data-theme="light"] .format-btn:hover,
+#animation-section[data-theme="light"] .format-btn:hover {
+    background: var(--bg-lighter);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+#news-section[data-theme="light"] .format-btn:active,
+#news-section[data-theme="light"] .format-btn.active,
+#animation-section[data-theme="light"] .format-btn:active,
+#animation-section[data-theme="light"] .format-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Duration breakdown */
+#news-section[data-theme="light"] .duration-breakdown,
+#animation-section[data-theme="light"] .duration-breakdown {
+    background: var(--bg-tertiary);
+    border-color: var(--border);
+}
+
+/* Sounds panel */
+#news-section[data-theme="light"] .sounds-panel,
+#animation-section[data-theme="light"] .sounds-panel {
+    background: var(--bg-tertiary);
+    border-color: var(--border);
+}
+
+#news-section[data-theme="light"] .sound-item,
+#animation-section[data-theme="light"] .sound-item {
+    background: var(--bg-primary);
+    border-color: var(--border);
+}
+
+/* Sound types dans le thème clair */
+#news-section[data-theme="light"] .sound-type.microtrottoir,
+#animation-section[data-theme="light"] .sound-type.microtrottoir,
+#animation-section[data-theme="light"] .sound-type.jingle {
+    background: rgba(204, 136, 0, 0.2);
+    color: var(--warning);
+}
+
+#news-section[data-theme="light"] .sound-type.interview,
+#animation-section[data-theme="light"] .sound-type.interview {
+    background: rgba(0, 136, 0, 0.2);
+    color: var(--success);
+}
+
+#news-section[data-theme="light"] .sound-type.ambiance,
+#animation-section[data-theme="light"] .sound-type.ambiance {
+    background: rgba(0, 102, 204, 0.2);
+    color: var(--info);
+}
+
+#news-section[data-theme="light"] .sound-type.musique,
+#animation-section[data-theme="light"] .sound-type.musique {
+    background: rgba(124, 58, 237, 0.2);
+    color: #7c3aed;
+}
+
+#news-section[data-theme="light"] .sound-type.autre,
+#animation-section[data-theme="light"] .sound-type.autre,
+#animation-section[data-theme="light"] .sound-type.effet,
+#animation-section[data-theme="light"] .sound-type.transition {
+    background: rgba(108, 117, 125, 0.2);
+    color: var(--text-muted);
+}
+
+/* Status colors dans le thème clair */
+#news-section[data-theme="light"] .status-draft,
+#animation-section[data-theme="light"] .status-draft {
+    color: var(--text-muted);
+}
+
+#news-section[data-theme="light"] .status-ready,
+#animation-section[data-theme="light"] .status-ready {
+    color: var(--success);
+}
+
+#news-section[data-theme="light"] .status-approved,
+#animation-section[data-theme="light"] .status-approved {
+    color: var(--primary);
+}
+
+/* Welcome screen */
+#news-section[data-theme="light"] .welcome-content h2,
+#animation-section[data-theme="light"] .welcome-content h2 {
+    color: var(--primary);
+}
+
+#news-section[data-theme="light"] .welcome-content p,
+#animation-section[data-theme="light"] .welcome-content p {
+    color: var(--text-secondary);
+}
+
+/* Urgent items */
+#news-section[data-theme="light"] .news-item.urgent,
+#animation-section[data-theme="light"] .animation-item.urgent {
+    border-color: var(--error);
+    background: rgba(204, 0, 0, 0.05);
+}
+
+/* Scheduled items */
+#news-section[data-theme="light"] .news-item.scheduled,
+#animation-section[data-theme="light"] .animation-item.scheduled {
+    background: rgba(0, 102, 204, 0.05);
+}
+
+/* Recurring items */
+#news-section[data-theme="light"] .news-item.recurring,
+#animation-section[data-theme="light"] .animation-item.recurring {
+    background: rgba(0, 136, 0, 0.05);
+}
+
+/* Scrollbars pour le thème clair */
+#news-section[data-theme="light"] ::-webkit-scrollbar-track,
+#animation-section[data-theme="light"] ::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+}
+
+#news-section[data-theme="light"] ::-webkit-scrollbar-thumb,
+#animation-section[data-theme="light"] ::-webkit-scrollbar-thumb {
+    background: var(--border);
+}
+
+#news-section[data-theme="light"] ::-webkit-scrollbar-thumb:hover,
+#animation-section[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-light);
+}
+
+/* Placeholder text */
+#news-section[data-theme="light"] ::placeholder,
+#animation-section[data-theme="light"] ::placeholder {
+    color: var(--text-muted);
+}
+
+/* Duration display */
+#news-section[data-theme="light"] #news-duration-display,
+#animation-section[data-theme="light"] #animation-duration-display {
+    background: var(--bg-tertiary);
+    border-color: var(--border);
+}
+
+/* Icon buttons */
+#news-section[data-theme="light"] .icon-btn,
+#animation-section[data-theme="light"] .icon-btn {
+    background: var(--bg-tertiary);
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+#news-section[data-theme="light"] .icon-btn:hover,
+#animation-section[data-theme="light"] .icon-btn:hover {
+    background: var(--bg-lighter);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+/* File upload buttons */
+#news-section[data-theme="light"] .file-upload-btn,
+#animation-section[data-theme="light"] .file-upload-btn {
+    background: var(--bg-tertiary);
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+#news-section[data-theme="light"] .file-upload-btn:hover,
+#animation-section[data-theme="light"] .file-upload-btn:hover {
+    background: var(--bg-lighter);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+/* Search highlighting */
+#news-section[data-theme="light"] .news-item.highlight,
+#animation-section[data-theme="light"] .animation-item.highlight {
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+/* Virtual list en thème clair */
+#news-section[data-theme="light"] .virtual-list-container,
+#animation-section[data-theme="light"] .virtual-list-container {
+    background: var(--bg-primary);
+}
+
+/* Block assignment en thème clair */
+#news-section[data-theme="light"] select[id$="assigned-block"],
+#animation-section[data-theme="light"] select[id$="assigned-block"] {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border);
+}

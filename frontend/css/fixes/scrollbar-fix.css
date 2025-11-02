@@ -1,0 +1,129 @@
+/* ===== FIX GLOBAL POUR SCROLLBARS ===== */
+
+/* Fix pour TOUS les editor-content dans toutes les sections */
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Editor content global - simplifié */
+.editor-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Force scrollbar visible */
+.editor-content::-webkit-scrollbar {
+    width: 12px !important;
+    display: block !important;
+}
+
+.editor-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+.editor-content::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.editor-content::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+/* Sections principales - layout flexible */
+.section main {
+    height: 100%;
+    display: flex;
+    flex: 1;
+}
+
+/* Fix pour les listes dans les sidebars */
+.news-list,
+.animation-list,
+.block-list,
+.fridge-list {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.5rem;
+    min-height: 0;
+}
+
+/* Scrollbar pour les listes */
+.news-list::-webkit-scrollbar,
+.animation-list::-webkit-scrollbar,
+.block-list::-webkit-scrollbar,
+.fridge-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.news-list::-webkit-scrollbar-track,
+.animation-list::-webkit-scrollbar-track,
+.block-list::-webkit-scrollbar-track,
+.fridge-list::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.1);
+}
+
+.news-list::-webkit-scrollbar-thumb,
+.animation-list::-webkit-scrollbar-thumb,
+.block-list::-webkit-scrollbar-thumb,
+.fridge-list::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+}
+
+/* Fix spécifique pour les textareas */
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Assure que le contenu principal des sections a un scrollbar si nécessaire */
+.section-content,
+.main-content {
+    overflow-y: auto;
+    height: 100%;
+}
+
+/* Scrollbar global plus visible */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.5);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.7);
+}
+
+/* Pour Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(128, 128, 128, 0.5) rgba(0, 0, 0, 0.1);
+}
+
+/* Fix pour éviter le débordement horizontal */
+body {
+    overflow-x: hidden;
+}
+
+.section {
+    overflow-x: hidden;
+}

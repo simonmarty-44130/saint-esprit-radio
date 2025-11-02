@@ -1,0 +1,214 @@
+/* ===== RESET & VARIABLES CSS - THÈME BLANC SAINT-ESPRIT ===== */
+
+/* CSS Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Variables CSS - Thème Blanc Moderne */
+:root {
+    /* Couleurs principales - Conservées pour l'identité Saint-Esprit */
+    --primary: #00B4D8;          /* Accent bleu cyan Saint-Esprit */
+    --primary-dark: #003459;     /* Bleu foncé pour hover */
+    --primary-light: rgba(0, 180, 216, 0.1);  /* Version très claire du bleu */
+    --primary-hover: rgba(0, 180, 216, 0.15); /* Pour les hovers subtils */
+    
+    /* Couleurs secondaires */
+    --secondary: #00ffdd;         /* Cyan secondaire */
+    --success: #28a745;          /* Vert succès standard */
+    --warning: #ffc107;          /* Jaune warning standard */
+    --error: #dc3545;            /* Rouge erreur standard */
+    --info: #17a2b8;             /* Bleu info standard */
+    
+    /* Fonds - Thème blanc */
+    --bg-primary: #ffffff;        /* Fond principal blanc */
+    --bg-secondary: #f8f9fa;      /* Fond secondaire gris très clair */
+    --bg-tertiary: #f1f3f4;       /* Fond tertiaire gris clair */
+    --bg-hover: #e9ecef;          /* Fond au survol */
+    --bg-dark: #f8f9fa;           /* CHANGÉ: était #343a40, maintenant clair pour thème blanc */
+    --bg-darker: #f1f3f4;         /* CHANGÉ: était #212529, maintenant clair pour thème blanc */
+    --bg-modal: rgba(0, 0, 0, 0.5); /* Overlay modal semi-transparent */
+    
+    /* Textes - Adaptés pour fond blanc */
+    --text-primary: #212529;      /* Texte principal sombre */
+    --text-secondary: #495057;    /* Texte secondaire */
+    --text-muted: #6c757d;        /* Texte atténué */
+    --text-light: #adb5bd;        /* Texte clair */
+    --text-white: #ffffff;        /* Texte blanc (pour éléments sur fond sombre) */
+    --text-dark: #343a40;         /* Texte sombre */
+    
+    /* Bordures */
+    --border: #dee2e6;            /* Bordures standard */
+    --border-light: #e9ecef;      /* Bordures claires */
+    --border-dark: #ced4da;       /* Bordures plus marquées */
+    --border-active: var(--primary);  /* Bordure active/focus */
+    
+    /* Ombres - Adaptées pour thème blanc */
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    --shadow-xl: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    
+    /* Tailles */
+    --header-height: 80px;
+    --sidebar-width: 320px;
+    --border-radius: 8px;
+    --border-radius-sm: 4px;
+    --border-radius-lg: 12px;
+    
+    /* Transitions */
+    --transition: all 0.2s ease;
+    --transition-slow: all 0.3s ease;
+    
+    /* Z-index layers */
+    --z-header: 100;
+    --z-modal: 1000;
+    --z-tooltip: 1001;
+    --z-notification: 1002;
+}
+
+/* Base styles - Thème blanc */
+html, body {
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus styles - Adaptés pour thème blanc */
+*:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Focus visible uniquement au clavier */
+*:focus:not(:focus-visible) {
+    outline: none;
+}
+
+*:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Scrollbar styles - Adaptées pour thème blanc */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-dark);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Sélection de texte */
+::selection {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+::-moz-selection {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+/* Hover effects - Adaptés pour thème blanc */
+.btn:hover,
+.toolbar-btn:hover,
+.tool-btn:hover {
+    background: var(--primary) !important;
+    color: var(--text-white) !important;
+    border-color: var(--primary);
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+}
+
+.nav-item:hover {
+    background: var(--primary-light) !important;
+    color: var(--primary-dark);
+    border-color: var(--primary);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark) !important;
+    border-color: var(--primary-dark);
+}
+
+button:hover {
+    transition: all 0.2s ease;
+}
+
+/* Links */
+a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+}
+
+h1 { font-size: 2rem; }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+h5 { font-size: 1.125rem; }
+h6 { font-size: 1rem; }
+
+p {
+    margin-bottom: 1rem;
+}
+
+/* Form elements base */
+input,
+textarea,
+select {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    padding: 0.5rem;
+    transition: var(--transition);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem var(--primary-light);
+}
+
+/* Utility classes */
+.bg-primary { background-color: var(--bg-primary) !important; }
+.bg-secondary { background-color: var(--bg-secondary) !important; }
+.bg-tertiary { background-color: var(--bg-tertiary) !important; }
+.text-primary { color: var(--text-primary) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.text-muted { color: var(--text-muted) !important; }
+.text-white { color: var(--text-white) !important; }

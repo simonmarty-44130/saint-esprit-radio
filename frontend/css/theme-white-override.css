@@ -1,0 +1,317 @@
+/* ===== THÈME BLANC SAINT-ESPRIT - OVERRIDES GLOBAUX ===== */
+/* Ce fichier contient les overrides spécifiques pour le thème blanc */
+
+/* REDÉFINITION DES VARIABLES RACINES POUR FORCER LE THÈME BLANC */
+:root {
+    /* Écraser les variables sombres avec des valeurs claires */
+    --bg-dark: #f8f9fa !important;      /* était #343a40 -> maintenant clair */
+    --bg-darker: #f1f3f4 !important;    /* était #212529 -> maintenant clair */
+    --bg-light: #e9ecef !important;     /* déjà clair mais on s'assure */
+    --bg-lighter: #ffffff !important;   /* blanc pur */
+}
+
+/* Cards et panneaux */
+.card,
+.panel,
+.content-section,
+.news-item,
+.animation-item,
+.block-item {
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-sm) !important;
+    color: var(--text-primary) !important;
+}
+
+.card:hover,
+.news-item:hover,
+.animation-item:hover {
+    box-shadow: var(--shadow) !important;
+    transform: translateY(-2px);
+}
+
+/* Inputs et formulaires */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+textarea,
+select {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border) !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 0.2rem var(--primary-light) !important;
+}
+
+/* Toolbar */
+.toolbar {
+    background: var(--bg-secondary) !important;
+    border-bottom: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+/* Status badges */
+.badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: rgba(40, 167, 69, 0.1);
+    color: var(--success);
+    border: 1px solid var(--success);
+}
+
+.badge-warning {
+    background: rgba(255, 193, 7, 0.1);
+    color: var(--warning);
+    border: 1px solid var(--warning);
+}
+
+.badge-danger {
+    background: rgba(220, 53, 69, 0.1);
+    color: var(--error);
+    border: 1px solid var(--error);
+}
+
+.badge-info {
+    background: rgba(23, 162, 184, 0.1);
+    color: var(--info);
+    border: 1px solid var(--info);
+}
+
+.badge-primary {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    border: 1px solid var(--primary);
+}
+
+/* Tooltips */
+.tooltip {
+    background: var(--bg-secondary) !important;
+    color: var(--text-white) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+/* Notifications */
+.notification {
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-lg) !important;
+    color: var(--text-primary) !important;
+}
+
+.notification.success {
+    border-left: 4px solid var(--success);
+}
+
+.notification.warning {
+    border-left: 4px solid var(--warning);
+}
+
+.notification.error {
+    border-left: 4px solid var(--error);
+}
+
+.notification.info {
+    border-left: 4px solid var(--info);
+}
+
+/* Progress bars */
+.progress {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+/* Dropdown menus */
+.dropdown-menu {
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+
+.dropdown-item {
+    color: var(--text-primary) !important;
+    padding: 0.5rem 1rem;
+}
+
+.dropdown-item:hover {
+    background: var(--primary-light) !important;
+    color: var(--primary-dark) !important;
+}
+
+/* Audio player */
+.audio-player {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border) !important;
+}
+
+.audio-controls button {
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-primary) !important;
+}
+
+.audio-controls button:hover {
+    background: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+}
+
+/* Waveform */
+.waveform-container {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border) !important;
+}
+
+/* Timeline/Conductor */
+.timeline-header {
+    background: var(--bg-secondary) !important;
+    border-bottom: 2px solid var(--primary) !important;
+}
+
+.timeline-item {
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border) !important;
+}
+
+.timeline-item:hover {
+    background: var(--bg-secondary) !important;
+}
+
+.timeline-item.active {
+    background: var(--primary) !important;
+    color: white !important;
+}
+
+/* Editor areas */
+.editor-panel {
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border) !important;
+}
+
+.editor-toolbar {
+    background: var(--bg-secondary) !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+
+/* Code/text editor */
+.CodeMirror {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+.CodeMirror-gutters {
+    background: var(--bg-secondary) !important;
+    border-right: 1px solid var(--border) !important;
+}
+
+/* List items */
+.list-item {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+    padding: 1rem;
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition);
+}
+
+.list-item:hover {
+    background: var(--bg-secondary);
+    box-shadow: var(--shadow-sm);
+}
+
+.list-item.selected {
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+
+/* Tabs */
+.tabs {
+    border-bottom: 2px solid var(--border);
+}
+
+.tab {
+    background: transparent;
+    color: var(--text-muted);
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-bottom: 2px solid transparent;
+    transition: var(--transition);
+}
+
+.tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+}
+
+.tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    background: var(--bg-primary);
+}
+
+/* Animations pour le thème blanc */
+@keyframes pulse-primary {
+    0% { box-shadow: 0 0 0 0 rgba(0, 180, 216, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 180, 216, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 180, 216, 0); }
+}
+
+.pulse {
+    animation: pulse-primary 2s infinite;
+}
+
+/* Dark mode toggle button (pour futur usage) */
+.theme-toggle {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.theme-toggle:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+/* Print styles */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .no-print {
+        display: none !important;
+    }
+}

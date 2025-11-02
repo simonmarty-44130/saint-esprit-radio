@@ -1,0 +1,1028 @@
+/**
+ * Storage AWS pour Saint-Esprit
+ * Remplace le storage IndexedDB/localStorage par S3
+ * Interface compatible avec le code existant
+ */
+class Storage {
+    constructor() {
+        // Configuration pour accès HTTP direct au bucket S3 public
+        this.config = {
+            region: 'eu-west-3',
+            bucket: 'saint-esprit-audio',
+            baseUrl: 'https://saint-esprit-audio.s3.eu-west-3.amazonaws.com'
+        };
+        
+        // Pour compatibilité, créer un mock S3 qui utilise fetch
+        this.s3 = {
+            getObject: (params) => {
+                return {
+                    promise: () => this.httpGetObject(params)
+                };
+            },
+            putObject: (params) => {
+                return {
+                    promise: () => this.httpPutObject(params)
+                };
+            },
+            upload: (params) => {
+                // upload est un alias de putObject pour compatibilité
+                return {
+                    promise: () => this.httpPutObject(params).then(result => ({
+                        ...result,
+                        Location: `${this.config.baseUrl}/${params.Key}`
+                    }))
+                };
+            },
+            deleteObject: (params) => {
+                return {
+                    promise: () => this.httpDeleteObject(params)
+                };
+            },
+            listObjectsV2: (params) => {
+                return {
+                    promise: () => this.httpListObjects(params)
+                };
+            },
+            headObject: (params) => {
+                return {
+                    promise: () => this.httpHeadObject(params)
+                };
+            }
+        };
+        
+        // État local
+        this.userId = this.getCurrentUser();
+        this.data = null;
+        this.lastSyncCheck = 0;
+        
+        console.log(`🔧 Storage initialized for user: ${this.userId} (using HTTP mode)`);
+    }
+
+    // ===== INTERFACE COMPATIBLE AVEC L'EXISTANT =====
+    
+    /**
+     * Initialisation (interface compatible)
+     */
+    // Méthodes HTTP pour remplacer AWS SDK
+    async httpGetObject(params) {
+        const url = `${this.config.baseUrl}/${params.Key}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw { code: 'NoSuchKey' };
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const text = await response.text();
+        return { Body: text };
+    }
+    
+    async httpPutObject(params) {
+        const url = `${this.config.baseUrl}/${params.Key}`;
+        const response = await fetch(url, {
+            method: 'PUT',
+            body: params.Body,
+            headers: {
+                'Content-Type': params.ContentType || 'application/json'
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return {};
+    }
+    
+    async httpHeadObject(params) {
+        const url = `${this.config.baseUrl}/${params.Key}`;
+        const response = await fetch(url, {
+            method: 'HEAD'
+        });
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw { code: 'NoSuchKey' };
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return {
+            Metadata: {},
+            ContentType: response.headers.get('content-type'),
+            ContentLength: response.headers.get('content-length')
+        };
+    }
+    
+    async httpDeleteObject(params) {
+        const url = `${this.config.baseUrl}/${params.Key}`;
+        const response = await fetch(url, {
+            method: 'DELETE'
+        });
+        if (!response.ok && response.status !== 404) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return {};
+    }
+    
+    async httpListObjects(params) {
+        // Pour l'instant, retourner une liste vide
+        // En production, utiliser l'API S3 list ou un endpoint backend
+        return {
+            Contents: [],
+            IsTruncated: false
+        };
+    }
+    
+    async init() {
+        try {
+            // Test connexion avec une requête simple
+            console.log('✅ Storage connection established (HTTP mode)');
+            
+            // Charger données utilisateur
+            this.data = await this.loadUserDataFromS3();
+            
+            // Migration des données locales si nécessaire
+            await this.migrateLocalData();
+            
+            return true;
+        } catch (error) {
+            console.error('❌ Storage init failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Sauvegarder toutes les données (interface compatible)
+     * Remplace l'ancien système localStorage/IndexedDB
+     */
+    async save(data) {
+        try {
+            // Utiliser la version actuelle stockée ou celle des données
+            const currentVersion = this.data?.version || data.version || 0;
+            const dataToSave = {
+                ...data,
+                userId: this.userId,
+                lastModified: Date.now(),
+                version: currentVersion + 1,
+                lastSavedBy: this.userId
+            };
+
+            console.log(`💾 Saving data to S3, version: ${dataToSave.version}`);
+
+            // Sauvegarder sur S3
+            await this.s3.putObject({
+                Bucket: this.config.bucket,
+                Key: `users/${this.userId}/data.json`,
+                Body: JSON.stringify(dataToSave, null, 2),
+                ContentType: 'application/json',
+                Metadata: {
+                    'user-id': this.userId,
+                    'saved-at': Date.now().toString()
+                }
+            }).promise();
+
+            // Mettre à jour état de sync
+            await this.updateSyncState(dataToSave.version);
+            
+            this.data = dataToSave;
+            console.log('✅ Data saved to S3');
+            
+            return dataToSave;
+        } catch (error) {
+            console.error('❌ Error saving to S3:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Charger toutes les données (interface compatible)
+     */
+    async load() {
+        if (this.data) {
+            return this.data;
+        }
+        
+        this.data = await this.loadUserDataFromS3();
+        return this.data;
+    }
+
+    /**
+     * Charger données depuis S3
+     */
+    async loadUserDataFromS3() {
+        try {
+            const response = await this.s3.getObject({
+                Bucket: this.config.bucket,
+                Key: `users/${this.userId}/data.json`
+            }).promise();
+            
+            const data = typeof response.Body === 'string' 
+                ? JSON.parse(response.Body) 
+                : JSON.parse(response.Body.toString());
+            console.log(`📥 Data loaded from S3, version: ${data.version}`);
+            return data;
+            
+        } catch (error) {
+            if (error.code === 'NoSuchKey') {
+                console.log('📄 No existing data, creating new user');
+                return this.createEmptyUserData();
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Créer structure vide pour nouveau utilisateur
+     */
+    createEmptyUserData() {
+        return {
+            userId: this.userId,
+            news: [],
+            animations: [],
+            blocks: [],
+            conductor: [],
+            settings: {
+                theme: 'dark',
+                autoSave: true,
+                syncInterval: 10000
+            },
+            templates: {},
+            version: 1,
+            createdAt: Date.now(),
+            lastModified: Date.now()
+        };
+    }
+
+    // ===== GESTION AUDIO (interface compatible avec audio-storage.js) =====
+    
+    /**
+     * Sauvegarder fichier audio (interface compatible)
+     */
+    async saveAudioFile(audioFileId, audioData) {
+        try {
+            const key = `audio/${this.userId}/${audioFileId}.mp3`;
+            
+            // Convert data URL to blob si nécessaire
+            let audioBlob;
+            if (typeof audioData.data === 'string' && audioData.data.startsWith('data:')) {
+                audioBlob = this.dataURLtoBlob(audioData.data);
+            } else {
+                audioBlob = audioData.data;
+            }
+
+            // Upload vers S3
+            const uploadResult = await this.s3.upload({
+                Bucket: this.config.bucket,
+                Key: key,
+                Body: audioBlob,
+                ContentType: audioData.type || 'audio/mp3',
+                Metadata: {
+                    'audio-id': audioFileId,
+                    'uploaded-by': this.userId,
+                    'original-name': audioData.name || 'audio.mp3',
+                    'duration': audioData.duration || '0:00'
+                }
+            }).promise();
+
+            console.log(`🎵 Audio saved to S3: ${key}`);
+            
+            // Retourner metadata compatible
+            return {
+                id: audioFileId,
+                key: key,
+                url: uploadResult.Location,
+                name: audioData.name,
+                type: audioData.type,
+                duration: audioData.duration,
+                timestamp: Date.now()
+            };
+            
+        } catch (error) {
+            console.error('❌ Error saving audio to S3:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Récupérer fichier audio (interface compatible)
+     */
+    async getAudioFile(audioFileId) {
+        try {
+            const key = `audio/${this.userId}/${audioFileId}.mp3`;
+            
+            // Récupérer metadata
+            const headResponse = await this.s3.headObject({
+                Bucket: this.config.bucket,
+                Key: key
+            }).promise();
+
+            // Construire URL direct
+            const url = `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com/${key}`;
+            
+            // Retourner format compatible avec l'existant
+            return {
+                id: audioFileId,
+                data: url, // URL au lieu de data URI
+                name: headResponse.Metadata['original-name'] || 'audio.mp3',
+                type: headResponse.ContentType || 'audio/mp3',
+                duration: headResponse.Metadata['duration'] || '0:00',
+                timestamp: parseInt(headResponse.Metadata['uploaded-at'] || Date.now())
+            };
+            
+        } catch (error) {
+            if (error.code === 'NotFound') {
+                return null;
+            }
+            console.error('❌ Error getting audio from S3:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Supprimer fichier audio (interface compatible)
+     */
+    async deleteAudioFile(audioFileId) {
+        try {
+            const key = `audio/${this.userId}/${audioFileId}.mp3`;
+            
+            await this.s3.deleteObject({
+                Bucket: this.config.bucket,
+                Key: key
+            }).promise();
+            
+            console.log(`🗑️ Audio deleted from S3: ${key}`);
+        } catch (error) {
+            console.error('❌ Error deleting audio from S3:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Lister tous les IDs audio (interface compatible)
+     */
+    async getAllAudioIds() {
+        try {
+            const response = await this.s3.listObjects({
+                Bucket: this.config.bucket,
+                Prefix: `audio/${this.userId}/`
+            }).promise();
+            
+            const audioIds = response.Contents.map(obj => {
+                const filename = obj.Key.split('/').pop();
+                return filename.replace('.mp3', '');
+            });
+            
+            return audioIds;
+        } catch (error) {
+            console.error('❌ Error listing audio files:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Lister tous les fichiers audio avec métadonnées (interface compatible AudioEditor)
+     */
+    async getAllAudioFiles() {
+        try {
+            const audioIds = await this.getAllAudioIds();
+            const audioFiles = [];
+            
+            for (const audioId of audioIds) {
+                const audioData = await this.getAudioFile(audioId);
+                if (audioData) {
+                    audioFiles.push(audioData);
+                }
+            }
+            
+            console.log(`📂 Loaded ${audioFiles.length} audio files from S3`);
+            return audioFiles;
+        } catch (error) {
+            console.error('❌ Error getting all audio files:', error);
+            return [];
+        }
+    }
+
+    // ===== SYSTÈME DE VERROUILLAGE (LOCKS) =====
+    
+    /**
+     * Verrouiller un élément pour édition
+     */
+    async lockItem(type, itemId) {
+        try {
+            const locks = await this.getLocks();
+            const lockId = `lock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            // Vérifier si déjà verrouillé
+            if (locks[type] && locks[type][itemId]) {
+                const existingLock = locks[type][itemId];
+                if (existingLock.lockedBy !== this.userId) {
+                    return {
+                        success: false,
+                        lockedBy: existingLock.lockedBy,
+                        lockedAt: existingLock.lockedAt
+                    };
+                }
+            }
+            
+            // Créer le verrou
+            if (!locks[type]) locks[type] = {};
+            locks[type][itemId] = {
+                lockedBy: this.userId,
+                lockedAt: Date.now(),
+                lockId: lockId
+            };
+            
+            // Sauvegarder sur S3
+            await this.s3.putObject({
+                Bucket: this.config.bucket,
+                Key: 'locks/global-locks.json',
+                Body: JSON.stringify(locks, null, 2),
+                ContentType: 'application/json'
+            }).promise();
+            
+            console.log(`🔒 Item locked: ${type}/${itemId} by ${this.userId}`);
+            return { success: true, lockId };
+            
+        } catch (error) {
+            console.error('❌ Error locking item:', error);
+            return { success: false, error };
+        }
+    }
+    
+    /**
+     * Déverrouiller un élément
+     */
+    async unlockItem(type, itemId) {
+        try {
+            const locks = await this.getLocks();
+            
+            // Vérifier que c'est bien notre verrou
+            if (locks[type] && locks[type][itemId]) {
+                if (locks[type][itemId].lockedBy !== this.userId) {
+                    console.warn('⚠️ Cannot unlock: not owner');
+                    return { success: false, reason: 'not_owner' };
+                }
+                
+                // Supprimer le verrou
+                delete locks[type][itemId];
+                
+                // Nettoyer les objets vides
+                if (Object.keys(locks[type]).length === 0) {
+                    delete locks[type];
+                }
+                
+                // Sauvegarder
+                await this.s3.putObject({
+                    Bucket: this.config.bucket,
+                    Key: 'locks/global-locks.json',
+                    Body: JSON.stringify(locks, null, 2),
+                    ContentType: 'application/json'
+                }).promise();
+                
+                console.log(`🔓 Item unlocked: ${type}/${itemId}`);
+                return { success: true };
+            }
+            
+            return { success: false, reason: 'no_lock' };
+            
+        } catch (error) {
+            console.error('❌ Error unlocking item:', error);
+            return { success: false, error };
+        }
+    }
+    
+    /**
+     * Vérifier si un élément est verrouillé
+     */
+    async isItemLocked(type, itemId) {
+        try {
+            const locks = await this.getLocks();
+            if (locks[type] && locks[type][itemId]) {
+                const lock = locks[type][itemId];
+                // Vérifier si le verrou n'est pas expiré (5 minutes)
+                const isExpired = (Date.now() - lock.lockedAt) > (5 * 60 * 1000);
+                if (isExpired) {
+                    await this.forceUnlock(type, itemId);
+                    return false;
+                }
+                return lock.lockedBy !== this.userId;
+            }
+            return false;
+        } catch (error) {
+            console.error('❌ Error checking lock:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Obtenir les infos d'un verrou
+     */
+    async getItemLock(type, itemId) {
+        try {
+            const locks = await this.getLocks();
+            if (locks[type] && locks[type][itemId]) {
+                return locks[type][itemId];
+            }
+            return null;
+        } catch (error) {
+            console.error('❌ Error getting lock:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Récupérer tous les verrous
+     */
+    async getLocks() {
+        try {
+            const response = await this.s3.getObject({
+                Bucket: this.config.bucket,
+                Key: 'locks/global-locks.json'
+            }).promise();
+            
+            return JSON.parse(response.Body.toString());
+        } catch (error) {
+            if (error.code === 'NoSuchKey') {
+                return {};
+            }
+            throw error;
+        }
+    }
+    
+    /**
+     * Rafraîchir un verrou (heartbeat)
+     */
+    async refreshLock(type, itemId) {
+        try {
+            const locks = await this.getLocks();
+            
+            if (locks[type] && locks[type][itemId]) {
+                if (locks[type][itemId].lockedBy === this.userId) {
+                    locks[type][itemId].lockedAt = Date.now();
+                    
+                    await this.s3.putObject({
+                        Bucket: this.config.bucket,
+                        Key: 'locks/global-locks.json',
+                        Body: JSON.stringify(locks, null, 2),
+                        ContentType: 'application/json'
+                    }).promise();
+                    
+                    console.log(`💓 Lock refreshed: ${type}/${itemId}`);
+                    return { success: true };
+                }
+            }
+            return { success: false };
+        } catch (error) {
+            console.error('❌ Error refreshing lock:', error);
+            return { success: false };
+        }
+    }
+    
+    /**
+     * Nettoyer les verrous expirés
+     */
+    async cleanExpiredLocks() {
+        try {
+            const locks = await this.getLocks();
+            const now = Date.now();
+            const timeout = 5 * 60 * 1000; // 5 minutes
+            let hasChanges = false;
+            
+            for (const [type, typeLocks] of Object.entries(locks)) {
+                for (const [itemId, lock] of Object.entries(typeLocks)) {
+                    if (now - lock.lockedAt > timeout) {
+                        delete locks[type][itemId];
+                        hasChanges = true;
+                        console.log(`🧹 Expired lock cleaned: ${type}/${itemId} (was locked by ${lock.lockedBy})`);
+                    }
+                }
+                
+                if (Object.keys(locks[type]).length === 0) {
+                    delete locks[type];
+                }
+            }
+            
+            if (hasChanges) {
+                await this.s3.putObject({
+                    Bucket: this.config.bucket,
+                    Key: 'locks/global-locks.json',
+                    Body: JSON.stringify(locks, null, 2),
+                    ContentType: 'application/json'
+                }).promise();
+            }
+            
+            return { cleaned: hasChanges };
+        } catch (error) {
+            console.error('❌ Error cleaning locks:', error);
+            return { cleaned: false };
+        }
+    }
+    
+    /**
+     * Forcer le déverrouillage (admin ou timeout)
+     */
+    async forceUnlock(type, itemId) {
+        try {
+            const locks = await this.getLocks();
+            
+            if (locks[type] && locks[type][itemId]) {
+                delete locks[type][itemId];
+                
+                if (Object.keys(locks[type]).length === 0) {
+                    delete locks[type];
+                }
+                
+                await this.s3.putObject({
+                    Bucket: this.config.bucket,
+                    Key: 'locks/global-locks.json',
+                    Body: JSON.stringify(locks, null, 2),
+                    ContentType: 'application/json'
+                }).promise();
+                
+                console.log(`⚡ Force unlocked: ${type}/${itemId}`);
+                return { success: true };
+            }
+            
+            return { success: false };
+        } catch (error) {
+            console.error('❌ Error force unlocking:', error);
+            return { success: false };
+        }
+    }
+    
+    // ===== SYNCHRONISATION MULTI-UTILISATEURS =====
+    
+    /**
+     * Mettre à jour état de synchronisation
+     */
+    async updateSyncState(userVersion) {
+        try {
+            const syncState = await this.getSyncState();
+            
+            syncState.users = syncState.users || {};
+            syncState.users[this.userId] = {
+                lastModified: Date.now(),
+                version: userVersion,
+                status: 'active'
+            };
+            syncState.lastUpdate = Date.now();
+
+            await this.s3.putObject({
+                Bucket: this.config.bucket,
+                Key: 'sync/global-state.json',
+                Body: JSON.stringify(syncState, null, 2),
+                ContentType: 'application/json'
+            }).promise();
+
+            console.log(`📡 Sync state updated for ${this.userId}`);
+        } catch (error) {
+            console.error('❌ Error updating sync state:', error);
+        }
+    }
+
+    /**
+     * Récupérer état de synchronisation
+     */
+    async getSyncState() {
+        try {
+            const response = await this.s3.getObject({
+                Bucket: this.config.bucket,
+                Key: 'sync/global-state.json'
+            }).promise();
+            
+            return JSON.parse(response.Body.toString());
+        } catch (error) {
+            if (error.code === 'NoSuchKey') {
+                return {
+                    users: {},
+                    lastUpdate: Date.now(),
+                    created: Date.now()
+                };
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Détecter changements d'autres utilisateurs
+     */
+    async detectChanges() {
+        const syncState = await this.getSyncState();
+        const changes = [];
+
+        for (const [userId, userInfo] of Object.entries(syncState.users || {})) {
+            if (userId !== this.userId && userInfo.lastModified > this.lastSyncCheck) {
+                changes.push({
+                    userId,
+                    lastModified: userInfo.lastModified,
+                    version: userInfo.version
+                });
+            }
+        }
+
+        this.lastSyncCheck = Date.now();
+        return changes;
+    }
+
+    /**
+     * Charger données d'un autre utilisateur
+     */
+    async loadOtherUserData(targetUserId) {
+        try {
+            const response = await this.s3.getObject({
+                Bucket: this.config.bucket,
+                Key: `users/${targetUserId}/data.json`
+            }).promise();
+            
+            return JSON.parse(response.Body.toString());
+        } catch (error) {
+            console.error(`❌ Error loading data for ${targetUserId}:`, error);
+            return null;
+        }
+    }
+
+    // ===== MIGRATION ET BACKUP =====
+    
+    /**
+     * Migrer données depuis localStorage/IndexedDB
+     */
+    async migrateLocalData() {
+        try {
+            // Vérifier s'il y a des données à migrer
+            const localData = localStorage.getItem('saintEsprit_data');
+            if (!localData) return;
+
+            console.log('🔄 Migrating local data to S3...');
+            
+            const parsedData = JSON.parse(localData);
+            
+            // Sauvegarder vers S3
+            await this.save(parsedData);
+            
+            // Nettoyer localStorage après migration réussie
+            localStorage.removeItem('saintEsprit_data');
+            console.log('✅ Local data migrated to S3');
+            
+        } catch (error) {
+            console.error('❌ Migration failed:', error);
+        }
+    }
+
+    /**
+     * Export complet (interface compatible)
+     */
+    async exportData() {
+        const data = await this.load();
+        const exportData = {
+            ...data,
+            exportDate: new Date().toISOString(),
+            exportedBy: this.userId,
+            exportVersion: '2.0-aws'
+        };
+        
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
+            type: 'application/json' 
+        });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `saint-esprit-export-${this.userId}-${Date.now()}.json`;
+        a.click();
+        
+        URL.revokeObjectURL(url);
+        console.log('📥 Data exported');
+    }
+
+    // ===== UTILITAIRES =====
+    
+    getCurrentUser() {
+        let userId = localStorage.getItem('saint-esprit-user');
+        let userRole = localStorage.getItem('saint-esprit-role');
+        
+        // Vérifier l'authentification
+        const isAuthenticated = localStorage.getItem('saint-esprit-authenticated');
+        
+        if (!userId || !isAuthenticated) {
+            // Si pas authentifié, retourner anonymous (Cognito gère la redirection)
+            console.error('❌ Utilisateur non authentifié');
+            return 'anonymous';
+        }
+        
+        // Ajouter sélection de rôle si pas encore défini
+        if (!userRole) {
+            this.selectUserRole();
+        }
+        
+        // Ajouter bouton de déconnexion si pas déjà présent
+        this.addLogoutButton();
+        
+        return userId.toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+    
+    addLogoutButton() {
+        // Vérifier si le bouton existe déjà
+        if (document.getElementById('role-switch-button')) return;
+        
+        // Attendre que le DOM soit prêt
+        setTimeout(() => {
+            const currentRole = localStorage.getItem('saint-esprit-role') || 'journalist';
+            const otherRole = currentRole === 'journalist' ? 'bénévole' : 'journaliste';
+            
+            const roleSwitchBtn = document.createElement('button');
+            roleSwitchBtn.id = 'role-switch-button';
+            roleSwitchBtn.className = 'role-switch-btn';
+            roleSwitchBtn.innerHTML = `🔄 Passer en mode ${otherRole}`;
+            roleSwitchBtn.style.cssText = `
+                background: #2196F3;
+                color: white;
+                border: none;
+                padding: 8px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+                margin: 10px;
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                z-index: 9999;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            `;
+            
+            roleSwitchBtn.onclick = () => this.switchRole();
+            
+            document.body.appendChild(roleSwitchBtn);
+            
+            // Ajouter aussi un bouton pour changer d'utilisateur
+            const userSwitchBtn = document.createElement('button');
+            userSwitchBtn.id = 'user-switch-button';
+            userSwitchBtn.className = 'user-switch-btn';
+            userSwitchBtn.innerHTML = `👤 ${this.userId}`;
+            userSwitchBtn.title = 'Changer d\'utilisateur';
+            userSwitchBtn.style.cssText = `
+                background: #4CAF50;
+                color: white;
+                border: none;
+                padding: 8px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+                margin: 10px;
+                position: fixed;
+                top: 10px;
+                right: 160px;
+                z-index: 9999;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            `;
+            
+            userSwitchBtn.onclick = () => this.logout();
+            
+            document.body.appendChild(userSwitchBtn);
+        }, 1000);
+    }
+    
+    switchRole() {
+        const currentRole = localStorage.getItem('saint-esprit-role') || 'journalist';
+        const newRole = currentRole === 'journalist' ? 'volunteer' : 'journalist';
+        
+        if (confirm(`Passer en mode ${newRole === 'journalist' ? 'journaliste' : 'bénévole'} ?`)) {
+            localStorage.setItem('saint-esprit-role', newRole);
+            
+            // Rediriger vers la bonne page
+            if (newRole === 'volunteer') {
+                window.location.href = '/volunteer.html';
+            } else {
+                window.location.href = '/index.html';
+            }
+        }
+    }
+    
+    logout() {
+        if (confirm('Changer d\'utilisateur ?')) {
+            // Effacer uniquement l'utilisateur, garder le rôle
+            localStorage.removeItem('saint-esprit-user');
+            localStorage.removeItem('saint-esprit-data');
+            
+            // Recharger la page pour nouveau login
+            location.reload();
+        }
+    }
+    
+    selectUserRole() {
+        // Créer une modal de sélection de rôle
+        const modal = document.createElement('div');
+        modal.className = 'role-selection-modal';
+        modal.innerHTML = `
+            <div class="role-modal-content">
+                <h2>👋 Bienvenue sur Saint-Esprit Radio</h2>
+                <p>Sélectionnez votre rôle :</p>
+                <div class="role-options">
+                    <button class="role-btn journalist-btn" onclick="window.setUserRole('journalist')">
+                        <span class="role-icon">📰</span>
+                        <span class="role-title">Journaliste</span>
+                        <span class="role-desc">Accès complet à toutes les fonctionnalités</span>
+                    </button>
+                    <button class="role-btn volunteer-btn" onclick="window.setUserRole('volunteer')">
+                        <span class="role-icon">🎙️</span>
+                        <span class="role-title">Bénévole</span>
+                        <span class="role-desc">Interface simplifiée pour créer des émissions</span>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Fonction globale pour définir le rôle
+        window.setUserRole = (role) => {
+            localStorage.setItem('saint-esprit-role', role);
+            this.userRole = role;
+            
+            // Rediriger vers la page appropriée
+            if (role === 'volunteer' && !window.location.pathname.includes('volunteer.html')) {
+                window.location.href = '/volunteer.html';
+            } else if (role === 'journalist' && window.location.pathname.includes('volunteer.html')) {
+                window.location.href = '/index.html';
+            } else {
+                document.body.className = `user-role-${role}`;
+                modal.remove();
+            }
+            
+            // Notifier l'app du changement de rôle
+            if (window.app) {
+                window.app.setupInterfaceForRole(role);
+            }
+        };
+    }
+
+    dataURLtoBlob(dataURL) {
+        const arr = dataURL.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    }
+
+    // ===== MÉTHODES COMPATIBLES AVEC L'EXISTANT =====
+    
+    async createBackup() {
+        const data = await this.load();
+        const backup = {
+            id: Date.now(),
+            data: data,
+            timestamp: new Date().toISOString(),
+            userId: this.userId
+        };
+
+        // Sauvegarder backup sur S3
+        await this.s3.putObject({
+            Bucket: this.config.bucket,
+            Key: `backups/${this.userId}/${backup.id}.json`,
+            Body: JSON.stringify(backup, null, 2),
+            ContentType: 'application/json'
+        }).promise();
+
+        console.log('💾 Backup created:', backup.id);
+        return backup;
+    }
+
+    async clearAll() {
+        console.log('🧹 Clearing all data...');
+        
+        // Supprimer données utilisateur
+        await this.s3.deleteObject({
+            Bucket: this.config.bucket,
+            Key: `users/${this.userId}/data.json`
+        }).promise();
+
+        // Supprimer audios
+        const audioFiles = await this.getAllAudioIds();
+        for (const audioId of audioFiles) {
+            await this.deleteAudioFile(audioId);
+        }
+
+        this.data = null;
+        console.log('✅ All data cleared');
+    }
+}
+
+// Fonctions globales pour compatibilité avec audio-storage.js
+async function initializeAudioStorage() {
+    // Déjà géré par Storage.init()
+    console.log('🎵 Audio storage already initialized with AWS S3');
+}
+
+async function saveAudioFile(audioFileId, audioData) {
+    return await window.app.storage.saveAudioFile(audioFileId, audioData);
+}
+
+async function getAudioFile(audioFileId) {
+    return await window.app.storage.getAudioFile(audioFileId);
+}
+
+async function deleteAudioFile(audioFileId) {
+    return await window.app.storage.deleteAudioFile(audioFileId);
+}
+
+// Export pour compatibilité
+window.Storage = Storage;

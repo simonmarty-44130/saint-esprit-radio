@@ -1,0 +1,19 @@
+{
+  "name": "saint-esprit-aws",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@aws-amplify/backend": "^1.16.1",
+    "@aws-amplify/ui-react": "^6.11.2",
+    "@parcel/watcher": "^2.5.1",
+    "@parcel/watcher-darwin-x64": "^2.5.1",
+    "aws-amplify": "^6.15.5",
+    "aws-cdk-lib": "^2.212.0",
+    "constructs": "^10.4.2",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2"
+  },
+  "devDependencies": {
+    "@aws-amplify/backend-cli": "^1.8.0"
+  }
+}

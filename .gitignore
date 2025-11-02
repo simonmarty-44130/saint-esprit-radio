@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Amplify
+.amplify/
+amplify/backend/amplify-meta.json
+amplify/backend/awscloudformation/
+amplify/#current-cloud-backend/
+amplify/.config/
+
+# AWS
+.aws/
+aws-exports.js
+awsconfiguration.json
+
+# Credentials et secrets
+*.pem
+*.key
+.env
+.env.local
+.env.production
+credentials.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Builds
+dist/
+build/
+*.zip
+*.tar.gz
+
+# Backups
+backup-*.tar.gz
+backups/
+*.backup
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# Lambda deployment packages
+lambda-*.zip
+stream-recorder*.zip
+
+# Documentation temporaire
+.claude.json
+.claude.json.backup
+
+# Ne pas ignorer
+!amplify/backend.ts
+!amplify/auth/
+!amplify/data/
+!amplify/storage/
+!amplify_outputs.json
