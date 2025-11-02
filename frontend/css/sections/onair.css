@@ -161,7 +161,7 @@
     color: var(--text-secondary);
     padding: 0.25rem 0.75rem;
     background: var(--bg-tertiary);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border);
 }
 
@@ -194,11 +194,11 @@
 
 /* Prompter notes */
 .prompter-note {
-    background: rgba(0, 204, 255, 0.1);
+    background: var(--primary-bg);
     border-left: 4px solid var(--primary);
     padding: 0.75rem;
     margin: 1rem 0;
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     font-style: italic;
     color: var(--primary);
     font-size: 0.95rem;
@@ -212,7 +212,7 @@
     padding: 0.25rem 0.5rem;
     background: var(--warning);
     color: var(--bg-dark);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     font-size: 0.8rem;
     font-weight: bold;
     margin: 0 0.25rem;
@@ -226,7 +226,7 @@
     padding: 1rem;
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius);
+    border-radius: var(--radius-lg);
     margin: 1rem 0;
     color: var(--success);
     font-weight: bold;
@@ -245,7 +245,7 @@
     padding: 1rem;
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius);
+    border-radius: var(--radius-lg);
     margin: 1rem 0;
     color: var(--info);
     font-weight: bold;
@@ -276,7 +276,7 @@
     padding: 1rem;
     background: var(--bg-primary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius);
+    border-radius: var(--radius-lg);
     transition: var(--transition);
 }
 
@@ -287,7 +287,7 @@
 
 .audio-control-item.playing {
     border-color: var(--success);
-    background: rgba(0, 255, 0, 0.05);
+    background: var(--success-bg);
 }
 
 .audio-play-btn {
@@ -341,7 +341,7 @@
     background: rgba(0, 0, 0, 0.9);
     color: var(--success);
     padding: 1rem;
-    border-radius: var(--border-radius);
+    border-radius: var(--radius-lg);
     font-family: 'Courier New', monospace;
     font-size: 1.5rem;
     font-weight: bold;
@@ -357,7 +357,7 @@
     background: var(--error);
     color: white;
     padding: 0.5rem 1rem;
-    border-radius: var(--border-radius);
+    border-radius: var(--radius-lg);
     font-weight: bold;
     font-size: 0.875rem;
     z-index: 50;
@@ -409,10 +409,10 @@
 }
 
 .onair-teleprompter .prompter-note {
-    background: rgba(0, 204, 255, 0.2);
+    background: var(--primary-bg-hover);
     color: var(--primary);
     font-size: 1.6rem;
-    border-radius: var(--border-radius);
+    border-radius: var(--radius-lg);
     margin: 2rem 0;
 }
 
@@ -424,7 +424,7 @@
     background: rgba(0, 0, 0, 0.9);
     color: var(--warning);
     padding: 1rem;
-    border-radius: var(--border-radius);
+    border-radius: var(--radius-lg);
     border: 2px solid var(--warning);
     z-index: 50;
     max-width: 300px;

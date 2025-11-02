@@ -114,7 +114,7 @@
 }
 
 .week-day.today {
-    background-color: rgba(0, 255, 0, 0.1);
+    background-color: var(--success-bg);
     border-color: var(--success);
 }
 
@@ -214,7 +214,7 @@
 
 .fridge-item.in-rundown {
     opacity: 0.6;
-    background-color: rgba(0, 255, 0, 0.05);
+    background-color: var(--success-bg);
 }
 
 .fridge-item[draggable="true"] {
@@ -336,5 +336,5 @@
 
 .fridge-item.drag-over {
     border-color: var(--primary);
-    background-color: rgba(0, 204, 255, 0.1);
+    background-color: var(--primary-bg);
 }

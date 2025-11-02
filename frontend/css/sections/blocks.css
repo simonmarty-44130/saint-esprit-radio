@@ -12,7 +12,7 @@
     margin-bottom: 0.5rem;
     background: var(--bg-primary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: var(--transition);
     position: relative;
@@ -73,7 +73,7 @@
 .block-duration-info {
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     padding: 1rem;
 }
 
@@ -107,7 +107,7 @@
 .assigned-items-list {
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     max-height: 300px;
     overflow-y: auto;
 }
@@ -126,7 +126,7 @@
 }
 
 .block-item-entry:hover {
-    background: var(--bg-lighter);
+    background: var(--primary-bg);
 }
 
 .block-item-entry .icon-btn {
@@ -158,7 +158,7 @@
 .assign-items-list {
     background: var(--bg-primary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     max-height: 200px;
     overflow-y: auto;
 }
@@ -203,7 +203,7 @@
     padding: 1rem;
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
 }
 
 .stat-item {
@@ -237,14 +237,14 @@
     padding: 1rem;
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: var(--transition);
     text-align: center;
 }
 
 .template-card:hover {
-    background: var(--bg-lighter);
+    background: var(--primary-bg);
     border-color: var(--primary);
 }
 
@@ -323,14 +323,14 @@
 
 .block-item.drag-over {
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(0, 204, 255, 0.3);
+    box-shadow: 0 0 0 2px var(--primary-bg-hover);
 }
 
 /* Block hierarchy visualization */
 .block-hierarchy {
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     padding: 1rem;
     margin-top: 1rem;
 }

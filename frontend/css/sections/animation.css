@@ -12,7 +12,7 @@
     margin-bottom: 0.5rem;
     background: var(--bg-primary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: var(--transition);
 }
@@ -23,9 +23,9 @@
 }
 
 .animation-item.active {
-    background: #9333ea;
+    background: var(--secondary);
     color: white;
-    border-color: #9333ea;
+    border-color: var(--secondary);
 }
 
 .animation-item.active .meta {
@@ -121,35 +121,35 @@
 }
 
 .sound-type.transition {
-    background: rgba(0, 204, 255, 0.2);
+    background: var(--primary-bg);
     color: var(--primary);
 }
 
 /* Différenciation visuelle des animations */
 .animation-item {
-    border-left: 4px solid #9333ea;
+    border-left: 4px solid var(--secondary);
 }
 
 .animation-item.active {
-    box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.3);
+    box-shadow: 0 0 0 2px var(--secondary-bg);
 }
 
 /* Prompter notes spécifiques aux animations */
 .animation-editor .prompter-note {
-    background: rgba(147, 51, 234, 0.1);
-    border-left: 3px solid #9333ea;
+    background: var(--secondary-bg);
+    border-left: 3px solid var(--secondary);
     padding: 0.5rem;
     margin: 0.5rem 0;
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     font-style: italic;
-    color: #9333ea;
+    color: var(--secondary);
 }
 
 /* Timeline pour les animations longues */
 .animation-timeline {
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     padding: 1rem;
     margin-top: 1rem;
 }
@@ -189,7 +189,7 @@
 .cue-card {
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     padding: 1rem;
     text-align: center;
 }
@@ -209,7 +209,7 @@
 .animation-segments {
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     padding: 1rem;
     margin-top: 1rem;
 }
@@ -257,14 +257,14 @@
     padding: 1rem;
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
 }
 
 .mood-item {
     aspect-ratio: 1;
     background: var(--bg-primary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -274,7 +274,7 @@
 }
 
 .mood-item:hover {
-    background: var(--bg-lighter);
+    background: var(--primary-bg);
     border-color: var(--primary);
 }
 
@@ -286,7 +286,7 @@
     padding: 1rem;
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     margin-top: 1rem;
 }
 
@@ -307,7 +307,7 @@
 .music-waveform {
     height: 40px;
     background: var(--bg-primary);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     margin: 0.5rem 0;
     position: relative;
     overflow: hidden;
@@ -328,16 +328,16 @@
 
 /* Script formatting spécifique */
 .animation-editor .script-section {
-    background: rgba(147, 51, 234, 0.05);
-    border-left: 4px solid #9333ea;
+    background: var(--secondary-bg);
+    border-left: 4px solid var(--secondary);
     padding: 1rem;
     margin: 1rem 0;
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
 }
 
 .script-section-title {
     font-weight: bold;
-    color: #9333ea;
+    color: var(--secondary);
     margin-bottom: 0.5rem;
     text-transform: uppercase;
     font-size: 0.875rem;
@@ -346,8 +346,8 @@
 
 /* Animation-specific toolbar items */
 .animation-editor .text-format-toolbar {
-    background: rgba(147, 51, 234, 0.1);
-    border-color: #9333ea;
+    background: var(--secondary-bg);
+    border-color: var(--secondary);
 }
 
 /* Show flow visualization */
@@ -358,7 +358,7 @@
     padding: 1rem;
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     margin-top: 1rem;
     overflow-x: auto;
 }
@@ -368,16 +368,16 @@
     padding: 0.5rem;
     background: var(--bg-primary);
     border: 1px solid var(--border);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--radius-md);
     text-align: center;
     font-size: 0.75rem;
     white-space: nowrap;
 }
 
 .flow-step.active {
-    background: #9333ea;
+    background: var(--secondary);
     color: white;
-    border-color: #9333ea;
+    border-color: var(--secondary);
 }
 
 .flow-arrow {
