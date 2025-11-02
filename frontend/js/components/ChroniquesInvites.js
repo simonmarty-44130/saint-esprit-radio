@@ -1,32 +1,33 @@
 class ChroniquesInvites {
     constructor() {
         this.chroniques = [];
+        this.benevolesChroniques = [];
+        this.benevolesEmissions = [];
         this.currentUser = null;
         this.tableName = 'saint-esprit-chroniques';
         this.bucketName = 'saint-esprit-audio';
         this.isAdmin = false;
+        this.currentTab = 'permanentes'; // 'permanentes' ou 'benevoles'
+        this.appSyncClient = null;
     }
 
     async init() {
-        // Attendre que AWS soit configuré
-        if (!window.AWS) {
-            console.warn('AWS SDK non chargé, attente...');
+        // Attendre que Amplify soit configuré
+        if (!window.appSyncStorage) {
+            console.warn('AppSync non chargé, attente...');
             setTimeout(() => this.init(), 500);
             return;
         }
-        
-        // S'assurer que la configuration AWS est appliquée
-        if (!AWS.config.region) {
-            AWS.config.update({ 
-                region: 'eu-west-3',
-                credentials: window.app?.storage?.credentials
-            });
-        }
-        
+
+        this.appSyncClient = window.appSyncStorage.client;
         this.currentUser = await this.getCurrentUser();
         this.isAdmin = this.currentUser && (this.currentUser.isAdmin || this.currentUser.sub);
-        
-        await this.loadChroniques();
+
+        await Promise.all([
+            this.loadChroniques(),
+            this.loadBenevolesData()
+        ]);
+
         this.render();
         this.setupEventListeners();
     }
@@ -96,46 +97,82 @@ class ChroniquesInvites {
 
     async loadChroniques() {
         try {
-            // Utiliser le storage manager de l'application
-            if (window.app && window.app.storage) {
-                // Utiliser directement DynamoDB via le storage
-                const params = {
-                    TableName: this.tableName
-                };
-                
-                if (window.app.storage.docClient) {
-                    const result = await window.app.storage.docClient.scan(params).promise();
-                    this.chroniques = result.Items || [];
-                } else {
-                    // Fallback: appel direct à DynamoDB
-                    const docClient = new AWS.DynamoDB.DocumentClient({ region: 'eu-west-3' });
-                    const result = await docClient.scan(params).promise();
-                    this.chroniques = result.Items || [];
-                }
-            } else {
-                // Initialiser DynamoDB si nécessaire
-                if (!window.AWS) {
-                    console.error('AWS SDK non chargé');
-                    this.chroniques = [];
-                    return;
-                }
-                
-                AWS.config.update({ region: 'eu-west-3' });
-                const docClient = new AWS.DynamoDB.DocumentClient();
-                const params = {
-                    TableName: this.tableName
-                };
-                const result = await docClient.scan(params).promise();
-                this.chroniques = result.Items || [];
-            }
-            
-            // Trier par ordre alphabétique
-            this.chroniques.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-            
-            console.log(`${this.chroniques.length} chroniques chargées`);
+            // Charger chroniques permanentes (ancien système)
+            // Cette partie reste pour les chroniques récurrentes stockées dans DynamoDB legacy
+            this.chroniques = [];
+            console.log('Chroniques permanentes chargées (legacy désactivé)');
         } catch (error) {
             console.error('Erreur chargement chroniques:', error);
             this.chroniques = [];
+        }
+    }
+
+    async loadBenevolesData() {
+        try {
+            if (!this.appSyncClient) {
+                console.warn('AppSync client non disponible');
+                return;
+            }
+
+            // Charger les chroniques des bénévoles
+            const chroniquesResult = await this.appSyncClient.graphql({
+                query: `query ListChroniques {
+                    listChroniques {
+                        items {
+                            id
+                            title
+                            author
+                            type
+                            audioUrl
+                            s3Key
+                            duration
+                            dateDiffusion
+                            lancement
+                            desannonce
+                            status
+                            submittedAt
+                            reviewedAt
+                            reviewedBy
+                            reviewNotes
+                        }
+                    }
+                }`
+            });
+
+            this.benevolesChroniques = chroniquesResult.data?.listChroniques?.items || [];
+
+            // Charger les émissions des bénévoles
+            const emissionsResult = await this.appSyncClient.graphql({
+                query: `query ListEmissions {
+                    listEmissions {
+                        items {
+                            id
+                            title
+                            content
+                            author
+                            guests
+                            musics
+                            wordCount
+                            readingTime
+                            musicTime
+                            totalTime
+                            status
+                            submittedAt
+                            reviewedAt
+                            reviewedBy
+                            reviewNotes
+                        }
+                    }
+                }`
+            });
+
+            this.benevolesEmissions = emissionsResult.data?.listEmissions?.items || [];
+
+            console.log(`${this.benevolesChroniques.length} chroniques bénévoles et ${this.benevolesEmissions.length} émissions chargées`);
+        } catch (error) {
+            console.error('Erreur chargement données bénévoles:', error);
+            this.benevolesChroniques = [];
+            this.benevolesEmissions = [];
         }
     }
 
@@ -143,70 +180,243 @@ class ChroniquesInvites {
         const container = document.getElementById('chroniques-invites-content');
         if (!container) return;
 
+        const totalBenevoles = this.benevolesChroniques.length + this.benevolesEmissions.length;
+        const pendingCount = [...this.benevolesChroniques, ...this.benevolesEmissions]
+            .filter(item => item.status === 'submitted').length;
+
         container.innerHTML = `
-            <div class="chroniques-header">
-                <h2><i class="fas fa-microphone"></i> Chroniques et Invités</h2>
-                ${this.isAdmin ? `
-                    <button class="btn btn-primary" onclick="window.chroniquesInvites.showAddForm()">
-                        <i class="fas fa-plus"></i> Nouvelle chronique
+            <div class="chroniques-modern-header">
+                <div class="header-top">
+                    <h1><i class="fas fa-microphone-alt"></i> Chroniques & Émissions</h1>
+                </div>
+
+                <div class="tabs-navigation">
+                    <button class="tab-btn ${this.currentTab === 'benevoles' ? 'active' : ''}"
+                            onclick="window.chroniquesInvites.switchTab('benevoles')">
+                        <i class="fas fa-users"></i>
+                        <span>Soumissions Bénévoles</span>
+                        ${totalBenevoles > 0 ? `<span class="badge">${totalBenevoles}</span>` : ''}
+                        ${pendingCount > 0 ? `<span class="badge-new">${pendingCount} nouvelle${pendingCount > 1 ? 's' : ''}</span>` : ''}
                     </button>
+                    <button class="tab-btn ${this.currentTab === 'permanentes' ? 'active' : ''}"
+                            onclick="window.chroniquesInvites.switchTab('permanentes')">
+                        <i class="fas fa-database"></i>
+                        <span>Chroniques Permanentes</span>
+                        ${this.chroniques.length > 0 ? `<span class="badge">${this.chroniques.length}</span>` : ''}
+                    </button>
+                </div>
+            </div>
+
+            <div id="benevoles-tab" class="tab-content ${this.currentTab === 'benevoles' ? 'active' : ''}">
+                ${this.renderBenevolesTab()}
+            </div>
+
+            <div id="permanentes-tab" class="tab-content ${this.currentTab === 'permanentes' ? 'active' : ''}">
+                ${this.renderPermanentesTab()}
+            </div>
+        `;
+    }
+
+    renderBenevolesTab() {
+        if (this.benevolesChroniques.length === 0 && this.benevolesEmissions.length === 0) {
+            return `
+                <div class="empty-state-modern">
+                    <div class="empty-icon">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <h3>Aucune soumission</h3>
+                    <p>Les bénévoles n'ont pas encore envoyé de chroniques ou d'émissions</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="benevoles-sections">
+                ${this.benevolesChroniques.length > 0 ? `
+                    <div class="section-group">
+                        <h2 class="section-title">
+                            <i class="fas fa-headphones"></i> Chroniques Audio
+                            <span class="count">${this.benevolesChroniques.length}</span>
+                        </h2>
+                        <div class="cards-grid">
+                            ${this.benevolesChroniques.map(c => this.renderChroniqueCard(c)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${this.benevolesEmissions.length > 0 ? `
+                    <div class="section-group">
+                        <h2 class="section-title">
+                            <i class="fas fa-file-alt"></i> Émissions Écrites
+                            <span class="count">${this.benevolesEmissions.length}</span>
+                        </h2>
+                        <div class="cards-grid">
+                            ${this.benevolesEmissions.map(e => this.renderEmissionCard(e)).join('')}
+                        </div>
+                    </div>
                 ` : ''}
             </div>
+        `;
+    }
 
-            <div class="chroniques-description">
-                <p>Fiches permanentes des chroniques récurrentes. Les sons sont remplacés automatiquement à chaque mise à jour.</p>
+    renderPermanentesTab() {
+        return `
+            <div class="info-card">
+                <i class="fas fa-info-circle"></i>
+                <p>Les chroniques permanentes seront ajoutées prochainement</p>
             </div>
+        `;
+    }
 
-            <div id="chroniques-list" class="chroniques-grid">
-                ${this.renderChroniques()}
-            </div>
+    renderChroniqueCard(chronique) {
+        const statusInfo = this.getStatusInfo(chronique.status);
+        const dateDiff = chronique.dateDiffusion ? new Date(chronique.dateDiffusion).toLocaleDateString('fr-FR') : 'Non spécifié';
+        const dateSubmit = chronique.submittedAt ? new Date(chronique.submittedAt).toLocaleString('fr-FR') : '';
 
-            <div id="chronique-form-modal" class="modal" style="display: none;">
-                <div class="modal-content">
-                    <span class="close" onclick="window.chroniquesInvites.hideForm()">&times;</span>
-                    <h3 id="form-title">Nouvelle chronique</h3>
-                    <form id="chronique-form">
-                        <div class="form-group">
-                            <label for="chronique-title">Titre de la chronique</label>
-                            <input type="text" id="chronique-title" required>
+        return `
+            <div class="content-card chronique-card">
+                <div class="card-header">
+                    <div class="card-title-row">
+                        <h3>${chronique.title || 'Sans titre'}</h3>
+                        <span class="status-badge ${statusInfo.class}">${statusInfo.label}</span>
+                    </div>
+                    <div class="card-meta">
+                        <span class="meta-item"><i class="fas fa-user"></i> ${chronique.author}</span>
+                        <span class="meta-item"><i class="fas fa-tag"></i> ${this.getTypeLabel(chronique.type)}</span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    ${chronique.lancement ? `
+                        <div class="info-block">
+                            <strong>Lancement:</strong>
+                            <p>${chronique.lancement}</p>
                         </div>
-                        
-                        <div class="form-group">
-                            <label for="chronique-type">Type de source</label>
-                            <select id="chronique-type" required>
-                                <option value="manual">Manuel</option>
-                                <option value="rss">Flux RSS</option>
-                                <option value="ftp">Serveur FTP</option>
-                            </select>
+                    ` : ''}
+
+                    ${chronique.desannonce ? `
+                        <div class="info-block">
+                            <strong>Désannonce:</strong>
+                            <p>${chronique.desannonce}</p>
                         </div>
-                        
-                        <div class="form-group" id="source-url-group" style="display: none;">
-                            <label for="chronique-source">URL de la source</label>
-                            <input type="url" id="chronique-source" placeholder="https://...">
+                    ` : ''}
+
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-clock"></i>
+                            <span>${this.formatDuration(chronique.duration || 0)}</span>
                         </div>
-                        
-                        <div class="form-group">
-                            <label for="chronique-description">Description</label>
-                            <textarea id="chronique-description" rows="3"></textarea>
+                        <div class="stat-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>${dateDiff}</span>
                         </div>
-                        
-                        <div class="form-group">
-                            <label for="chronique-audio">Fichier audio (MP3)</label>
-                            <input type="file" id="chronique-audio" accept="audio/mp3,audio/mpeg">
+                        <div class="stat-item">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>${dateSubmit}</span>
                         </div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Enregistrer
-                            </button>
-                            <button type="button" class="btn btn-secondary" onclick="window.chroniquesInvites.hideForm()">
-                                Annuler
-                            </button>
-                        </div>
-                    </form>
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    ${chronique.audioUrl ? `
+                        <button class="btn-action" onclick="window.chroniquesInvites.playAudio('${chronique.audioUrl}', '${chronique.title}')">
+                            <i class="fas fa-play"></i> Écouter
+                        </button>
+                    ` : ''}
+                    ${this.isAdmin && chronique.status === 'submitted' ? `
+                        <button class="btn-action primary" onclick="window.chroniquesInvites.approveChronique('${chronique.id}')">
+                            <i class="fas fa-check"></i> Approuver
+                        </button>
+                        <button class="btn-action warning" onclick="window.chroniquesInvites.rejectChronique('${chronique.id}')">
+                            <i class="fas fa-times"></i> Refuser
+                        </button>
+                    ` : ''}
                 </div>
             </div>
         `;
+    }
+
+    renderEmissionCard(emission) {
+        const statusInfo = this.getStatusInfo(emission.status);
+        const dateSubmit = emission.submittedAt ? new Date(emission.submittedAt).toLocaleString('fr-FR') : '';
+        const musics = emission.musics ? JSON.parse(emission.musics) : [];
+
+        return `
+            <div class="content-card emission-card">
+                <div class="card-header">
+                    <div class="card-title-row">
+                        <h3>${emission.title || 'Sans titre'}</h3>
+                        <span class="status-badge ${statusInfo.class}">${statusInfo.label}</span>
+                    </div>
+                    <div class="card-meta">
+                        <span class="meta-item"><i class="fas fa-user"></i> ${emission.author}</span>
+                        ${emission.guests ? `<span class="meta-item"><i class="fas fa-user-friends"></i> ${emission.guests}</span>` : ''}
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="content-preview">
+                        ${emission.content ? emission.content.substring(0, 200) + (emission.content.length > 200 ? '...' : '') : ''}
+                    </div>
+
+                    ${musics.length > 0 ? `
+                        <div class="info-block">
+                            <strong>Musiques (${musics.length}):</strong>
+                            <ul class="music-list">
+                                ${musics.slice(0, 3).map(m => `<li>${m.title} - ${m.artist}</li>`).join('')}
+                                ${musics.length > 3 ? `<li><em>+${musics.length - 3} autre(s)</em></li>` : ''}
+                            </ul>
+                        </div>
+                    ` : ''}
+
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-file-word"></i>
+                            <span>${emission.wordCount || 0} mots</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-clock"></i>
+                            <span>${this.formatDuration(emission.totalTime || 0)}</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>${dateSubmit}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    <button class="btn-action" onclick="window.chroniquesInvites.viewEmission('${emission.id}')">
+                        <i class="fas fa-eye"></i> Lire
+                    </button>
+                    ${this.isAdmin && emission.status === 'submitted' ? `
+                        <button class="btn-action primary" onclick="window.chroniquesInvites.approveEmission('${emission.id}')">
+                            <i class="fas fa-check"></i> Approuver
+                        </button>
+                        <button class="btn-action warning" onclick="window.chroniquesInvites.rejectEmission('${emission.id}')">
+                            <i class="fas fa-times"></i> Refuser
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    getStatusInfo(status) {
+        const statuses = {
+            'submitted': { label: 'En attente', class: 'status-pending' },
+            'reviewed': { label: 'En révision', class: 'status-reviewing' },
+            'approved': { label: 'Approuvé', class: 'status-approved' },
+            'rejected': { label: 'Refusé', class: 'status-rejected' },
+            'scheduled': { label: 'Programmé', class: 'status-scheduled' },
+            'aired': { label: 'Diffusé', class: 'status-aired' }
+        };
+        return statuses[status] || { label: status || 'Inconnu', class: 'status-default' };
+    }
+
+    switchTab(tab) {
+        this.currentTab = tab;
+        this.render();
     }
 
     renderChroniques() {
@@ -467,20 +677,162 @@ class ChroniquesInvites {
         }
     }
 
-    async playAudio(chroniqueId) {
-        const chronique = this.chroniques.find(c => c.id === chroniqueId);
-        if (!chronique || !chronique.audioUrl) {
+    async playAudio(audioUrl, title) {
+        if (!audioUrl) {
             this.showNotification('Aucun audio disponible', 'warning');
             return;
         }
 
         // Utiliser le player audio global si disponible
         if (window.audioManager) {
-            window.audioManager.loadAndPlay(chronique.audioUrl, chronique.title);
+            window.audioManager.loadAndPlay(audioUrl, title);
         } else {
             // Fallback: ouvrir dans un nouvel onglet
-            window.open(chronique.audioUrl, '_blank');
+            window.open(audioUrl, '_blank');
         }
+    }
+
+    async approveChronique(id) {
+        try {
+            await this.appSyncClient.graphql({
+                query: `mutation UpdateChronique($input: UpdateChroniqueInput!) {
+                    updateChronique(input: $input) {
+                        id
+                        status
+                    }
+                }`,
+                variables: {
+                    input: {
+                        id,
+                        status: 'approved',
+                        reviewedAt: new Date().toISOString(),
+                        reviewedBy: this.currentUser.username
+                    }
+                }
+            });
+
+            this.showNotification('Chronique approuvée', 'success');
+            await this.loadBenevolesData();
+            this.render();
+        } catch (error) {
+            console.error('Erreur approbation:', error);
+            this.showNotification('Erreur lors de l\'approbation', 'error');
+        }
+    }
+
+    async rejectChronique(id) {
+        const notes = prompt('Raison du refus (optionnel):');
+
+        try {
+            await this.appSyncClient.graphql({
+                query: `mutation UpdateChronique($input: UpdateChroniqueInput!) {
+                    updateChronique(input: $input) {
+                        id
+                        status
+                    }
+                }`,
+                variables: {
+                    input: {
+                        id,
+                        status: 'rejected',
+                        reviewedAt: new Date().toISOString(),
+                        reviewedBy: this.currentUser.username,
+                        reviewNotes: notes || 'Refusé'
+                    }
+                }
+            });
+
+            this.showNotification('Chronique refusée', 'success');
+            await this.loadBenevolesData();
+            this.render();
+        } catch (error) {
+            console.error('Erreur refus:', error);
+            this.showNotification('Erreur lors du refus', 'error');
+        }
+    }
+
+    async approveEmission(id) {
+        try {
+            await this.appSyncClient.graphql({
+                query: `mutation UpdateEmission($input: UpdateEmissionInput!) {
+                    updateEmission(input: $input) {
+                        id
+                        status
+                    }
+                }`,
+                variables: {
+                    input: {
+                        id,
+                        status: 'approved',
+                        reviewedAt: new Date().toISOString(),
+                        reviewedBy: this.currentUser.username
+                    }
+                }
+            });
+
+            this.showNotification('Émission approuvée', 'success');
+            await this.loadBenevolesData();
+            this.render();
+        } catch (error) {
+            console.error('Erreur approbation:', error);
+            this.showNotification('Erreur lors de l\'approbation', 'error');
+        }
+    }
+
+    async rejectEmission(id) {
+        const notes = prompt('Raison du refus (optionnel):');
+
+        try {
+            await this.appSyncClient.graphql({
+                query: `mutation UpdateEmission($input: UpdateEmissionInput!) {
+                    updateEmission(input: $input) {
+                        id
+                        status
+                    }
+                }`,
+                variables: {
+                    input: {
+                        id,
+                        status: 'rejected',
+                        reviewedAt: new Date().toISOString(),
+                        reviewedBy: this.currentUser.username,
+                        reviewNotes: notes || 'Refusé'
+                    }
+                }
+            });
+
+            this.showNotification('Émission refusée', 'success');
+            await this.loadBenevolesData();
+            this.render();
+        } catch (error) {
+            console.error('Erreur refus:', error);
+            this.showNotification('Erreur lors du refus', 'error');
+        }
+    }
+
+    viewEmission(id) {
+        const emission = this.benevolesEmissions.find(e => e.id === id);
+        if (!emission) return;
+
+        // Créer une modal pour afficher le contenu complet
+        const modal = document.createElement('div');
+        modal.className = 'emission-modal';
+        modal.innerHTML = `
+            <div class="emission-modal-content">
+                <button class="modal-close" onclick="this.closest('.emission-modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h2>${emission.title}</h2>
+                <div class="emission-meta">
+                    <span><strong>Auteur:</strong> ${emission.author}</span>
+                    ${emission.guests ? `<span><strong>Invités:</strong> ${emission.guests}</span>` : ''}
+                </div>
+                <div class="emission-full-content">
+                    ${emission.content}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
     }
 
     async addToConductor(chroniqueId) {
