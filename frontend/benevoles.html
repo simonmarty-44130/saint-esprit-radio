@@ -87,51 +87,50 @@
         }
     </script>
     
-    <!-- AWS SDK -->
+    <!-- ===== AMPLIFY V6 - AppSync avec DynamoDB ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/aws-amplify@6/dist/aws-amplify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@aws-amplify/api@6/dist/aws-amplify-api.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@aws-amplify/auth@6/dist/aws-amplify-auth.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@aws-amplify/storage@6/dist/aws-amplify-storage.min.js"></script>
+
+    <!-- Client AppSync pour bénévoles -->
+    <script src="js/benevoles-appsync.js?v=1.0"></script>
+
+    <!-- AWS SDK v2 (uniquement pour SES - emails) -->
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1000.0.min.js"></script>
-    
-    <!-- Configuration AWS pour les bénévoles -->
+
+    <!-- Configuration AWS pour SES (emails uniquement) -->
     <script>
-        // Configuration AWS Cognito Identity pour l'accès S3
+        // Configuration minimale AWS pour SES uniquement
         AWS.config.region = 'eu-west-3';
-        
-        // Identity Pool ID pour les bénévoles
+
         const IDENTITY_POOL_ID = 'eu-west-3:f3a9b658-a726-46e1-82d9-7d5bf85bd18f';
         const USER_POOL_ID = 'eu-west-3_wlQrKtvCn';
-        
-        // Fonction pour configurer AWS après authentification
+
+        // Configurer AWS credentials pour SES après authentification
         function configureAWSCredentials(idToken) {
             const logins = {};
             logins[`cognito-idp.eu-west-3.amazonaws.com/${USER_POOL_ID}`] = idToken;
-            
+
             AWS.config.credentials = new AWS.CognitoIdentityCredentials({
                 IdentityPoolId: IDENTITY_POOL_ID,
                 Logins: logins
             });
-            
-            // Rafraîchir les credentials
+
             AWS.config.credentials.refresh((error) => {
                 if (error) {
-                    console.error('Erreur lors de la configuration AWS:', error);
+                    console.error('Erreur configuration AWS SES:', error);
                 } else {
-                    console.log('✅ AWS credentials configurées avec succès');
+                    console.log('✅ AWS SES credentials OK');
                 }
             });
         }
-        
-        // Vérifier si on a un token stocké
+
         const storedIdToken = localStorage.getItem('benevole-id-token');
         if (storedIdToken) {
             configureAWSCredentials(storedIdToken);
-        } else {
-            // Configuration temporaire pour les utilisateurs non authentifiés (limité)
-            AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-                IdentityPoolId: IDENTITY_POOL_ID
-            });
         }
     </script>
-    
-    <script src="js/core/storage.js?v=1.1"></script>
     
     <style>
         * {
@@ -716,7 +715,7 @@
     
     <script>
         // Variables globales
-        let currentUser = 'Bénévole'; // Nom fixe pour tous les bénévoles
+        let currentUser = 'Bénévole';
         let isRecording = false;
         let mediaRecorder = null;
         let audioChunks = [];
@@ -724,9 +723,22 @@
         let recordingInterval = null;
         let audioBlob = null;
         let musicsList = [];
-        
+        let benevolesClient = null; // Client AppSync
+
         // Initialisation
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Initialiser le client AppSync
+            try {
+                benevolesClient = new BenevolesAppSync();
+                await benevolesClient.init();
+                currentUser = benevolesClient.currentUser;
+                console.log('✅ Client bénévoles initialisé');
+            } catch (error) {
+                console.error('❌ Erreur initialisation client:', error);
+                currentUser = 'Bénévole';
+            }
+
+            // Continuer l'initialisation originale
             // Essayer de récupérer le nom depuis le token si disponible
             const idToken = localStorage.getItem('benevole-id-token');
             if (idToken) {
@@ -891,18 +903,52 @@
             }
         }
         
-        // Sauvegarde émission
-        function saveEmission() {
+        // Sauvegarde émission dans DynamoDB
+        async function saveEmission() {
             const title = document.getElementById('emission-title').value;
+            const guests = document.getElementById('emission-guests').value;
             const content = document.getElementById('emission-content').value;
-            
+
             if (!title || !content) {
                 alert('Veuillez remplir le titre et le contenu');
                 return;
             }
-            
-            // Simulation de sauvegarde
-            alert('Émission sauvegardée avec succès !');
+
+            if (!benevolesClient) {
+                alert('❌ Client non initialisé');
+                return;
+            }
+
+            try {
+                // Calculer les durées
+                const words = content.trim().split(/\s+/).filter(w => w.length > 0).length;
+                const readingTime = Math.ceil((words / 140) * 60); // secondes
+
+                let musicTotalSeconds = 0;
+                musicsList.forEach(music => {
+                    const [min, sec] = music.duration.split(':').map(Number);
+                    musicTotalSeconds += min * 60 + sec;
+                });
+
+                const totalTime = readingTime + musicTotalSeconds;
+
+                // Sauvegarder dans DynamoDB
+                await benevolesClient.saveEmission({
+                    title,
+                    content,
+                    guests,
+                    musics: musicsList.length > 0 ? musicsList : null,
+                    wordCount: words,
+                    readingTime,
+                    musicTime: musicTotalSeconds,
+                    totalTime
+                });
+
+                alert('✅ Émission sauvegardée dans DynamoDB avec succès !');
+            } catch (error) {
+                console.error('❌ Erreur sauvegarde:', error);
+                alert('❌ Erreur lors de la sauvegarde');
+            }
         }
         
         // Export émission
@@ -1362,7 +1408,7 @@ Généré par Saint-Esprit Radio`;
             audioBlob = null;
         }
         
-        // Fonction pour envoyer à la programmation via AWS SES
+        // Fonction pour envoyer à la programmation via AppSync + S3 + SES
         async function sendToProgrammation() {
             // Validation des champs
             const title = document.getElementById('audio-title').value;
@@ -1370,32 +1416,61 @@ Généré par Saint-Esprit Radio`;
             const dateDiffusion = document.getElementById('date-diffusion').value;
             const lancement = document.getElementById('lancement-text').value;
             const desannonce = document.getElementById('desannonce-text').value;
-            
+
             if (!title || !type || !dateDiffusion) {
                 alert('Veuillez remplir tous les champs obligatoires (*)');
                 return;
             }
-            
+
             if (!audioBlob) {
                 alert('Aucun enregistrement à envoyer');
                 return;
             }
-            
+
+            if (!benevolesClient) {
+                alert('❌ Client non initialisé');
+                return;
+            }
+
             // Afficher le statut
             const statusDiv = document.getElementById('send-status');
             statusDiv.style.display = 'block';
             statusDiv.style.background = '#d1ecf1';
             statusDiv.style.color = '#0c5460';
-            statusDiv.innerHTML = '⏳ Envoi en cours via AWS...';
-            
+            statusDiv.innerHTML = '⏳ 1/3 Upload audio vers S3...';
+
             try {
-                // Calculer la durée
-                const duration = document.getElementById('recording-time').textContent;
-                
+                // Calculer la durée en secondes
+                const durationText = document.getElementById('recording-time').textContent;
+                const [min, sec] = durationText.split(':').map(Number);
+                const durationSeconds = min * 60 + sec;
+
                 // Créer un nom de fichier unique
                 const fileName = `chronique_${new Date().toISOString().slice(0,10)}_${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.wav`;
-                
-                // Convertir le blob en base64 pour l'envoi
+
+                // 1. Upload audio vers S3 via Amplify Storage
+                statusDiv.innerHTML = '⏳ 1/3 Upload audio vers S3...';
+                const uploadResult = await benevolesClient.uploadAudio(audioBlob, fileName);
+                console.log('✅ Audio uploaded:', uploadResult.s3Key);
+
+                // 2. Sauvegarder chronique dans DynamoDB
+                statusDiv.innerHTML = '⏳ 2/3 Sauvegarde dans DynamoDB...';
+                await benevolesClient.saveChronique({
+                    title,
+                    type,
+                    audioUrl: uploadResult.url,
+                    s3Key: uploadResult.s3Key,
+                    duration: durationSeconds,
+                    dateDiffusion,
+                    lancement,
+                    desannonce
+                });
+                console.log('✅ Chronique saved to DynamoDB');
+
+                // 3. Envoyer email de notification via SES
+                statusDiv.innerHTML = '⏳ 3/3 Envoi email à Clara...';
+
+                // Convertir le blob en base64 pour l'email
                 const reader = new FileReader();
                 reader.readAsDataURL(audioBlob);
                 
@@ -1497,17 +1572,19 @@ Envoyé automatiquement depuis l'espace bénévole Saint Esprit Radio`;
                             console.error('Erreur SES:', err);
                             statusDiv.style.background = '#f8d7da';
                             statusDiv.style.color = '#721c24';
-                            statusDiv.innerHTML = '❌ Erreur lors de l\'envoi. Veuillez réessayer.';
+                            statusDiv.innerHTML = '❌ Erreur envoi email (chronique sauvegardée dans DynamoDB).';
                         } else {
                             console.log('Email envoyé:', data.MessageId);
                             statusDiv.style.background = '#d4edda';
                             statusDiv.style.color = '#155724';
                             statusDiv.innerHTML = `
                                 ✅ <strong>Chronique envoyée avec succès !</strong><br>
-                                📧 Email envoyé à Clara avec le fichier audio en pièce jointe<br>
-                                <small>Date de diffusion souhaitée : ${new Date(dateDiffusion).toLocaleDateString('fr-FR')}</small>
+                                📦 Sauvegardée dans DynamoDB<br>
+                                📁 Audio uploadé vers S3<br>
+                                📧 Email envoyé à Clara<br>
+                                <small>Date de diffusion : ${new Date(dateDiffusion).toLocaleDateString('fr-FR')}</small>
                             `;
-                            
+
                             // Proposer de réinitialiser après 3 secondes
                             setTimeout(() => {
                                 if (confirm('Votre chronique a été envoyée. Voulez-vous en enregistrer une nouvelle ?')) {
@@ -1521,7 +1598,7 @@ Envoyé automatiquement depuis l'espace bénévole Saint Esprit Radio`;
                 console.error('Erreur:', error);
                 statusDiv.style.background = '#f8d7da';
                 statusDiv.style.color = '#721c24';
-                statusDiv.innerHTML = '❌ Erreur lors de l\'envoi. Veuillez réessayer.';
+                statusDiv.innerHTML = '❌ Erreur: ' + error.message;
             }
         }
         

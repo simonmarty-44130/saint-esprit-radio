@@ -183,6 +183,59 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.authenticated()
+    ]),
+
+  // Emission - Émissions écrites par les bénévoles
+  Emission: a
+    .model({
+      title: a.string().required(),
+      content: a.string().required(), // Texte de l'émission
+      author: a.string().required(), // Nom du bénévole
+      guests: a.string(), // Invités
+      musics: a.json(), // Liste des musiques [{title, artist, duration}]
+      wordCount: a.integer(), // Nombre de mots
+      readingTime: a.integer(), // Temps de lecture en secondes
+      musicTime: a.integer(), // Temps total musiques en secondes
+      totalTime: a.integer(), // Temps total en secondes
+      status: a.enum(['submitted', 'reviewed', 'approved', 'rejected', 'scheduled']),
+      submittedAt: a.datetime().required(),
+      reviewedAt: a.datetime(),
+      reviewedBy: a.string(),
+      scheduledAt: a.datetime(),
+      reviewNotes: a.string(),
+      emailSent: a.boolean().default(false),
+      emailSentAt: a.datetime(),
+      metadata: a.json()
+    })
+    .authorization((allow) => [
+      allow.authenticated()
+    ]),
+
+  // Chronique - Chroniques audio des bénévoles
+  Chronique: a
+    .model({
+      title: a.string().required(),
+      author: a.string().required(), // Nom du bénévole
+      type: a.enum(['humeur', 'cinema', 'jardinage', 'culture', 'sport', 'cuisine', 'livre', 'musique', 'autre']),
+      audioUrl: a.string(), // URL S3 du fichier audio
+      s3Key: a.string(), // Clé S3 pour accès direct
+      duration: a.integer(), // Durée en secondes
+      dateDiffusion: a.date(), // Date de diffusion souhaitée
+      lancement: a.string(), // Texte de lancement pour le journaliste
+      desannonce: a.string(), // Texte de désannonce
+      status: a.enum(['submitted', 'reviewed', 'approved', 'rejected', 'scheduled', 'aired']),
+      submittedAt: a.datetime().required(),
+      reviewedAt: a.datetime(),
+      reviewedBy: a.string(),
+      scheduledAt: a.datetime(),
+      airedAt: a.datetime(),
+      reviewNotes: a.string(),
+      emailSent: a.boolean().default(false),
+      emailSentAt: a.datetime(),
+      metadata: a.json()
+    })
+    .authorization((allow) => [
+      allow.authenticated()
     ])
 });
 
