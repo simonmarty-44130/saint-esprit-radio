@@ -72,6 +72,25 @@
     <!-- AWS SDK - Version unique stable -->
     <!-- Supprimé la version 2.1000.0 pour éviter les conflits -->
     
+    <!-- CRITICAL CSS - Inline pour contourner le cache CloudFront -->
+    <style>
+        :root {
+            --primary: #6366f1 !important;
+            --primary-dark: #4f46e5 !important;
+            --primary-darker: #4338ca !important;
+            --primary-light: #818cf8 !important;
+            --primary-bg: rgba(99, 102, 241, 0.08) !important;
+            --secondary: #8b5cf6 !important;
+            --secondary-dark: #7c3aed !important;
+            --secondary-bg: rgba(139, 92, 246, 0.08) !important;
+        }
+        .nav-item.active { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; }
+        .btn-primary { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; }
+        .logo-icon { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; }
+        .animation-item.active { background: #8b5cf6 !important; }
+        input:focus, textarea:focus, select:focus { border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important; }
+    </style>
+
     <!-- Updated CSS import - now using modular structure -->
     <link rel="stylesheet" href="css/main.css?v=3.2">
     <!-- FORCE COLOR OVERRIDE - Design System V3 with Indigo -->
