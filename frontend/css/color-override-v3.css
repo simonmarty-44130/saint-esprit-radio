@@ -1,0 +1,86 @@
+/* ===== OVERRIDE FORCE DES COULEURS - Design System V3 ===== */
+/* Ce fichier force les nouvelles couleurs indigo pour contourner le cache */
+
+:root {
+    /* Couleurs principales */
+    --primary: #6366f1 !important;
+    --primary-dark: #4f46e5 !important;
+    --primary-darker: #4338ca !important;
+    --primary-light: #818cf8 !important;
+    --primary-lighter: #a5b4fc !important;
+    --primary-bg: rgba(99, 102, 241, 0.08) !important;
+    --primary-bg-hover: rgba(99, 102, 241, 0.12) !important;
+
+    /* Couleur secondaire */
+    --secondary: #8b5cf6 !important;
+    --secondary-dark: #7c3aed !important;
+    --secondary-light: #a78bfa !important;
+    --secondary-bg: rgba(139, 92, 246, 0.08) !important;
+
+    /* Couleurs de statut */
+    --success: #10b981 !important;
+    --success-dark: #059669 !important;
+    --success-light: #34d399 !important;
+    --success-bg: rgba(16, 185, 129, 0.08) !important;
+
+    --warning: #f59e0b !important;
+    --warning-dark: #d97706 !important;
+    --warning-light: #fbbf24 !important;
+    --warning-bg: rgba(245, 158, 11, 0.08) !important;
+
+    --error: #ef4444 !important;
+    --error-dark: #dc2626 !important;
+    --error-darker: #b91c1c !important;
+    --error-light: #f87171 !important;
+    --error-bg: rgba(239, 68, 68, 0.08) !important;
+
+    --info: #3b82f6 !important;
+    --info-dark: #2563eb !important;
+    --info-light: #60a5fa !important;
+    --info-bg: rgba(59, 130, 246, 0.08) !important;
+}
+
+/* Override pour les éléments actifs */
+.nav-item.active {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+}
+
+.animation-item.active {
+    background: #8b5cf6 !important;
+}
+
+.news-item.active,
+.block-item.active {
+    background: #6366f1 !important;
+}
+
+/* Override pour les boutons */
+.btn-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+}
+
+/* Override pour les focus states */
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+/* Override pour le logo */
+.logo-icon {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+}
+
+/* Override pour les liens */
+a:not(.btn) {
+    color: #6366f1 !important;
+}
+
+a:not(.btn):hover {
+    color: #4f46e5 !important;
+}
