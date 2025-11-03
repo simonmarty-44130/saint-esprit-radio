@@ -562,8 +562,11 @@ class SaintEspritApp {
         document.querySelectorAll('.nav-item, .nav-tab').forEach(nav => {
             nav.classList.toggle('active', nav.dataset.tab === 'dashboard');
         });
-        
+
         this.currentTab = 'dashboard';
+
+        // Update body attribute for sidebar visibility
+        document.body.setAttribute('data-current-tab', 'dashboard');
     }
 
     getDashboardHTML(data) {
@@ -590,7 +593,7 @@ class SaintEspritApp {
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 0 auto;">
 
                     <!-- News -->
-                    <div onclick="app.switchTab('news')" style="cursor: pointer; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                    <div onclick="app.switchTab('news')" style="cursor: pointer; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">📰</div>
                         <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">News</h3>
                         <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Gérer les actualités</p>
@@ -600,63 +603,63 @@ class SaintEspritApp {
                     </div>
 
                     <!-- Journaux -->
-                    <div onclick="app.switchTab('blocks')" style="cursor: pointer; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                    <div onclick="app.switchTab('blocks')" style="cursor: pointer; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">📋</div>
                         <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Journaux</h3>
                         <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Créer les journaux</p>
                     </div>
 
                     <!-- Animation -->
-                    <div onclick="app.switchTab('animation')" style="cursor: pointer; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                    <div onclick="app.switchTab('animation')" style="cursor: pointer; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">🎙️</div>
                         <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Animation</h3>
                         <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Éléments d'animation</p>
                     </div>
 
                     <!-- Chroniques -->
-                    <div onclick="app.switchTab('chroniques-invites')" style="cursor: pointer; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(6, 182, 212, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                    <div onclick="app.switchTab('chroniques-invites')" style="cursor: pointer; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 24px rgba(6, 182, 212, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">🎤</div>
                         <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Chroniques</h3>
                         <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Chroniqueurs & Invités</p>
                     </div>
 
                     <!-- Conducteur -->
-                    <div onclick="app.switchTab('conductor')" style="cursor: pointer; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                    <div onclick="app.switchTab('conductor')" style="cursor: pointer; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">📋</div>
                         <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Conducteur</h3>
                         <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Organiser l'émission</p>
                     </div>
 
                     <!-- ON AIR -->
-                    <div onclick="app.switchTab('onair')" style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3); transition: all 0.3s ease; border: 2px solid transparent; animation: pulse-glow 2s infinite;">
+                    <div onclick="app.switchTab('onair')" style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3); transition: all 0.3s ease; border: 2px solid transparent; animation: pulse-glow 2s infinite;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">🔴</div>
                         <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">ON AIR</h3>
                         <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Diffusion en direct</p>
                     </div>
 
                     <!-- Audio Editor -->
-                    <div onclick="app.switchTab('audio-editor')" style="cursor: pointer; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                    <div onclick="app.switchTab('audio-editor')" style="cursor: pointer; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">🎵</div>
                         <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Audio</h3>
                         <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Éditeur audio</p>
                     </div>
 
                     <!-- Frigo -->
-                    <div onclick="app.switchTab('fridge')" style="cursor: pointer; background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(20, 184, 166, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                    <div onclick="app.switchTab('fridge')" style="cursor: pointer; background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 24px rgba(20, 184, 166, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">🧊</div>
                         <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Frigo</h3>
                         <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Contenus en attente</p>
                     </div>
 
                     <!-- Archives -->
-                    <div onclick="app.switchTab('archives')" style="cursor: pointer; background: linear-gradient(135deg, #64748b 0%, #475569 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(100, 116, 139, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                    <div onclick="app.switchTab('archives')" style="cursor: pointer; background: linear-gradient(135deg, #64748b 0%, #475569 100%); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 24px rgba(100, 116, 139, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">📚</div>
                         <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Archives</h3>
                         <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Historique</p>
                     </div>
 
                     <!-- Paramètres -->
-                    <div onclick="app.switchTab('settings')" style="cursor: pointer; background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(107, 114, 128, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                    <div onclick="app.switchTab('settings')" style="cursor: pointer; background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 24px rgba(107, 114, 128, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">⚙️</div>
                         <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Paramètres</h3>
                         <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Configuration</p>
@@ -1265,7 +1268,16 @@ Use:
         }
         
         this.currentTab = tabName;
-        
+
+        // Update body attribute for sidebar visibility
+        document.body.setAttribute('data-current-tab', tabName);
+
+        // Update header nav items
+        const headerNavItems = document.querySelectorAll('.header-nav-item');
+        headerNavItems.forEach(item => {
+            item.classList.toggle('active', item.dataset.tab === tabName);
+        });
+
         // Update timer display
         this.updateTimerDisplay(tabName);
         

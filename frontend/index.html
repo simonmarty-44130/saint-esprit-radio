@@ -122,6 +122,8 @@
     <link rel="stylesheet" href="css/theme-white-override.css?v=2.0">
     <!-- SIDEBAR FORCE - Doit être chargé en dernier pour override les inline styles -->
     <link rel="stylesheet" href="css/components/sidebar-force.css?v=1762170000">
+    <!-- SIDEBAR VISIBILITY - Cache sidebar hors dashboard -->
+    <link rel="stylesheet" href="css/components/sidebar-visibility.css?v=1762170000">
 
     <!-- Logo switching CSS for sidebar -->
     <style>
@@ -368,7 +370,26 @@
     <div class="main-content">
         <!-- Header with centered timers -->
         <header class="header">
-            <!-- Header Left Spacer pour équilibrer -->
+            <!-- Logo (visible hors dashboard) -->
+            <div class="header-logo" onclick="app.switchTab('dashboard')">
+                <img src="logo-saint-esprit-clair-icon-hd.png" alt="Saint-Esprit">
+                <span class="header-logo-text">Saint-Esprit</span>
+            </div>
+
+            <!-- Navigation horizontale (visible hors dashboard) -->
+            <nav class="header-nav" id="header-nav">
+                <button class="header-nav-item" data-tab="news" onclick="app.switchTab('news')">📰 News</button>
+                <button class="header-nav-item" data-tab="blocks" onclick="app.switchTab('blocks')">📋 Journaux</button>
+                <button class="header-nav-item" data-tab="animation" onclick="app.switchTab('animation')">🎙️ Animation</button>
+                <button class="header-nav-item" data-tab="conductor" onclick="app.switchTab('conductor')">📋 Conducteur</button>
+                <button class="header-nav-item" data-tab="onair" onclick="app.switchTab('onair')">🔴 ON AIR</button>
+                <button class="header-nav-item" data-tab="settings" onclick="app.switchTab('settings')">⚙️</button>
+            </nav>
+
+            <!-- Bouton menu mobile -->
+            <button class="header-menu-toggle" onclick="document.getElementById('header-nav').classList.toggle('mobile-open')">☰</button>
+
+            <!-- Header Left Spacer pour équilibrer (visible sur dashboard) -->
             <div class="header-left"></div>
 
             <!-- Timer Display - Centered! -->
