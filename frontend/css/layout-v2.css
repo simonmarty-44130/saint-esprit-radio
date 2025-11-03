@@ -1,0 +1,355 @@
+/* ===== LAYOUT V2 - ARCHITECTURE PROPRE ===== */
+
+/* ========================================
+   STRUCTURE GÉNÉRALE
+   ======================================== */
+
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ========================================
+   HEADER - CONFIGURATION PAR PAGE
+   ======================================== */
+
+.header {
+    height: 60px;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    border-bottom: 2px solid var(--primary);
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    gap: 2rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    position: relative;
+    z-index: 100;
+}
+
+/* Dashboard : header centré avec timers */
+body[data-current-tab="dashboard"] .header {
+    justify-content: center;
+}
+
+/* Autres pages : header avec logo + nav + controls */
+body:not([data-current-tab="dashboard"]) .header {
+    display: grid;
+    grid-template-columns: 200px 1fr 200px;
+    padding: 0 1.5rem;
+    gap: 2rem;
+}
+
+/* ========================================
+   LOGO HEADER
+   ======================================== */
+
+.header-logo {
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.header-logo:hover {
+    opacity: 0.8;
+}
+
+body:not([data-current-tab="dashboard"]) .header-logo {
+    display: flex;
+}
+
+.header-logo img {
+    height: 35px;
+    width: auto;
+}
+
+.header-logo-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ========================================
+   NAVIGATION HEADER
+   ======================================== */
+
+.header-nav {
+    display: none;
+}
+
+body:not([data-current-tab="dashboard"]) .header-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.header-nav-item {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.header-nav-item:hover {
+    background: var(--primary-bg);
+    color: var(--primary);
+}
+
+.header-nav-item.active {
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+}
+
+/* ========================================
+   TIMER DISPLAY
+   ======================================== */
+
+.timer-display {
+    display: none;
+}
+
+body[data-current-tab="dashboard"] .timer-display {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+
+.timer-item {
+    text-align: center;
+}
+
+.timer-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.timer-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    color: var(--text-primary);
+}
+
+.timer-value.positive {
+    color: var(--success);
+}
+
+.timer-value.negative {
+    color: var(--error);
+}
+
+/* ========================================
+   HEADER CONTROLS
+   ======================================== */
+
+.header-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* Dashboard : position absolue à droite */
+body[data-current-tab="dashboard"] .header-controls {
+    position: absolute;
+    right: 2rem;
+}
+
+/* ========================================
+   SIDEBAR NAVIGATION (Dashboard uniquement)
+   ======================================== */
+
+#sidebar {
+    display: none;
+}
+
+body[data-current-tab="dashboard"] #sidebar {
+    display: flex;
+}
+
+/* ========================================
+   MAIN CONTENT AREA
+   ======================================== */
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    width: 100%;
+}
+
+/* Dashboard avec sidebar */
+body[data-current-tab="dashboard"] {
+    flex-direction: row;
+}
+
+body[data-current-tab="dashboard"] .main-content {
+    flex: 1;
+}
+
+/* ========================================
+   MAIN CONTAINER (contenu scrollable)
+   ======================================== */
+
+.main-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--bg-app);
+}
+
+/* ========================================
+   SECTIONS
+   ======================================== */
+
+.section {
+    display: none;
+    height: 100%;
+    width: 100%;
+}
+
+.section.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Dashboard : section pleine page */
+#dashboard-section {
+    padding: 0;
+}
+
+/* Autres sections : layout avec sidebar latérale */
+.section:not(#dashboard-section) {
+    flex-direction: row;
+}
+
+/* ========================================
+   SIDEBARS LATÉRALES (dans les sections)
+   ======================================== */
+
+.section > aside.sidebar {
+    width: 320px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+}
+
+/* Sur dashboard : masquer sidebars internes */
+body[data-current-tab="dashboard"] .section > aside.sidebar {
+    display: none;
+}
+
+/* ========================================
+   CONTENT AREA (zone de travail principale)
+   ======================================== */
+
+.section > main.content-area {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--bg-primary);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+    body:not([data-current-tab="dashboard"]) .header {
+        grid-template-columns: auto 1fr auto;
+        padding: 0 1rem;
+    }
+
+    .header-nav {
+        display: none !important;
+    }
+
+    .header-menu-toggle {
+        display: block;
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+    }
+
+    .section > aside.sidebar {
+        position: fixed;
+        left: -320px;
+        top: 60px;
+        bottom: 0;
+        z-index: 1000;
+        transition: left 0.3s ease;
+    }
+
+    .section > aside.sidebar.mobile-open {
+        left: 0;
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* ========================================
+   UTILITIES
+   ======================================== */
+
+.hidden {
+    display: none !important;
+}
+
+/* Smooth scrolling */
+.main-container,
+.content-area,
+.section > aside.sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+}
+
+.main-container::-webkit-scrollbar,
+.content-area::-webkit-scrollbar,
+.section > aside.sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.main-container::-webkit-scrollbar-track,
+.content-area::-webkit-scrollbar-track,
+.section > aside.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.main-container::-webkit-scrollbar-thumb,
+.content-area::-webkit-scrollbar-thumb,
+.section > aside.sidebar::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+.main-container::-webkit-scrollbar-thumb:hover,
+.content-area::-webkit-scrollbar-thumb:hover,
+.section > aside.sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}

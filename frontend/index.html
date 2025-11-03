@@ -91,39 +91,43 @@
         input:focus, textarea:focus, select:focus { border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important; }
     </style>
 
-    <!-- Updated CSS import - now using modular structure -->
-    <link rel="stylesheet" href="css/main.css?v=1762170000">
-    <!-- FORCE COLOR OVERRIDE - Design System V3 with Indigo -->
-    <link rel="stylesheet" href="css/color-override-v3.css">
+    <!-- CORE CSS - Base styles et design system -->
+    <link rel="stylesheet" href="css/core/reset-v3.css">
+    <link rel="stylesheet" href="css/core/utilities.css">
+
+    <!-- LAYOUT V2 - Architecture propre et cohérente -->
+    <link rel="stylesheet" href="css/layout-v2.css?v=1762171000">
+
+    <!-- COMPONENTS CSS -->
+    <link rel="stylesheet" href="css/components/buttons.css">
+    <link rel="stylesheet" href="css/components/forms.css">
+    <link rel="stylesheet" href="css/components/modals.css">
+    <link rel="stylesheet" href="css/components/tables.css">
+    <link rel="stylesheet" href="css/components/multitrack.css">
     <link rel="stylesheet" href="css/components/template-modal.css?v=2.0">
     <link rel="stylesheet" href="css/components/locks.css?v=2.0">
     <link rel="stylesheet" href="css/components/conductor-selector.css?v=2.0">
     <link rel="stylesheet" href="css/components/chroniques.css?v=2.0">
+    <link rel="stylesheet" href="css/components/sidebar-force.css?v=1762170000">
+
+    <!-- SECTIONS CSS -->
+    <link rel="stylesheet" href="css/sections/dashboard.css">
+    <link rel="stylesheet" href="css/sections/news.css">
+    <link rel="stylesheet" href="css/sections/animation.css">
+    <link rel="stylesheet" href="css/sections/blocks.css">
+    <link rel="stylesheet" href="css/sections/conductor.css">
+    <link rel="stylesheet" href="css/sections/onair.css">
+    <link rel="stylesheet" href="css/sections/audio_editor.css">
+    <link rel="stylesheet" href="css/sections/fridge.css">
+    <link rel="stylesheet" href="css/sections/settings.css">
     <link rel="stylesheet" href="css/sections/news-optimized.css?v=2.0">
     <link rel="stylesheet" href="css/sections/blocks-optimized.css?v=2.0">
-    <link rel="stylesheet" href="css/sections/cross-user.css?v=2.0">
-    <!-- Volunteer mode CSS -->
-    <link rel="stylesheet" href="css/volunteer-mode.css?v=2.0">
-    <!-- Debug CSS pour forcer l'affichage des sections -->
-    <link rel="stylesheet" href="css/debug-force.css?v=2.0">
-    <!-- Fix global pour les scrollbars -->
-    <link rel="stylesheet" href="css/fixes/scrollbar-fix.css?v=2.0">
-    <!-- Fix layout éditeur -->
-    <link rel="stylesheet" href="css/fixes/editor-layout-fix.css?v=2.0">
-    <!-- Fix layout principal -->
-    <link rel="stylesheet" href="css/fixes/layout-fix.css?v=2.0">
-    <!-- Fix panneau sound elements -->
-    <link rel="stylesheet" href="css/fixes/sound-panel-fix.css?v=2.0">
-    <!-- Fix panneau blocks/journal -->
-    <link rel="stylesheet" href="css/fixes/blocks-panel-fix.css?v=2.0">
-    <!-- Automation module CSS -->
+
+    <!-- MODULES CSS -->
     <link rel="stylesheet" href="css/automation/automation.css?v=2.0">
-    <!-- Thème blanc Saint-Esprit -->
+
+    <!-- THEME CSS -->
     <link rel="stylesheet" href="css/theme-white-override.css?v=2.0">
-    <!-- SIDEBAR FORCE - Doit être chargé en dernier pour override les inline styles -->
-    <link rel="stylesheet" href="css/components/sidebar-force.css?v=1762170000">
-    <!-- SIDEBAR VISIBILITY - Cache sidebar hors dashboard -->
-    <link rel="stylesheet" href="css/components/sidebar-visibility.css?v=1762170000">
 
     <!-- Logo switching CSS for sidebar -->
     <style>
@@ -273,7 +277,7 @@
         }
     </style>
 </head>
-<body>
+<body data-current-tab="dashboard">
     <!-- Toggle Button for mobile -->
     <button class="sidebar-toggle" id="sidebar-toggle" onclick="app.toggleSidebar()">☰</button>
 
