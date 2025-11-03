@@ -178,6 +178,68 @@
             <p>Section ON AIR - En construction</p>
         </div>
 
+        <!-- AUDIO EDITOR VIEW -->
+        <div class="view" id="audio-editor-view">
+            <header class="view-header">
+                <div class="view-header-left">
+                    <button class="btn btn-secondary" onclick="app.returnToNews()">← Retour à la News</button>
+                    <h2>🎵 Éditeur Audio</h2>
+                </div>
+                <div class="view-header-right">
+                    <button class="btn btn-secondary" onclick="app.audioEditor.exportAudio()">💾 Exporter</button>
+                </div>
+            </header>
+
+            <div class="audio-editor-container">
+                <!-- Toolbar -->
+                <div class="audio-toolbar">
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" id="play-btn" onclick="app.audioEditor.togglePlayback()" title="Lecture/Pause (Espace)">▶️</button>
+                        <button class="toolbar-btn" onclick="app.audioEditor.stop()" title="Stop">⏹️</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn success" onclick="app.audioEditor.setInPoint()" title="Marquer point IN (I)">⬇️ IN</button>
+                        <button class="toolbar-btn danger" onclick="app.audioEditor.setOutPoint()" title="Marquer point OUT (O)">⬆️ OUT</button>
+                        <button class="toolbar-btn" onclick="app.audioEditor.clearInOut()" title="Effacer IN/OUT">🔄</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" id="cut-btn" onclick="app.audioEditor.cut()" title="Couper (Ctrl+X)" disabled>✂️</button>
+                        <button class="toolbar-btn" id="copy-btn" onclick="app.audioEditor.copy()" title="Copier (Ctrl+C)" disabled>📋</button>
+                        <button class="toolbar-btn" id="paste-btn" onclick="app.audioEditor.paste()" title="Coller (Ctrl+V)" disabled>📌</button>
+                        <button class="toolbar-btn danger" id="delete-btn" onclick="app.audioEditor.deleteSelection()" title="Supprimer (Suppr)" disabled>🗑️</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.audioEditor.normalize()" title="Normaliser">🔊</button>
+                        <button class="toolbar-btn" id="fadein-btn" onclick="app.audioEditor.fadeIn()" title="Fade In" disabled>📈</button>
+                        <button class="toolbar-btn" id="fadeout-btn" onclick="app.audioEditor.fadeOut()" title="Fade Out" disabled>📉</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" id="undo-btn" onclick="app.audioEditor.undo()" title="Annuler (Ctrl+Z)" disabled>↶</button>
+                        <button class="toolbar-btn" id="redo-btn" onclick="app.audioEditor.redo()" title="Refaire (Ctrl+Y)" disabled>↷</button>
+                    </div>
+                </div>
+
+                <!-- Waveform Display -->
+                <div class="waveform-container">
+                    <canvas id="waveform-canvas"></canvas>
+                </div>
+
+                <!-- Transport Controls -->
+                <div class="transport-controls">
+                    <div class="time-display">
+                        <span id="current-time">00:00.000</span>
+                        <span class="separator">/</span>
+                        <span id="total-duration">00:00.000</span>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="btn btn-sm" onclick="app.audioEditor.zoomIn()">🔍+</button>
+                        <button class="btn btn-sm" onclick="app.audioEditor.zoomOut()">🔍-</button>
+                        <button class="btn btn-sm" onclick="app.audioEditor.zoomFit()">⬌ Ajuster</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- AWS SDK -->
