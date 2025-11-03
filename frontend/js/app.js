@@ -568,81 +568,113 @@ class SaintEspritApp {
 
     getDashboardHTML(data) {
         // Récupérer le prénom de l'utilisateur
-        const fullName = localStorage.getItem('saint-esprit-user-fullname') || 
+        const fullName = localStorage.getItem('saint-esprit-user-fullname') ||
                         localStorage.getItem('saint-esprit-user-name') || '';
         const firstName = fullName.split(' ')[0] || '';
-        const welcomeMessage = firstName ? `Bienvenue sur Saint-Esprit, ${firstName}` : 'Bienvenue sur Saint-Esprit';
-        
+        const welcomeMessage = firstName ? `Bienvenue, ${firstName}` : 'Bienvenue';
+
         return `
-            <div class="dashboard-container" style="padding: 2rem; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: calc(100vh - 200px);">
-                <div style="text-align: center;">
-                    <h1 style="font-size: 3rem; margin-bottom: 1rem; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700;">${welcomeMessage}</h1>
-                    <h2 style="font-size: 1.8rem; margin-bottom: 2rem; color: var(--text-secondary);">Système de Newsroom pour Radio Fidélité</h2>
-                    <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 3rem;">${data.dayName} ${new Date().toLocaleDateString('fr-FR')}</p>
+            <div class="dashboard-container" style="padding: 3rem 2rem; max-width: 1400px; margin: 0 auto;">
+                <!-- Header -->
+                <div style="text-align: center; margin-bottom: 3rem;">
+                    <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700;">${welcomeMessage}</h1>
+                    <p style="font-size: 1.1rem; color: var(--text-muted);">${data.dayName} ${new Date().toLocaleDateString('fr-FR')}</p>
+                </div>
 
-                    <!-- VERSION DISPLAY -->
-                    <div style="position: fixed; bottom: 10px; right: 10px; background: var(--bg-secondary); padding: 5px 10px; border-radius: var(--radius-md); border: 1px solid var(--primary); font-size: 0.9rem; color: var(--primary); font-family: monospace; box-shadow: var(--shadow-md);">
-                        Saint-Esprit v${Constants.VERSION}
-                    </div>
+                <!-- VERSION DISPLAY -->
+                <div style="position: fixed; bottom: 10px; right: 10px; background: var(--bg-secondary); padding: 5px 10px; border-radius: var(--radius-md); border: 1px solid var(--primary); font-size: 0.9rem; color: var(--primary); font-family: monospace; box-shadow: var(--shadow-md);">
+                    Saint-Esprit v${Constants.VERSION}
+                </div>
 
-                    <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;">
-                        <button class="btn btn-primary" onclick="app.switchTab('news')" style="padding: 1rem 2rem; font-size: 1.1rem;">
-                            📰 Créer une News
-                        </button>
-                        <button class="btn btn-primary" onclick="app.switchTab('animation')" style="padding: 1rem 2rem; font-size: 1.1rem;">
-                            🎙️ Créer une Animation
-                        </button>
-                        <button class="btn btn-primary" onclick="app.switchTab('conductor')" style="padding: 1rem 2rem; font-size: 1.1rem;">
-                            📋 Voir le Conducteur
-                        </button>
-                    </div>
+                <!-- Grille de tuiles -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 0 auto;">
 
-                    <div style="margin-top: 3rem; padding: 1.5rem; background: var(--primary-bg); border-radius: var(--radius-xl); border: 1px solid var(--primary); box-shadow: var(--shadow-md);">
-                        <h3 style="color: var(--primary); margin-bottom: 1rem; font-weight: 600;">📊 Statistiques du jour</h3>
-                        <p style="color: var(--text-secondary); font-size: 1rem;">
-                            ${data.totalItems} éléments planifiés • ${data.readyCount} prêts • ${data.totalItems - data.readyCount} en préparation
-                        </p>
-                        ${data.urgentItems.length > 0 ?
-                            `<p style="color: var(--error); margin-top: 0.5rem;">⚠️ ${data.urgentItems.length} élément(s) urgent(s) à finaliser</p>`
-                            : '<p style="color: var(--success); margin-top: 0.5rem;">✅ Aucun élément urgent</p>'
-                    }
-                    
-                    <!-- Séparateur -->
-                    <div style="border-top: 1px solid var(--border); margin: 1rem 0;"></div>
-
-                    <!-- Nouvelles statistiques des news -->
-                    <div style="margin-top: 1rem;">
-                        <h4 style="color: var(--primary); margin-bottom: 0.5rem; font-size: 0.95rem; font-weight: 600;">📰 État des news</h4>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.9rem;">
-                            <div style="color: var(--info);">
-                                <span style="font-weight: bold;">${data.todayNewsCount}</span> news aujourd'hui
-                            </div>
-                            <div style="color: var(--warning);">
-                                <span style="font-weight: bold;">${data.futureNewsCount}</span> news à venir
-                            </div>
-                            <div style="color: var(--error);">
-                                <span style="font-weight: bold;">${data.expiredNewsCount}</span> news périmées
-                            </div>
-                            <div style="color: var(--text-muted);">
-                                <span style="font-weight: bold;">${data.undatedNewsCount}</span> news non datées
-                            </div>
+                    <!-- News -->
+                    <div onclick="app.switchTab('news')" style="cursor: pointer; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">📰</div>
+                        <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">News</h3>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Gérer les actualités</p>
+                        <div style="margin-top: 1rem; color: rgba(255,255,255,0.8); font-size: 0.85rem;">
+                            ${data.todayNewsCount} aujourd'hui
                         </div>
                     </div>
 
-                    <!-- Séparateur -->
-                    <div style="border-top: 1px solid var(--border); margin: 1rem 0;"></div>
+                    <!-- Journaux -->
+                    <div onclick="app.switchTab('blocks')" style="cursor: pointer; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">📋</div>
+                        <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Journaux</h3>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Créer les journaux</p>
+                    </div>
 
-                    <!-- Utilisateurs connectés -->
-                    <div>
-                        <h4 style="color: var(--primary); margin-bottom: 0.5rem; font-size: 0.95rem; font-weight: 600;">👥 Utilisateurs en ligne</h4>
-                        <div id="connected-users-list" style="color: var(--text-secondary); font-size: 0.85rem;">
-                            <!-- La liste sera remplie dynamiquement -->
-                        </div>
+                    <!-- Animation -->
+                    <div onclick="app.switchTab('animation')" style="cursor: pointer; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">🎙️</div>
+                        <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Animation</h3>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Éléments d'animation</p>
+                    </div>
+
+                    <!-- Chroniques -->
+                    <div onclick="app.switchTab('chroniques-invites')" style="cursor: pointer; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(6, 182, 212, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">🎤</div>
+                        <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Chroniques</h3>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Chroniqueurs & Invités</p>
+                    </div>
+
+                    <!-- Conducteur -->
+                    <div onclick="app.switchTab('conductor')" style="cursor: pointer; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">📋</div>
+                        <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Conducteur</h3>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Organiser l'émission</p>
+                    </div>
+
+                    <!-- ON AIR -->
+                    <div onclick="app.switchTab('onair')" style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3); transition: all 0.3s ease; border: 2px solid transparent; animation: pulse-glow 2s infinite;">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">🔴</div>
+                        <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">ON AIR</h3>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Diffusion en direct</p>
+                    </div>
+
+                    <!-- Audio Editor -->
+                    <div onclick="app.switchTab('audio-editor')" style="cursor: pointer; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">🎵</div>
+                        <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Audio</h3>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Éditeur audio</p>
+                    </div>
+
+                    <!-- Frigo -->
+                    <div onclick="app.switchTab('fridge')" style="cursor: pointer; background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(20, 184, 166, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">🧊</div>
+                        <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Frigo</h3>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Contenus en attente</p>
+                    </div>
+
+                    <!-- Archives -->
+                    <div onclick="app.switchTab('archives')" style="cursor: pointer; background: linear-gradient(135deg, #64748b 0%, #475569 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(100, 116, 139, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">📚</div>
+                        <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Archives</h3>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Historique</p>
+                    </div>
+
+                    <!-- Paramètres -->
+                    <div onclick="app.switchTab('settings')" style="cursor: pointer; background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 8px 24px rgba(107, 114, 128, 0.2); transition: all 0.3s ease; border: 2px solid transparent;">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">⚙️</div>
+                        <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Paramètres</h3>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Configuration</p>
                     </div>
                 </div>
-                <button class="btn btn-primary" style="font-size: 1.25rem; padding: 1rem 2rem;" onclick="app.loadTemplate('${data.dayName.toLowerCase()}')">
-                    📋 Charger Template ${data.dayName}
-                </button>
+
+                <style>
+                    .dashboard-container > div > div:hover {
+                        transform: translateY(-4px) scale(1.02);
+                        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+                        border-color: rgba(255,255,255,0.3);
+                    }
+
+                    @keyframes pulse-glow {
+                        0%, 100% { box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3); }
+                        50% { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.5); }
+                    }
+                </style>
             </div>
         `;
     }
