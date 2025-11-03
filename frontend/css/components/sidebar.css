@@ -262,11 +262,12 @@ body {
     border-bottom: 2px solid var(--primary);
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     padding: 0 var(--space-2xl);
     position: relative;
     flex-shrink: 0;
     box-shadow: var(--shadow-sm);
+    gap: var(--space-2xl);
 }
 
 /* Timer Display */
@@ -304,13 +305,20 @@ body {
     color: var(--error);
 }
 
+/* Header Left Spacer (pour équilibrer) */
+.header-left {
+    flex: 1;
+    min-width: 200px;
+}
+
 /* Header Controls */
 .header-controls {
-    position: absolute;
-    right: var(--space-2xl);
     display: flex;
     gap: var(--space-md);
     align-items: center;
+    flex: 1;
+    justify-content: flex-end;
+    min-width: 200px;
 }
 
 .quick-action {

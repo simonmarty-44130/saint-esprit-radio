@@ -576,15 +576,15 @@ class SaintEspritApp {
         return `
             <div class="dashboard-container" style="padding: 2rem; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: calc(100vh - 200px);">
                 <div style="text-align: center;">
-                    <h1 style="font-size: 3rem; margin-bottom: 1rem; color: #00ff9f;">${welcomeMessage}</h1>
-                    <h2 style="font-size: 1.8rem; margin-bottom: 2rem; color: #ccc;">Système de Newsroom pour Radio Fidélité</h2>
-                    <p style="font-size: 1.2rem; color: #999; margin-bottom: 3rem;">${data.dayName} ${new Date().toLocaleDateString('fr-FR')}</p>
-                    
+                    <h1 style="font-size: 3rem; margin-bottom: 1rem; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700;">${welcomeMessage}</h1>
+                    <h2 style="font-size: 1.8rem; margin-bottom: 2rem; color: var(--text-secondary);">Système de Newsroom pour Radio Fidélité</h2>
+                    <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 3rem;">${data.dayName} ${new Date().toLocaleDateString('fr-FR')}</p>
+
                     <!-- VERSION DISPLAY -->
-                    <div style="position: fixed; bottom: 10px; right: 10px; background: rgba(0, 0, 0, 0.8); padding: 5px 10px; border-radius: 5px; border: 1px solid #00ff9f; font-size: 0.9rem; color: #00ff9f; font-family: monospace;">
+                    <div style="position: fixed; bottom: 10px; right: 10px; background: var(--bg-secondary); padding: 5px 10px; border-radius: var(--radius-md); border: 1px solid var(--primary); font-size: 0.9rem; color: var(--primary); font-family: monospace; box-shadow: var(--shadow-md);">
                         Saint-Esprit v${Constants.VERSION}
                     </div>
-                    
+
                     <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;">
                         <button class="btn btn-primary" onclick="app.switchTab('news')" style="padding: 1rem 2rem; font-size: 1.1rem;">
                             📰 Créer une News
@@ -596,46 +596,46 @@ class SaintEspritApp {
                             📋 Voir le Conducteur
                         </button>
                     </div>
-                    
-                    <div style="margin-top: 3rem; padding: 1.5rem; background: rgba(0, 255, 159, 0.1); border-radius: 8px; border: 1px solid rgba(0, 255, 159, 0.3);">
-                        <h3 style="color: #00ff9f; margin-bottom: 1rem;">📊 Statistiques du jour</h3>
-                        <p style="color: #ccc; font-size: 1rem;">
+
+                    <div style="margin-top: 3rem; padding: 1.5rem; background: var(--primary-bg); border-radius: var(--radius-xl); border: 1px solid var(--primary); box-shadow: var(--shadow-md);">
+                        <h3 style="color: var(--primary); margin-bottom: 1rem; font-weight: 600;">📊 Statistiques du jour</h3>
+                        <p style="color: var(--text-secondary); font-size: 1rem;">
                             ${data.totalItems} éléments planifiés • ${data.readyCount} prêts • ${data.totalItems - data.readyCount} en préparation
                         </p>
-                        ${data.urgentItems.length > 0 ? 
-                            `<p style="color: #ff6666; margin-top: 0.5rem;">⚠️ ${data.urgentItems.length} élément(s) urgent(s) à finaliser</p>` 
-                            : '<p style="color: #00ff9f; margin-top: 0.5rem;">✅ Aucun élément urgent</p>'
+                        ${data.urgentItems.length > 0 ?
+                            `<p style="color: var(--error); margin-top: 0.5rem;">⚠️ ${data.urgentItems.length} élément(s) urgent(s) à finaliser</p>`
+                            : '<p style="color: var(--success); margin-top: 0.5rem;">✅ Aucun élément urgent</p>'
                     }
                     
                     <!-- Séparateur -->
-                    <div style="border-top: 1px solid rgba(0, 255, 159, 0.2); margin: 1rem 0;"></div>
-                    
+                    <div style="border-top: 1px solid var(--border); margin: 1rem 0;"></div>
+
                     <!-- Nouvelles statistiques des news -->
                     <div style="margin-top: 1rem;">
-                        <h4 style="color: #00ff9f; margin-bottom: 0.5rem; font-size: 0.95rem;">📰 État des news</h4>
+                        <h4 style="color: var(--primary); margin-bottom: 0.5rem; font-size: 0.95rem; font-weight: 600;">📰 État des news</h4>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.9rem;">
-                            <div style="color: #00aaff;">
+                            <div style="color: var(--info);">
                                 <span style="font-weight: bold;">${data.todayNewsCount}</span> news aujourd'hui
                             </div>
-                            <div style="color: #ffa500;">
+                            <div style="color: var(--warning);">
                                 <span style="font-weight: bold;">${data.futureNewsCount}</span> news à venir
                             </div>
-                            <div style="color: #ff6666;">
+                            <div style="color: var(--error);">
                                 <span style="font-weight: bold;">${data.expiredNewsCount}</span> news périmées
                             </div>
-                            <div style="color: #999;">
+                            <div style="color: var(--text-muted);">
                                 <span style="font-weight: bold;">${data.undatedNewsCount}</span> news non datées
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Séparateur -->
-                    <div style="border-top: 1px solid rgba(0, 255, 159, 0.2); margin: 1rem 0;"></div>
-                    
+                    <div style="border-top: 1px solid var(--border); margin: 1rem 0;"></div>
+
                     <!-- Utilisateurs connectés -->
                     <div>
-                        <h4 style="color: #00ff9f; margin-bottom: 0.5rem; font-size: 0.95rem;">👥 Utilisateurs en ligne</h4>
-                        <div id="connected-users-list" style="color: #ccc; font-size: 0.85rem;">
+                        <h4 style="color: var(--primary); margin-bottom: 0.5rem; font-size: 0.95rem; font-weight: 600;">👥 Utilisateurs en ligne</h4>
+                        <div id="connected-users-list" style="color: var(--text-secondary); font-size: 0.85rem;">
                             <!-- La liste sera remplie dynamiquement -->
                         </div>
                     </div>
