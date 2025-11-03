@@ -161,6 +161,28 @@ class StorageDynamoDB {
     }
 
     /**
+     * Méthode load() pour compatibilité avec l'interface Storage
+     * Retourne les données du cache (déjà chargées par init)
+     */
+    async load() {
+        // Si les données ne sont pas encore chargées, les charger
+        if (!this.initialized ||
+            (!this.cache.news && !this.cache.animations && !this.cache.blocks && !this.cache.conductors)) {
+            console.log('📥 Cache vide, rechargement depuis DynamoDB...');
+            await this.loadAllData();
+        }
+
+        // Retourner les données du cache
+        return {
+            news: this.cache.news || [],
+            animations: this.cache.animations || [],
+            blocks: this.cache.blocks || [],
+            conductors: this.cache.conductors || [],
+            settings: {} // Settings non implémenté pour l'instant
+        };
+    }
+
+    /**
      * Charger les blocks de manière optimisée avec Query au lieu de Scan
      */
     async loadOptimizedBlocks() {
