@@ -260,19 +260,61 @@
     <!-- Modal Container -->
     <div id="modal-container"></div>
 
-    <!-- Scripts -->
+    <!-- AWS SDK -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1462.0.min.js?v=1757350310"></script>
+
+    <!-- Core Scripts -->
+    <script src="js/config/aws-config.js?v=1.0"></script>
+    <script src="js/core/utils.js?v=1.1"></script>
     <script src="js/utils/utils.js"></script>
-    <script src="js/utils/constants.js"></script>
+    <script src="js/utils/audio-url-fixer.js?v=1.0"></script>
+    <script src="js/core/constants.js?v=2.1.0"></script>
     <script src="js/core/cognito-auth.js?v=1.2"></script>
     <script src="js/core/dynamodb-client.js?v=1762169381"></script>
     <script src="js/core/storage-dynamodb-v2.js?v=1762169381"></script>
     <script src="js/core/cache-manager.js?v=1762169381"></script>
-    <script src="js/app.js?v=1762169381"></script>
+    <script src="js/core/audio-storage.js?v=1762169381"></script>
+    <script src="js/core/conductor-storage.js?v=1762169381"></script>
+    <script src="js/core/sync-wrapper.js?v=1755899484"></script>
+    <script src="js/core/cross-user-manager.js?v=1.2"></script>
 
-    <script>
-        // Initialize app
-        const app = new App();
-        window.app = app;
-    </script>
+    <!-- Utils -->
+    <script src="js/utils/block-metrics.js?v=1.0"></script>
+
+    <!-- Managers -->
+    <script src="js/managers/ContentManagerHelpers.js?v=1755899484"></script>
+    <script src="js/managers/ContentManager.js?v=1756486244"></script>
+    <script src="js/managers/BlockManager.js?v=1756697800"></script>
+    <script src="js/managers/ConductorManager.js?v=1756484402"></script>
+    <script src="js/managers/ConductorTemplateManager.js?v=1755899484"></script>
+    <script src="js/managers/AudioManager.js?v=1757260400"></script>
+    <script src="js/managers/AudioS3Manager.js?v=1755899484"></script>
+    <script src="js/managers/AudioUrlManager.js?v=1755899484"></script>
+    <script src="js/managers/RecurrenceManager.js?v=1755899484"></script>
+    <script src="js/managers/ExportManager.js?v=1755899484"></script>
+    <script src="js/managers/ArchivesManager.js?v=1756492980"></script>
+
+    <!-- Components -->
+    <script src="js/components/Editor.js?v=1755899484"></script>
+    <script src="js/components/Rundown.js?v=1755899484"></script>
+    <script src="js/components/OnAir.js?v=1757350310"></script>
+    <script src="js/components/Settings.js?v=1755899484"></script>
+    <script src="js/components/Blocks.js?v=1755899484"></script>
+    <script src="js/components/UserFilter.js?v=1.0"></script>
+    <script src="js/components/ChroniquesInvites.js?v=1.0"></script>
+    <script src="js/components/AudioEditor.js?v=1756417514"></script>
+    <script src="js/components/MultitrackEditor.js?v=1755899484"></script>
+    <script src="js/components/Fridge.js?v=1755899484"></script>
+
+    <!-- Modules -->
+    <script src="js/modules/StudiosCalendar.js?v=1.0"></script>
+    <script src="js/modules/EmissionEditor.js?v=1.0"></script>
+    <script src="js/modules/VolunteerOptimizations.js?v=1.0"></script>
+
+    <!-- Dev Tools -->
+    <script src="js/utils/dev-tools.js?v=1.0"></script>
+
+    <!-- Main App -->
+    <script src="js/app.js?v=1762169381"></script>
 </body>
 </html>
