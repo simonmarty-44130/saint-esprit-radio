@@ -7,11 +7,11 @@
     overflow-y: auto;
     background-color: var(--bg-primary);
     position: relative;
-    display: block;
+    /* display: block; -- RETIRÉ : laisse .section contrôler le display */
 }
 
 #dashboard-section.active {
-    display: block !important;
+    /* Les règles .section.active de layout-v2.css gèrent l'affichage */
     visibility: visible;
     opacity: 1;
 }
