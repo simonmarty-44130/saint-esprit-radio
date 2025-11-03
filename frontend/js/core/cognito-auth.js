@@ -15,7 +15,7 @@ class CognitoAuth {
             redirectUri: window.location.origin + '/',
             logoutUri: window.location.origin + '/logout.html'
         };
-        
+
         // Mapping des utilisateurs connus (temporaire en attendant que Cognito soit configuré)
         this.knownUsers = {
             'simon.marty@radio-fidelite.fr': 'Simon Marty',
@@ -24,47 +24,67 @@ class CognitoAuth {
             'morgane.poirier@radio-fidelite.fr': 'Morgane Poirier',
             'arthur.camus@radio-fidelite.fr': 'Arthur Camus'
         };
-        
+
         // URLs Cognito
         this.cognitoUrl = `https://${this.config.domain}.auth.${this.config.region}.amazoncognito.com`;
-        
+
         // État de l'authentification
         this.isAuthenticated = false;
         this.user = null;
         this.tokens = null;
-        
+        this.authReady = false;
+        this.authPromise = null;
+
         // Initialiser au chargement
         this.init();
     }
-    
-    init() {
+
+    async init() {
         console.log('🔐 Initialisation Cognito Auth...');
-        
-        // Vérifier si on revient d'une redirection Cognito
-        this.handleCallback();
-        
-        // Vérifier si on a des tokens stockés
-        this.checkStoredTokens();
+
+        // Créer une promise pour que d'autres composants puissent attendre
+        this.authPromise = (async () => {
+            // Vérifier si on revient d'une redirection Cognito
+            await this.handleCallback();
+
+            // Vérifier si on a des tokens stockés
+            await this.checkStoredTokens();
+
+            this.authReady = true;
+            console.log('✅ Authentification Cognito prête');
+        })();
+
+        return this.authPromise;
+    }
+
+    /**
+     * Attendre que l'authentification soit prête
+     */
+    async waitForAuth() {
+        if (this.authReady) return;
+        if (this.authPromise) {
+            await this.authPromise;
+        }
     }
     
     /**
      * Gère le callback après authentification
      */
-    handleCallback() {
+    async handleCallback() {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
-        
+
         // Vérifier aussi le code stocké en session
         const storedCode = sessionStorage.getItem('auth-code');
-        
+
         if (code || storedCode) {
             const authCode = code || storedCode;
             console.log('🔑 Code d\'autorisation détecté, échange contre tokens...');
-            
+
             // S'assurer qu'on n'a pas déjà des tokens valides
             const existingToken = localStorage.getItem('cognito_id_token');
             if (!existingToken) {
-                this.exchangeCodeForTokens(authCode);
+                await this.exchangeCodeForTokens(authCode);
                 // Nettoyer le code stocké après utilisation
                 sessionStorage.removeItem('auth-code');
             } else {
@@ -323,7 +343,7 @@ class CognitoAuth {
                     console.log('✅ Session valide pour:', this.user?.name);
                 } else {
                     console.log('⏰ Token expiré, tentative de refresh...');
-                    this.refreshTokens();
+                    await this.refreshTokens();
                 }
             } catch (error) {
                 console.error('Token invalide:', error);

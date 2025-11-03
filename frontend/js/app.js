@@ -61,10 +61,17 @@ class SaintEspritApp {
             document.querySelectorAll('.modal').forEach(modal => {
                 modal.classList.remove('active');
             });
-            
+
+            // IMPORTANT : Attendre que l'authentification Cognito soit prête
+            if (window.cognitoAuth) {
+                console.log('⏳ En attente de l\'authentification Cognito...');
+                await window.cognitoAuth.waitForAuth();
+                console.log('✅ Authentification prête, initialisation du storage...');
+            }
+
             // Initialize storage - Utiliser DynamoDB
             const useDynamoDB = true; // Forcer DynamoDB
-            
+
             if (useDynamoDB) {
                 console.log('📦 Initializing DynamoDB storage (multi-user mode)...');
                 this.storage = new StorageDynamoDB();
@@ -72,7 +79,7 @@ class SaintEspritApp {
                 console.log('📁 Using S3/JSON storage (legacy mode)...');
                 this.storage = new Storage();
             }
-            
+
             await this.storage.init();
             
             // Initialiser le cache manager
