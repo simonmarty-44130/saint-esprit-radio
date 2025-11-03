@@ -20,9 +20,9 @@ body {
 /* Navigation Sidebar */
 #sidebar {
     width: var(--nav-sidebar-width);
-    background: var(--bg-secondary);
-    border-right: 1px solid var(--border);
-    transition: all 0.3s ease;
+    background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    border-right: 2px solid var(--primary);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     z-index: 100;
     display: flex;
@@ -36,7 +36,7 @@ body {
     visibility: visible;
     opacity: 1;
     scrollbar-width: thin;
-    box-shadow: var(--shadow-md);
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
 }
 
 /* Scrollbar pour sidebar */
@@ -68,25 +68,33 @@ body {
     height: var(--header-height);
     display: flex;
     align-items: center;
-    padding: 0 var(--space-lg);
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-primary);
+    justify-content: center;
+    padding: 0 var(--space-md);
+    border-bottom: 2px solid var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
 }
 
 #sidebar .logo-icon {
-    width: 35px;
-    height: 35px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    width: 40px;
+    height: 40px;
+    background: var(--text-white);
     border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
-    font-weight: bold;
-    color: var(--text-white);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
     flex-shrink: 0;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+#sidebar:hover .logo-icon {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .logo-text {
@@ -115,68 +123,87 @@ body {
 
 /* Navigation Sections */
 .nav-section {
-    padding: var(--space-sm) 0;
+    padding: var(--space-md) 0;
     flex-shrink: 0;
     overflow: hidden;
 }
 
 .nav-section-title {
     padding: var(--space-sm) var(--space-lg);
-    font-size: var(--text-xs);
+    font-size: 0.7rem;
     text-transform: uppercase;
-    color: var(--text-muted);
-    font-weight: 600;
-    letter-spacing: 0.1em;
+    color: var(--primary);
+    font-weight: 700;
+    letter-spacing: 0.15em;
     opacity: 0;
     transition: all 0.3s ease;
     white-space: nowrap;
+    border-left: 3px solid var(--primary);
+    margin-left: var(--space-md);
+    background: var(--primary-bg);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
 #sidebar:hover .nav-section-title,
 #sidebar.expanded .nav-section-title {
     opacity: 1;
+    transform: translateX(0);
 }
 
 /* Navigation Items */
 .nav-item {
     display: flex;
     align-items: center;
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-md) var(--space-md);
     color: var(--text-secondary);
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     position: relative;
-    min-height: 36px;
+    min-height: 44px;
     border: none;
-    background: none;
+    background: transparent;
     width: 100%;
     text-align: left;
-    margin: 2px var(--space-xs);
+    margin: 3px var(--space-sm);
     overflow: hidden;
     font-size: var(--text-sm);
-    border-radius: var(--radius-md);
+    font-weight: 500;
+    border-radius: var(--radius-lg);
 }
 
-.nav-item:hover {
-    background: var(--primary-bg);
-    color: var(--primary);
-}
-
-.nav-item.active {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: var(--text-white);
-    box-shadow: var(--shadow-sm);
-}
-
-.nav-item.active::before {
+.nav-item::after {
     content: '';
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 3px;
-    background: var(--primary-darker);
+    width: 0;
+    background: var(--primary);
+    transition: width 0.25s ease;
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.nav-item:hover {
+    background: var(--primary-bg-hover);
+    color: var(--primary);
+    transform: translateX(4px);
+}
+
+.nav-item:hover::after {
+    width: 4px;
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: var(--text-white);
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    transform: translateX(2px);
+}
+
+.nav-item.active::after {
+    width: 0;
 }
 
 .nav-icon {
@@ -207,9 +234,14 @@ body {
     margin-left: var(--space-lg);
     opacity: 0;
     transform: translateX(-20px);
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: var(--text-sm);
     white-space: nowrap;
+    font-weight: 500;
+}
+
+.nav-item.active .nav-text {
+    font-weight: 600;
 }
 
 #sidebar:hover .nav-text,
@@ -220,9 +252,10 @@ body {
 
 .nav-shortcut {
     margin-left: auto;
-    font-size: var(--text-xs);
-    background: var(--bg-tertiary);
-    padding: 2px 6px;
+    font-size: 0.65rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    padding: 3px 7px;
     border-radius: var(--radius-sm);
     opacity: 0;
     transition: all 0.3s ease;
@@ -230,6 +263,15 @@ body {
     visibility: hidden;
     position: absolute;
     right: var(--space-lg);
+    font-family: monospace;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-item.active .nav-shortcut {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-white);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 #sidebar:hover .nav-shortcut,
