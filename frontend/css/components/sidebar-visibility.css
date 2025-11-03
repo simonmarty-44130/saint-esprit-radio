@@ -19,20 +19,21 @@ body[data-current-tab="dashboard"] #sidebar {
 
 /* Menu horizontal dans le header pour les autres pages */
 body:not([data-current-tab="dashboard"]) .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 var(--space-xl);
-    gap: var(--space-xl);
+    display: grid !important;
+    grid-template-columns: auto 1fr auto !important;
+    grid-template-areas: "logo nav controls" !important;
+    align-items: center !important;
+    padding: 0 var(--space-xl) !important;
+    gap: var(--space-xl) !important;
 }
 
 /* Navigation horizontale en header */
 .header-nav {
     display: none;
-    flex: 1;
     align-items: center;
     gap: var(--space-sm);
-    max-width: 800px;
+    justify-content: center;
+    grid-area: nav;
 }
 
 body:not([data-current-tab="dashboard"]) .header-nav {
@@ -67,8 +68,9 @@ body:not([data-current-tab="dashboard"]) .header-nav {
 .header-logo {
     display: none;
     align-items: center;
-    gap: var(--space-md);
+    gap: var(--space-sm);
     cursor: pointer;
+    grid-area: logo;
 }
 
 body:not([data-current-tab="dashboard"]) .header-logo {
@@ -81,12 +83,28 @@ body:not([data-current-tab="dashboard"]) .header-logo {
 }
 
 .header-logo-text {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+/* Cacher les éléments du dashboard sur les autres pages */
+body:not([data-current-tab="dashboard"]) .header-left {
+    display: none !important;
+}
+
+body:not([data-current-tab="dashboard"]) .timer-display {
+    display: none !important;
+}
+
+/* Remettre controls à droite */
+body:not([data-current-tab="dashboard"]) .header-controls {
+    grid-area: controls;
+    display: flex !important;
+    justify-content: flex-end !important;
 }
 
 /* Bouton menu mobile */
@@ -99,6 +117,19 @@ body:not([data-current-tab="dashboard"]) .header-logo {
     border-radius: var(--radius-md);
     cursor: pointer;
     font-size: 1.2rem;
+}
+
+/* Cacher les panels latéraux dans les sections */
+body:not([data-current-tab="dashboard"]) .section > aside.sidebar {
+    display: none !important;
+}
+
+/* Ajuster le contenu principal pour prendre toute la largeur */
+body:not([data-current-tab="dashboard"]) .section > main.content-area {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    flex: 1 !important;
 }
 
 /* Responsive */
