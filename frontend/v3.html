@@ -183,7 +183,11 @@
     <!-- AWS SDK -->
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1462.0.min.js"></script>
 
+    <!-- Config (AWS config DOIT être chargé en premier) -->
+    <script src="js/config/aws-config.js?v=3.0.0"></script>
+
     <!-- Core JS (gardons ce qui fonctionne) -->
+    <script src="js/core/utils.js?v=3.0.0"></script>
     <script src="js/core/cognito-auth.js?v=1.2"></script>
     <script src="js/core/dynamodb-client.js?v=1762169381"></script>
     <script src="js/core/storage-dynamodb-v2.js?v=1762169381"></script>
