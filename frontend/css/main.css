@@ -11,7 +11,7 @@
 @import 'components/forms.css';
 @import 'components/modals.css';
 @import 'components/tables.css';
-@import 'components/sidebar.css';
+@import 'components/sidebar.css?v=1762170000';
 @import 'components/multitrack.css';
 
 /* 3. SECTIONS - Page-specific styles */
