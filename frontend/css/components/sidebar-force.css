@@ -1,0 +1,164 @@
+/* ===== SIDEBAR NAVIGATION - FORCE OVERRIDE ===== */
+/* Ce fichier utilise !important pour forcer les styles malgré les inline styles et le thème blanc */
+
+/* Sidebar container avec gradient */
+#sidebar {
+    background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%) !important;
+    border-right: 2px solid var(--primary) !important;
+    box-shadow: 4px 0 12px rgba(99, 102, 241, 0.08) !important;
+}
+
+/* Header avec gradient indigo */
+#sidebar .sidebar-header {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    border-bottom: 2px solid #6366f1 !important;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2) !important;
+    padding: 1.5rem var(--space-md) !important;
+    min-height: auto !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+/* Logo styling - fond blanc sur gradient indigo */
+#sidebar .logo-expanded {
+    background: white;
+    padding: 1rem;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#sidebar .logo-collapsed {
+    background: white;
+    padding: 0.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Section titles avec accent */
+.nav-section-title {
+    color: #6366f1 !important;
+    font-weight: 700 !important;
+    border-left: 3px solid #6366f1 !important;
+    background: rgba(99, 102, 241, 0.08) !important;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0 !important;
+    padding: var(--space-sm) var(--space-lg) !important;
+    margin-left: var(--space-md) !important;
+    font-size: 0.7rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.15em !important;
+}
+
+/* Nav items - état normal */
+.nav-item {
+    border-radius: var(--radius-lg) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative !important;
+    margin: 3px var(--space-sm) !important;
+    background: transparent !important;
+    color: #495057 !important;
+}
+
+/* Pseudo-element pour la barre d'accent au survol */
+.nav-item::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: #6366f1;
+    transition: width 0.25s ease;
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+/* Nav items - hover */
+.nav-item:hover {
+    background: rgba(99, 102, 241, 0.12) !important;
+    color: #6366f1 !important;
+    transform: translateX(4px) !important;
+}
+
+.nav-item:hover::after {
+    width: 4px;
+}
+
+/* Nav items - actif */
+.nav-item.active {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+    transform: translateX(2px) !important;
+}
+
+.nav-item.active::after {
+    width: 0 !important;
+}
+
+/* Icons avec effet scale */
+.nav-icon {
+    font-size: 1.3rem !important;
+    width: 24px !important;
+    text-align: center !important;
+    transition: all 0.2s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.nav-item:hover .nav-icon {
+    transform: scale(1.15);
+    filter: brightness(1.2);
+}
+
+.nav-item.active .nav-icon {
+    filter: brightness(1.3);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Keyboard shortcuts */
+.nav-shortcut {
+    font-size: 0.65rem !important;
+    background: rgba(0, 0, 0, 0.1) !important;
+    color: #6c757d !important;
+    padding: 3px 7px !important;
+    border-radius: var(--radius-sm) !important;
+    font-family: monospace !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.nav-item.active .nav-shortcut {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Special ON AIR item */
+.nav-item.live {
+    background: linear-gradient(90deg, #ef4444 0%, transparent 100%) !important;
+    color: white !important;
+}
+
+.nav-item.live:hover {
+    background: linear-gradient(90deg, #dc2626 0%, transparent 100%) !important;
+}
+
+/* Scrollbar pour sidebar */
+#sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+#sidebar::-webkit-scrollbar-track {
+    background: #f1f3f4;
+}
+
+#sidebar::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: var(--radius-full);
+}
+
+#sidebar::-webkit-scrollbar-thumb:hover {
+    background: #6366f1;
+}

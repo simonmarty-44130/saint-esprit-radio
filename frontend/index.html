@@ -120,7 +120,9 @@
     <link rel="stylesheet" href="css/automation/automation.css?v=2.0">
     <!-- Thème blanc Saint-Esprit -->
     <link rel="stylesheet" href="css/theme-white-override.css?v=2.0">
-    
+    <!-- SIDEBAR FORCE - Doit être chargé en dernier pour override les inline styles -->
+    <link rel="stylesheet" href="css/components/sidebar-force.css?v=1762170000">
+
     <!-- Logo switching CSS for sidebar -->
     <style>
         /* FORCE THÈME BLANC - OVERRIDE ABSOLU */
@@ -275,9 +277,9 @@
 
     <!-- Sidebar Navigation -->
     <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header" style="padding: 20px 15px; display: flex; justify-content: center; align-items: center; min-height: 100px;">
-            <img src="logo-saint-esprit-clair.png" alt="Saint-Esprit" class="logo-expanded" style="height: 110px; width: auto; display: block; max-width: 90%;">
-            <img src="logo-saint-esprit-clair-icon-hd.png" alt="Saint-Esprit" class="logo-collapsed" style="height: 55px; width: auto; display: none;">
+        <div class="sidebar-header">
+            <img src="logo-saint-esprit-clair.png" alt="Saint-Esprit" class="logo-expanded" style="height: 90px; width: auto;">
+            <img src="logo-saint-esprit-clair-icon-hd.png" alt="Saint-Esprit" class="logo-collapsed" style="height: 45px; width: auto;">
         </div>
 
         <div class="nav-container">
