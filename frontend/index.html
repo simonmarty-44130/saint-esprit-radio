@@ -1311,13 +1311,13 @@
     <script src="js/utils/audio-url-fixer.js?v=1.0"></script>
     <script src="js/core/constants.js?v=2.1.0"></script>
     <!-- DynamoDB Client -->
-    <script src="js/core/dynamodb-client.js?v=1.1"></script>
+    <script src="js/core/dynamodb-client.js?v=1762169381"></script>
     <!-- Storage avec DynamoDB (remplace storage.js) -->
-    <script src="js/core/storage-dynamodb-v2.js"></script>
+    <script src="js/core/storage-dynamodb-v2.js?v=1762169381"></script>
     <!-- Cache Manager pour synchronisation temps réel -->
-    <script src="js/core/cache-manager.js?v=1.0"></script>
-    <script src="js/core/audio-storage.js?v=1.1"></script>
-    <script src="js/core/conductor-storage.js?v=1.1"></script>
+    <script src="js/core/cache-manager.js?v=1762169381"></script>
+    <script src="js/core/audio-storage.js?v=1762169381"></script>
+    <script src="js/core/conductor-storage.js?v=1762169381"></script>
     <script src="js/core/sync-wrapper.js?v=1755899484"></script>
     <script src="js/core/cross-user-manager.js?v=1.2"></script>
     <!-- Métriques pour optimisation blocks -->
@@ -1360,21 +1360,22 @@
     <!-- Outils de développement -->
     <script src="js/utils/dev-tools.js?v=1.0"></script>
 
-    <!-- ===== AMPLIFY V6 - AppSync avec DynamoDB + Subscriptions temps réel ===== -->
-    <script src="https://cdn.jsdelivr.net/npm/aws-amplify@6/dist/aws-amplify.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@aws-amplify/api@6/dist/aws-amplify-api.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@aws-amplify/auth@6/dist/aws-amplify-auth.min.js"></script>
+    <!-- ===== AMPLIFY V6 - Disabled for now (causing errors) ===== -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/aws-amplify@6/dist/aws-amplify.min.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@aws-amplify/api@6/dist/aws-amplify-api.min.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@aws-amplify/auth@6/dist/aws-amplify-auth.min.js"></script> -->
 
-    <!-- Storage AppSync - Nouveau système avec GraphQL + Temps réel -->
-    <script src="js/core/storage-appsync.js?v=2.0"></script>
+    <!-- Storage AppSync - Disabled (Amplify not configured) -->
+    <!-- <script src="js/core/storage-appsync.js?v=2.0"></script> -->
 
     <!-- Application principale -->
-    <script src="js/app.js?v=1.3"></script>
+    <script src="js/app.js?v=1762169381"></script>
 
     <!-- Initialisation AppSync - À charger APRÈS app.js -->
-    <script src="js/init-appsync.js?v=1.0"></script>
-    <script src="js/migrate-to-dynamodb.js?v=1.0"></script>
-    <script src="js/migrate-all-users.js?v=1.0"></script>
+    <!-- <script src="js/init-appsync.js?v=1.0"></script> -->
+    <!-- Migration scripts disabled - no longer needed -->
+    <!-- <script src="js/migrate-to-dynamodb.js?v=1.0"></script> -->
+    <!-- <script src="js/migrate-all-users.js?v=1.0"></script> -->
 
     <!-- Modal pour nouveau conducteur -->
     <div id="new-conductor-modal" class="modal">
