@@ -120,7 +120,7 @@
 }
 
 .animation-item.active {
-    background: #9333ea !important;
+    background: var(--secondary) !important;
     color: white !important;
 }
 
