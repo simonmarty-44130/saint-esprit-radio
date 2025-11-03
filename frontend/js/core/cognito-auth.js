@@ -73,26 +73,52 @@ class CognitoAuth {
     async handleCallback() {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
+        const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+
+        // Gérer les erreurs OAuth
+        if (error) {
+            console.error('❌ Erreur OAuth:', error);
+            console.error('Description:', errorDescription);
+
+            // Nettoyer l'URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            // Afficher un message à l'utilisateur
+            alert(`Erreur d'authentification: ${error}\n${errorDescription || ''}`);
+            return;
+        }
 
         // Vérifier aussi le code stocké en session
         const storedCode = sessionStorage.getItem('auth-code');
 
-        if (code || storedCode) {
-            const authCode = code || storedCode;
-            console.log('🔑 Code d\'autorisation détecté, échange contre tokens...');
+        if (code) {
+            console.log('🔑 Code d\'autorisation détecté dans l\'URL');
+
+            // Stocker le code en session pour éviter de le perdre lors d'un refresh
+            sessionStorage.setItem('auth-code', code);
 
             // S'assurer qu'on n'a pas déjà des tokens valides
             const existingToken = localStorage.getItem('cognito_id_token');
             if (!existingToken) {
-                await this.exchangeCodeForTokens(authCode);
+                await this.exchangeCodeForTokens(code);
                 // Nettoyer le code stocké après utilisation
                 sessionStorage.removeItem('auth-code');
             } else {
                 console.log('✅ Tokens déjà présents, skip exchange');
-                // Nettoyer l'URL si besoin
-                if (code) {
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                }
+                // Nettoyer l'URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                sessionStorage.removeItem('auth-code');
+            }
+        } else if (storedCode) {
+            console.log('🔑 Code d\'autorisation trouvé en session');
+
+            // S'assurer qu'on n'a pas déjà des tokens valides
+            const existingToken = localStorage.getItem('cognito_id_token');
+            if (!existingToken) {
+                await this.exchangeCodeForTokens(storedCode);
+                // Nettoyer le code stocké après utilisation
+                sessionStorage.removeItem('auth-code');
             }
         }
     }
@@ -522,11 +548,43 @@ class CognitoAuth {
     }
     
     /**
-     * Ne pas afficher de prompt - l'authentification est gérée en amont
+     * Affiche un prompt de connexion ou redirige vers la page de login
      */
     showLoginPrompt() {
-        // Ne rien faire - l'authentification est obligatoire
         console.log('Authentification requise pour accéder au site');
+
+        // Vérifier si on est en train de traiter un callback OAuth
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasCode = urlParams.has('code');
+        const hasError = urlParams.has('error');
+
+        // Ne pas rediriger si on a un code (callback en cours) ou une erreur OAuth
+        if (hasCode || hasError) {
+            console.log('⏳ Callback OAuth en cours...');
+            return;
+        }
+
+        // Vérifier si on vient juste de tenter une authentification (éviter les boucles)
+        const lastAuthAttempt = sessionStorage.getItem('last-auth-attempt');
+        const now = Date.now();
+
+        if (lastAuthAttempt && (now - parseInt(lastAuthAttempt)) < 5000) {
+            console.warn('⚠️ Tentative d\'authentification récente détectée, éviter la boucle');
+            return;
+        }
+
+        // Stocker la tentative d'authentification
+        sessionStorage.setItem('last-auth-attempt', now.toString());
+
+        // Rediriger vers la page de login Cognito
+        const loginUrl = `${this.cognitoUrl}/login?` +
+            `client_id=${this.config.clientId}&` +
+            `response_type=code&` +
+            `scope=email+openid+profile&` +
+            `redirect_uri=${encodeURIComponent(this.config.redirectUri)}`;
+
+        console.log('🔐 Redirection vers la page de login...');
+        window.location.href = loginUrl;
     }
 }
 

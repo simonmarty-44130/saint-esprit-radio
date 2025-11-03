@@ -7,6 +7,7 @@
 
     <!-- Cognito Auth inline -->
     <script>
+        // Configuration Cognito pour le bouton de déconnexion
         const cognitoConfig = {
             domain: 'saint-esprit-radio-auth.auth.eu-west-3.amazoncognito.com',
             clientId: '5jst6bnhl26ekdr5a7pu9ik2f5',
@@ -15,35 +16,21 @@
             region: 'eu-west-3'
         };
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const authCode = urlParams.get('code');
-
-        if (authCode) {
-            localStorage.setItem('saint-esprit-authenticated', 'true');
-            localStorage.setItem('saint-esprit-auth-code', authCode);
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-
-        const isAuthenticated = localStorage.getItem('saint-esprit-authenticated');
-
-        if (!isAuthenticated || isAuthenticated !== 'true') {
-            const loginUrl = `https://${cognitoConfig.domain}/login?` +
-                `client_id=${cognitoConfig.clientId}&` +
-                `response_type=code&` +
-                `scope=email+openid+profile&` +
-                `redirect_uri=${encodeURIComponent(cognitoConfig.redirectUri)}`;
-            window.location.href = loginUrl;
-        }
-
+        // Fonction de déconnexion
         window.cognitoLogout = function() {
             localStorage.removeItem('saint-esprit-authenticated');
             localStorage.removeItem('saint-esprit-auth-code');
             localStorage.removeItem('saint-esprit-user');
+            localStorage.removeItem('cognito_id_token');
+            localStorage.removeItem('cognito_access_token');
+            localStorage.removeItem('cognito_refresh_token');
             const logoutUrl = `https://${cognitoConfig.domain}/logout?` +
                 `client_id=${cognitoConfig.clientId}&` +
                 `logout_uri=${encodeURIComponent(cognitoConfig.logoutUri)}`;
             window.location.href = logoutUrl;
         }
+
+        // Ne plus intercepter le code OAuth - laisser cognito-auth.js gérer tout
     </script>
 
     <!-- CSS -->
