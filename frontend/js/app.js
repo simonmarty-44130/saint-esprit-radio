@@ -9,7 +9,8 @@ class SaintEspritApp {
         this.templateManager = null;
         this.audioManager = null;
         this.audioEditor = null;
-        
+        this.newsDurationManager = null;
+
         this.currentTab = 'dashboard';
         this.showStartTime = null;
         this.scheduledStartTime = null; // Heure programmée de début
@@ -23,13 +24,13 @@ class SaintEspritApp {
         this.isLoadingData = false; // Flag pour empêcher l'autoSave pendant le chargement
         this.cachedSegmentDurations = null;
         this.lastSegmentCacheTime = 0;
-        
+
         // Global state
         this.newsDatabase = [];
         this.animationDatabase = [];
         this.blocksDatabase = [];
         this.conductorSegments = [];
-        
+
         // Optimization flags
         this.isInitialized = false;
         this.audioEditorInitialized = false;
@@ -177,7 +178,13 @@ class SaintEspritApp {
         
         // Initialize audio manager
         this.audioManager = new AudioManager(this.storage);
-        
+
+        // Initialize news duration manager
+        if (typeof NewsDurationManager !== 'undefined') {
+            this.newsDurationManager = new NewsDurationManager();
+            console.log('✅ NewsDurationManager initialisé');
+        }
+
         // Initialize sync manager - Désactivé (remplacé par Storage S3)
         // Note: Ne pas utiliser le nom SyncManager car c'est une API native du navigateur
         this.syncManager = null;
@@ -694,15 +701,28 @@ class SaintEspritApp {
                 if (newsContent) {
                     newsContent.addEventListener('input', () => {
                         this.newsManager.debouncedCalculateDuration();
+                        // Update duration displays
+                        if (this.newsDurationManager) {
+                            this.updateNewsDurationDisplay();
+                        }
                     });
                 }
-                
+
                 // Add event listener for multitrack button
                 const multitrackBtn = safeGetElement('multitrack-news-btn');
                 if (multitrackBtn) {
                     multitrackBtn.addEventListener('click', () => {
                         console.log('Multitrack button clicked');
                         this.openMultitrackForNews();
+                    });
+                }
+
+                // Initialize audio upload functionality
+                if (this.newsDurationManager) {
+                    this.newsDurationManager.initializeAudioUpload('audio-upload-zone', (audioInfo) => {
+                        console.log('Audio uploaded:', audioInfo);
+                        // Update duration display
+                        this.updateNewsDurationDisplay();
                     });
                 }
             }, 100);
@@ -871,16 +891,60 @@ class SaintEspritApp {
                     </div>
                 </div>
                 <div class="textarea-container">
-                    <textarea id="${prefix}content" 
+                    <textarea id="${prefix}content"
                               oninput="app.${type}Manager?.calculateDuration?.()"
                               placeholder="Content...
 
 Use:
 - **text** for bold
-- *text* for italic  
-- __text__ for underline
+- *text* for italic
+- __text** for underline
 - [SOUND: name - duration] for sounds"></textarea>
                 </div>
+
+                ${type === 'news' ? `
+                <!-- Audio Upload Section -->
+                <div class="form-group" style="margin-top: 16px;">
+                    <label class="form-label" style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; display: block;">Fichier Audio (optionnel)</label>
+                    <div class="audio-upload-area" id="audio-upload-zone" style="cursor: pointer;">
+                        <input type="file" id="audio-file-input" accept="audio/*" style="display: none;">
+                        <div class="audio-upload-prompt">
+                            <span style="font-size: 48px;">🎵</span>
+                            <p style="margin: 12px 0; font-weight: 600; color: var(--text-primary);">Cliquez pour importer un fichier audio</p>
+                            <p style="font-size: 13px; color: var(--text-muted);">MP3, WAV, OGG, etc.</p>
+                        </div>
+                        <div class="audio-file-info" style="display: none;">
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);" id="audio-file-name"></div>
+                                <div style="font-size: 12px; color: var(--text-muted);">
+                                    Durée: <span id="audio-file-duration">0:00</span>
+                                    • <span id="audio-file-size">0 KB</span>
+                                </div>
+                            </div>
+                            <button type="button" class="toolbar-btn" id="remove-audio-btn" style="margin: 0; padding: 8px 16px;">
+                                🗑️ Supprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Duration Display -->
+                <div class="duration-display" style="margin-top: 20px;">
+                    <div class="duration-item">
+                        <div class="duration-label">Temps de lecture</div>
+                        <div class="duration-value" id="reading-time-display">0:00</div>
+                    </div>
+                    <div class="duration-item">
+                        <div class="duration-label">Durée audio</div>
+                        <div class="duration-value" id="audio-time-display">0:00</div>
+                    </div>
+                    <div class="duration-item">
+                        <div class="duration-label">Durée totale</div>
+                        <div class="duration-value" id="total-time-display">0:00</div>
+                    </div>
+                </div>
+                ` : ''}
+
                 <div class="sounds-panel" id="${prefix}sounds-panel">
                     <h4 style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #999;">Sound elements</h4>
                     <div id="${prefix}sounds-list" class="sounds-list"></div>
@@ -1389,6 +1453,40 @@ Use:
                 showNotification('Erreur lors de l\'ouverture de l\'éditeur multipiste', 'error');
             }
         }, 100);
+    }
+
+    updateNewsDurationDisplay() {
+        if (!this.newsDurationManager) return;
+
+        const newsContent = safeGetElement('news-content');
+        if (!newsContent) return;
+
+        const text = newsContent.value || '';
+        const durations = this.newsDurationManager.calculateTotalDuration(text);
+
+        // Update the reading time display
+        const readingTimeEl = document.getElementById('reading-time-display');
+        if (readingTimeEl) {
+            readingTimeEl.textContent = durations.readingTimeFormatted;
+        }
+
+        // Update the total time display
+        const totalTimeEl = document.getElementById('total-time-display');
+        if (totalTimeEl) {
+            totalTimeEl.textContent = durations.totalTimeFormatted;
+        }
+
+        // Also update the audio time display if it hasn't been set
+        const audioTimeEl = document.getElementById('audio-time-display');
+        if (audioTimeEl && durations.audioTime > 0) {
+            audioTimeEl.textContent = durations.audioTimeFormatted;
+        }
+
+        // Update the duration field in the form (backwards compatibility)
+        const durationInput = safeGetElement('news-duration');
+        if (durationInput) {
+            durationInput.value = durations.totalTimeFormatted;
+        }
     }
 
     updateTimerDisplay(tab) {
