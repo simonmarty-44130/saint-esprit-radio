@@ -2,7 +2,7 @@
 /* Main CSS file - Imports all modules in correct order */
 
 /* 1. CORE - Foundation styles */
-@import 'core/reset.css?v=1730630400';
+@import 'core/reset-v3.css';
 @import 'core/layout.css';
 @import 'core/utilities.css';
 
