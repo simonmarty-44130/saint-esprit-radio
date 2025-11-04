@@ -1113,20 +1113,22 @@ class AudioEditorV3 {
 
     updateButtonStates() {
         const hasSelection = this.selection.start !== this.selection.end;
+        const hasInOut = this.inPoint !== null && this.outPoint !== null;
+        const canEdit = hasSelection || hasInOut;
         const hasClipboard = this.clipboard !== null;
 
-        // Cut, Copy, Delete require selection
+        // Cut, Copy, Delete require selection OR IN/OUT points
         const cutBtn = document.getElementById('cut-btn');
         const copyBtn = document.getElementById('copy-btn');
         const deleteBtn = document.getElementById('delete-btn');
         const fadeinBtn = document.getElementById('fadein-btn');
         const fadeoutBtn = document.getElementById('fadeout-btn');
 
-        if (cutBtn) cutBtn.disabled = !hasSelection;
-        if (copyBtn) copyBtn.disabled = !hasSelection;
-        if (deleteBtn) deleteBtn.disabled = !hasSelection;
-        if (fadeinBtn) fadeinBtn.disabled = !hasSelection;
-        if (fadeoutBtn) fadeoutBtn.disabled = !hasSelection;
+        if (cutBtn) cutBtn.disabled = !canEdit;
+        if (copyBtn) copyBtn.disabled = !canEdit;
+        if (deleteBtn) deleteBtn.disabled = !canEdit;
+        if (fadeinBtn) fadeinBtn.disabled = !canEdit;
+        if (fadeoutBtn) fadeoutBtn.disabled = !canEdit;
 
         // Paste requires clipboard
         const pasteBtn = document.getElementById('paste-btn');
@@ -1250,6 +1252,7 @@ class AudioEditorV3 {
             this.inPoint = this.currentTime;
         }
         this.drawWaveform();
+        this.updateButtonStates();
         console.log('✅ IN point set at', this.formatTime(this.inPoint));
     }
 
@@ -1260,6 +1263,7 @@ class AudioEditorV3 {
             this.outPoint = this.currentTime;
         }
         this.drawWaveform();
+        this.updateButtonStates();
         console.log('✅ OUT point set at', this.formatTime(this.outPoint));
     }
 
@@ -1267,11 +1271,16 @@ class AudioEditorV3 {
         this.inPoint = null;
         this.outPoint = null;
         this.drawWaveform();
+        this.updateButtonStates();
         console.log('✅ IN/OUT points cleared');
     }
 
     cut() {
-        if (this.selection.start === this.selection.end) {
+        // Use selection or IN/OUT points
+        const hasSelection = this.selection.start !== this.selection.end;
+        const hasInOut = this.inPoint !== null && this.outPoint !== null;
+
+        if (!hasSelection && !hasInOut) {
             return;
         }
 
@@ -1280,12 +1289,22 @@ class AudioEditorV3 {
     }
 
     copy() {
-        if (this.selection.start === this.selection.end || !this.currentBuffer) {
+        if (!this.currentBuffer) return;
+
+        // Use selection or IN/OUT points
+        let startTime, endTime;
+        if (this.selection.start !== this.selection.end) {
+            startTime = this.selection.start;
+            endTime = this.selection.end;
+        } else if (this.inPoint !== null && this.outPoint !== null) {
+            startTime = Math.min(this.inPoint, this.outPoint);
+            endTime = Math.max(this.inPoint, this.outPoint);
+        } else {
             return;
         }
 
-        const startSample = Math.floor(this.selection.start * this.currentBuffer.sampleRate);
-        const endSample = Math.floor(this.selection.end * this.currentBuffer.sampleRate);
+        const startSample = Math.floor(startTime * this.currentBuffer.sampleRate);
+        const endSample = Math.floor(endTime * this.currentBuffer.sampleRate);
         const length = endSample - startSample;
 
         // Copy selected audio to clipboard
@@ -1356,14 +1375,24 @@ class AudioEditorV3 {
     }
 
     deleteSelection() {
-        if (this.selection.start === this.selection.end || !this.currentBuffer) {
+        if (!this.currentBuffer) return;
+
+        // Use selection or IN/OUT points
+        let startTime, endTime;
+        if (this.selection.start !== this.selection.end) {
+            startTime = this.selection.start;
+            endTime = this.selection.end;
+        } else if (this.inPoint !== null && this.outPoint !== null) {
+            startTime = Math.min(this.inPoint, this.outPoint);
+            endTime = Math.max(this.inPoint, this.outPoint);
+        } else {
             return;
         }
 
         this.saveToHistory();
 
-        const startSample = Math.floor(this.selection.start * this.currentBuffer.sampleRate);
-        const endSample = Math.floor(this.selection.end * this.currentBuffer.sampleRate);
+        const startSample = Math.floor(startTime * this.currentBuffer.sampleRate);
+        const endSample = Math.floor(endTime * this.currentBuffer.sampleRate);
         const deletedLength = endSample - startSample;
         const newLength = this.currentBuffer.length - deletedLength;
 
@@ -1436,14 +1465,24 @@ class AudioEditorV3 {
     }
 
     fadeIn() {
-        if (this.selection.start === this.selection.end || !this.currentBuffer) {
+        if (!this.currentBuffer) return;
+
+        // Use selection or IN/OUT points
+        let startTime, endTime;
+        if (this.selection.start !== this.selection.end) {
+            startTime = this.selection.start;
+            endTime = this.selection.end;
+        } else if (this.inPoint !== null && this.outPoint !== null) {
+            startTime = Math.min(this.inPoint, this.outPoint);
+            endTime = Math.max(this.inPoint, this.outPoint);
+        } else {
             return;
         }
 
         this.saveToHistory();
 
-        const startSample = Math.floor(this.selection.start * this.currentBuffer.sampleRate);
-        const endSample = Math.floor(this.selection.end * this.currentBuffer.sampleRate);
+        const startSample = Math.floor(startTime * this.currentBuffer.sampleRate);
+        const endSample = Math.floor(endTime * this.currentBuffer.sampleRate);
         const length = endSample - startSample;
 
         for (let channel = 0; channel < this.currentBuffer.numberOfChannels; channel++) {
@@ -1461,14 +1500,24 @@ class AudioEditorV3 {
     }
 
     fadeOut() {
-        if (this.selection.start === this.selection.end || !this.currentBuffer) {
+        if (!this.currentBuffer) return;
+
+        // Use selection or IN/OUT points
+        let startTime, endTime;
+        if (this.selection.start !== this.selection.end) {
+            startTime = this.selection.start;
+            endTime = this.selection.end;
+        } else if (this.inPoint !== null && this.outPoint !== null) {
+            startTime = Math.min(this.inPoint, this.outPoint);
+            endTime = Math.max(this.inPoint, this.outPoint);
+        } else {
             return;
         }
 
         this.saveToHistory();
 
-        const startSample = Math.floor(this.selection.start * this.currentBuffer.sampleRate);
-        const endSample = Math.floor(this.selection.end * this.currentBuffer.sampleRate);
+        const startSample = Math.floor(startTime * this.currentBuffer.sampleRate);
+        const endSample = Math.floor(endTime * this.currentBuffer.sampleRate);
         const length = endSample - startSample;
 
         for (let channel = 0; channel < this.currentBuffer.numberOfChannels; channel++) {
