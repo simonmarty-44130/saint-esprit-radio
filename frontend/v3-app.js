@@ -1150,7 +1150,11 @@ class AudioEditorV3 {
     play() {
         if (!this.currentBuffer) return;
 
-        this.stop();
+        // Stop any existing playback without resetting currentTime
+        if (this.sourceNode) {
+            this.sourceNode.stop();
+            this.sourceNode = null;
+        }
 
         const startTime = this.currentTime;
         const duration = this.currentBuffer.duration - startTime;
