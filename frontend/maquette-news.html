@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News - Saint-Esprit v3.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: #0f1419;
+            color: #e6edf3;
+            overflow-x: hidden;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: rgba(22, 27, 34, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 24px;
+            z-index: 1000;
+        }
+
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            color: #58a6ff;
+        }
+
+        .topbar-nav {
+            flex: 1;
+            display: flex;
+            gap: 4px;
+        }
+
+        .topbar-nav-item {
+            padding: 6px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .topbar-nav-item:hover {
+            background: #30363d;
+            color: #e6edf3;
+        }
+
+        .topbar-nav-item.active {
+            background: #1f6feb;
+            color: white;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .topbar-btn {
+            padding: 8px 16px;
+            background: #238636;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-top: 56px;
+            min-height: calc(100vh - 56px);
+            display: flex;
+        }
+
+        /* LISTE DES NEWS - Sidebar gauche */
+        .news-sidebar {
+            width: 380px;
+            background: #161b22;
+            border-right: 1px solid #30363d;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 56px);
+            position: sticky;
+            top: 56px;
+        }
+
+        .news-sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .news-sidebar-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .news-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #8b949e;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background: #1f6feb;
+            border-color: #1f6feb;
+            color: white;
+        }
+
+        .news-search {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #e6edf3;
+            font-size: 14px;
+        }
+
+        .news-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .news-item {
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .news-item:hover {
+            background: #2d333b;
+            border-color: #58a6ff;
+        }
+
+        .news-item.active {
+            background: rgba(31, 111, 235, 0.15);
+            border-color: #1f6feb;
+        }
+
+        .news-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 8px;
+        }
+
+        .news-item-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e6edf3;
+            line-height: 1.4;
+        }
+
+        .news-item-status {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-draft {
+            background: rgba(139, 148, 158, 0.2);
+            color: #8b949e;
+        }
+
+        .status-ready {
+            background: rgba(35, 134, 54, 0.2);
+            color: #3fb950;
+        }
+
+        .news-item-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: #6e7681;
+        }
+
+        .news-item-category {
+            padding: 2px 6px;
+            background: rgba(31, 111, 235, 0.2);
+            border-radius: 3px;
+            color: #58a6ff;
+        }
+
+        /* ÉDITEUR - Zone principale */
+        .news-editor {
+            flex: 1;
+            padding: 48px 64px;
+            overflow-y: auto;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .editor-header {
+            margin-bottom: 32px;
+        }
+
+        .editor-breadcrumb {
+            font-size: 13px;
+            color: #6e7681;
+            margin-bottom: 16px;
+        }
+
+        .editor-toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .toolbar-btn {
+            padding: 8px 16px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #e6edf3;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            background: #2d333b;
+            border-color: #58a6ff;
+        }
+
+        .toolbar-btn.primary {
+            background: #238636;
+            border-color: #238636;
+            color: white;
+        }
+
+        .toolbar-btn.primary:hover {
+            background: #2ea043;
+        }
+
+        .editor-form {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #8b949e;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #e6edf3;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1f6feb;
+            box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.1);
+        }
+
+        .form-input.title {
+            font-size: 24px;
+            font-weight: 700;
+            border: none;
+            background: transparent;
+            padding: 0;
+            margin-bottom: 16px;
+        }
+
+        .form-textarea {
+            min-height: 300px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 10px 16px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #e6edf3;
+            font-size: 14px;
+        }
+
+        .metadata-row {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: #0d1117;
+            border-radius: 8px;
+            margin-top: 24px;
+        }
+
+        .metadata-item {
+            flex: 1;
+        }
+
+        .metadata-label {
+            font-size: 11px;
+            color: #6e7681;
+            margin-bottom: 4px;
+        }
+
+        .metadata-value {
+            font-size: 14px;
+            color: #e6edf3;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- TOP BAR -->
+    <div class="topbar">
+        <div class="topbar-logo">
+            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #1f6feb, #58a6ff); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px;">⚡</div>
+            <span>Saint-Esprit</span>
+        </div>
+
+        <nav class="topbar-nav">
+            <button class="topbar-nav-item">🏠 Dashboard</button>
+            <button class="topbar-nav-item active">📰 News</button>
+            <button class="topbar-nav-item">📋 Journaux</button>
+            <button class="topbar-nav-item">🎙️ Animation</button>
+            <button class="topbar-nav-item">📡 Conducteur</button>
+            <button class="topbar-nav-item">🔴 ON AIR</button>
+        </nav>
+
+        <div class="topbar-actions">
+            <button class="topbar-btn">+ Nouvelle News</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- SIDEBAR - Liste des news -->
+        <div class="news-sidebar">
+            <div class="news-sidebar-header">
+                <div class="news-sidebar-title">📰 News</div>
+
+                <div class="news-filters">
+                    <button class="filter-btn active">Toutes</button>
+                    <button class="filter-btn">Aujourd'hui</button>
+                    <button class="filter-btn">À venir</button>
+                    <button class="filter-btn">Brouillons</button>
+                </div>
+
+                <input type="text" class="news-search" placeholder="Rechercher une news...">
+            </div>
+
+            <div class="news-list">
+                <div class="news-item active">
+                    <div class="news-item-header">
+                        <div class="news-item-title">Nouvelle loi sur le climat votée à l'Assemblée</div>
+                        <div class="news-item-status status-ready">Prêt</div>
+                    </div>
+                    <div class="news-item-meta">
+                        <span class="news-item-category">Politique</span>
+                        <span>📅 Aujourd'hui 18h</span>
+                        <span>⏱️ 1:45</span>
+                    </div>
+                </div>
+
+                <div class="news-item">
+                    <div class="news-item-header">
+                        <div class="news-item-title">Match de football : victoire historique</div>
+                        <div class="news-item-status status-draft">Brouillon</div>
+                    </div>
+                    <div class="news-item-meta">
+                        <span class="news-item-category">Sport</span>
+                        <span>📅 Demain 12h</span>
+                        <span>⏱️ 2:00</span>
+                    </div>
+                </div>
+
+                <div class="news-item">
+                    <div class="news-item-header">
+                        <div class="news-item-title">Festival de musique ce week-end</div>
+                        <div class="news-item-status status-ready">Prêt</div>
+                    </div>
+                    <div class="news-item-meta">
+                        <span class="news-item-category">Culture</span>
+                        <span>📅 Samedi 10h</span>
+                        <span>⏱️ 1:30</span>
+                    </div>
+                </div>
+
+                <div class="news-item">
+                    <div class="news-item-header">
+                        <div class="news-item-title">Météo : tempête attendue en fin de semaine</div>
+                        <div class="news-item-status status-draft">Brouillon</div>
+                    </div>
+                    <div class="news-item-meta">
+                        <span class="news-item-category">Météo</span>
+                        <span>📅 Vendredi 6h</span>
+                        <span>⏱️ 1:00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ÉDITEUR -->
+        <div class="news-editor">
+            <div class="editor-header">
+                <div class="editor-breadcrumb">📰 News › Politique › Nouvelle loi sur le climat</div>
+
+                <div class="editor-toolbar">
+                    <button class="toolbar-btn primary">💾 Enregistrer</button>
+                    <button class="toolbar-btn">👁️ Prévisualiser</button>
+                    <button class="toolbar-btn">📤 Publier</button>
+                    <button class="toolbar-btn">🗑️ Supprimer</button>
+                </div>
+            </div>
+
+            <div class="editor-form">
+                <input type="text" class="form-input title" placeholder="Titre de la news..." value="Nouvelle loi sur le climat votée à l'Assemblée">
+
+                <div class="form-row" style="margin-bottom: 24px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Catégorie</label>
+                        <select class="form-select">
+                            <option>Politique</option>
+                            <option>Sport</option>
+                            <option>Culture</option>
+                            <option>Économie</option>
+                            <option>International</option>
+                            <option>Météo</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Statut</label>
+                        <select class="form-select">
+                            <option>Brouillon</option>
+                            <option selected>Prêt</option>
+                            <option>Archivé</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Contenu</label>
+                    <textarea class="form-input form-textarea" placeholder="Rédigez votre news ici...">Le Parlement a adopté ce mardi une nouvelle loi ambitieuse sur la transition écologique. Le texte prévoit notamment la réduction de 40% des émissions de gaz à effet de serre d'ici 2030.
+
+Les principales mesures incluent :
+- Interdiction des véhicules thermiques neufs dès 2035
+- Doublement des aides à la rénovation énergétique
+- Taxation renforcée des industries polluantes
+
+Cette loi fait suite à plusieurs mois de débats et de consultations citoyennes. Les associations écologistes saluent une avancée majeure, tandis que les industriels s'inquiètent des impacts économiques.</textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Date de diffusion</label>
+                        <input type="datetime-local" class="form-input" value="2025-11-03T18:00">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Durée estimée</label>
+                        <input type="text" class="form-input" placeholder="1:45" value="1:45">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tags</label>
+                    <input type="text" class="form-input" placeholder="climat, politique, environnement" value="climat, politique, environnement">
+                </div>
+
+                <div class="metadata-row">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Créé par</div>
+                        <div class="metadata-value">Simon Marty</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Date de création</div>
+                        <div class="metadata-value">3 nov. 2025, 14:23</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Dernière modif</div>
+                        <div class="metadata-value">3 nov. 2025, 14:30</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

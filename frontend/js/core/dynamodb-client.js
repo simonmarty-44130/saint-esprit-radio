@@ -12,9 +12,10 @@ class DynamoDBClient {
         // Tables DynamoDB depuis la config
         this.tables = window.AWSConfig?.tables || {
             news: 'saint-esprit-news',
-            animations: 'saint-esprit-animations', 
+            animations: 'saint-esprit-animations',
             blocks: 'saint-esprit-blocks',
             conductors: 'saint-esprit-conductors',
+            journals: 'saint-esprit-journals',
             audio: 'saint-esprit-audio',
             habillage: 'saint-esprit-habillage'
         };

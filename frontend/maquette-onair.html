@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ON AIR - Saint-Esprit v3.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* TOP BAR minimaliste */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #222;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 24px;
+            z-index: 1000;
+        }
+
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            color: #f85149;
+        }
+
+        .topbar-status {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(248, 81, 73, 0.2);
+            border: 2px solid #f85149;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            color: #f85149;
+        }
+
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f85149;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        .topbar-time {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+
+        /* MAIN CONTENT */
+        .onair-container {
+            margin-top: 48px;
+            height: calc(100vh - 48px);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            gap: 24px;
+        }
+
+        /* SEGMENT EN COURS - Grand affichage */
+        .current-segment {
+            background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
+            border: 2px solid #f85149;
+            border-radius: 16px;
+            padding: 48px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 0 60px rgba(248, 81, 73, 0.3);
+        }
+
+        .segment-badge {
+            position: absolute;
+            top: 32px;
+            left: 48px;
+            padding: 8px 16px;
+            background: rgba(248, 81, 73, 0.2);
+            border: 1px solid #f85149;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #f85149;
+        }
+
+        .segment-number {
+            font-size: 120px;
+            font-weight: 900;
+            color: rgba(248, 81, 73, 0.3);
+            line-height: 1;
+            margin-bottom: 24px;
+        }
+
+        .segment-title {
+            font-size: 56px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+
+        .segment-content {
+            font-size: 24px;
+            color: #999;
+            line-height: 1.5;
+            max-width: 900px;
+        }
+
+        /* TIMER - Énorme */
+        .timer-display {
+            position: absolute;
+            top: 48px;
+            right: 48px;
+            text-align: right;
+        }
+
+        .timer-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .timer-value {
+            font-size: 96px;
+            font-weight: 900;
+            font-family: 'Courier New', monospace;
+            color: #f85149;
+            line-height: 1;
+        }
+
+        .timer-value.warning {
+            color: #fbbf24;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
+        }
+
+        /* CONTRÔLES */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .control-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 32px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn.primary {
+            background: linear-gradient(135deg, #f85149, #da3633);
+            color: white;
+            box-shadow: 0 8px 24px rgba(248, 81, 73, 0.4);
+        }
+
+        .control-btn.primary:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 32px rgba(248, 81, 73, 0.6);
+        }
+
+        .control-btn.secondary {
+            background: #1a1a1a;
+            border: 2px solid #333;
+            color: #999;
+        }
+
+        .control-btn.secondary:hover {
+            background: #2a2a2a;
+            border-color: #f85149;
+            color: #f85149;
+        }
+
+        /* SEGMENTS SUIVANTS */
+        .upcoming-segments {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 24px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .upcoming-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+        }
+
+        .upcoming-item {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .upcoming-item:hover {
+            background: #2a2a2a;
+            border: 1px solid #333;
+        }
+
+        .upcoming-number {
+            width: 48px;
+            height: 48px;
+            background: #0a0a0a;
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: #666;
+            flex-shrink: 0;
+        }
+
+        .upcoming-info {
+            flex: 1;
+        }
+
+        .upcoming-info-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .upcoming-info-meta {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .upcoming-time {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+
+        .upcoming-timecode {
+            font-size: 18px;
+            font-weight: 700;
+            color: #999;
+        }
+
+        .upcoming-duration {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* GRID LAYOUT */
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        /* INFO CARD */
+        .info-card {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .info-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+        }
+
+        .info-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 16px;
+            background: #1a1a1a;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #f85149;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <!-- TOP BAR -->
+    <div class="topbar">
+        <div class="topbar-logo">
+            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #f85149, #da3633); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px;">🔴</div>
+            <span>Saint-Esprit</span>
+        </div>
+
+        <div class="topbar-status">
+            <div class="live-badge">
+                <span class="live-dot"></span>
+                <span>ON AIR</span>
+            </div>
+            <div class="topbar-time">18:04:32</div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="onair-container">
+        <!-- SEGMENT EN COURS -->
+        <div class="current-segment">
+            <div class="segment-badge">📰 NEWS EN COURS</div>
+
+            <div class="segment-number">#3</div>
+            <div class="segment-title">Actualité Politique</div>
+            <div class="segment-content">
+                Nouvelle loi sur le climat votée à l'Assemblée nationale. Le texte prévoit notamment la réduction de 40% des émissions de gaz à effet de serre d'ici 2030...
+            </div>
+
+            <div class="timer-display">
+                <div class="timer-label">TEMPS RESTANT</div>
+                <div class="timer-value">02:47</div>
+            </div>
+        </div>
+
+        <!-- CONTRÔLES -->
+        <div class="controls">
+            <button class="control-btn secondary">⏮️</button>
+            <button class="control-btn secondary">⏸️</button>
+            <button class="control-btn primary">⏭️</button>
+            <button class="control-btn secondary">⏹️</button>
+        </div>
+
+        <!-- BOTTOM GRID -->
+        <div class="bottom-grid">
+            <!-- SEGMENTS SUIVANTS -->
+            <div class="upcoming-segments">
+                <div class="upcoming-title">À venir</div>
+
+                <div class="upcoming-item">
+                    <div class="upcoming-number">4</div>
+                    <div class="upcoming-info">
+                        <div class="upcoming-info-title">📻 Publicité</div>
+                        <div class="upcoming-info-meta">3 spots publicités</div>
+                    </div>
+                    <div class="upcoming-time">
+                        <div class="upcoming-timecode">18:09:30</div>
+                        <div class="upcoming-duration">2:00</div>
+                    </div>
+                </div>
+
+                <div class="upcoming-item">
+                    <div class="upcoming-number">5</div>
+                    <div class="upcoming-info">
+                        <div class="upcoming-info-title">📰 Sport</div>
+                        <div class="upcoming-info-meta">Victoire du club local</div>
+                    </div>
+                    <div class="upcoming-time">
+                        <div class="upcoming-timecode">18:11:30</div>
+                        <div class="upcoming-duration">4:30</div>
+                    </div>
+                </div>
+
+                <div class="upcoming-item">
+                    <div class="upcoming-number">6</div>
+                    <div class="upcoming-info">
+                        <div class="upcoming-info-title">🎵 Transition musicale</div>
+                        <div class="upcoming-info-meta">Playlist du moment</div>
+                    </div>
+                    <div class="upcoming-time">
+                        <div class="upcoming-timecode">18:16:00</div>
+                        <div class="upcoming-duration">3:30</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INFO ÉMISSION -->
+            <div class="info-card">
+                <div class="info-title">Infos émission</div>
+                <div class="info-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">3/12</div>
+                        <div class="stat-label">Segments</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">20:30</div>
+                        <div class="stat-label">Écoulé</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">25:00</div>
+                        <div class="stat-label">Restant</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">18:45</div>
+                        <div class="stat-label">Fin prévue</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

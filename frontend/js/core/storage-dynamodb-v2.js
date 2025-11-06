@@ -20,7 +20,8 @@ class StorageDynamoDB {
             news: [],
             animations: [],
             blocks: [],
-            conductors: []
+            conductors: [],
+            journals: []
         };
         
         // Filtre actuel (null = tout afficher)
@@ -111,15 +112,24 @@ class StorageDynamoDB {
             
             // Charger TOUT le contenu de TOUS les utilisateurs
             // OPTIMISATION: Utiliser Query pour blocks si possible
-            const [news, animations, blocks, conductors] = await Promise.all([
+            const [news, animations, blocks, conductors, journals] = await Promise.all([
                 this.db.getAll('news'),
                 this.db.getAll('animations'),
                 this.loadOptimizedBlocks(), // Méthode optimisée pour blocks
-                this.db.getAll('conductors')
+                this.db.getAll('conductors'),
+                this.db.getAll('journals')
             ]);
 
             const filteredNews = news;
-            
+
+            // Convertir les durées "M:SS" en secondes
+            filteredNews.forEach(item => {
+                if (item.duration && typeof item.duration === 'string' && item.duration.includes(':')) {
+                    const [mins, secs] = item.duration.split(':').map(Number);
+                    item.duration = (mins * 60) + secs;
+                }
+            });
+
             // Corriger toutes les URLs audio pour utiliser S3 direct
             const fixer = window.audioUrlFixer || new (window.AudioUrlFixer || class {
                 fixItemsArray(items) { return items; }
@@ -130,8 +140,9 @@ class StorageDynamoDB {
             this.cache.animations = fixer.fixItemsArray(animations);
             this.cache.blocks = fixer.fixItemsArray(blocks);
             this.cache.conductors = fixer.fixItemsArray(conductors);
+            this.cache.journals = journals; // Les journaux n'ont pas d'URLs audio
 
-            console.log(`✅ Loaded: ${filteredNews.length} news, ${animations.length} animations, ${blocks.length} blocks, ${conductors.length} conductors`);
+            console.log(`✅ Loaded: ${filteredNews.length} news, ${animations.length} animations, ${blocks.length} blocks, ${conductors.length} conductors, ${journals.length} journals`);
             
             // Détail des conducteurs si plusieurs
             if (conductors.length > 1) {
@@ -147,7 +158,8 @@ class StorageDynamoDB {
                 news: this.cache.news,
                 animations: this.cache.animations,
                 blocks: this.cache.blocks,
-                conductors: this.cache.conductors
+                conductors: this.cache.conductors,
+                journals: this.cache.journals
             };
         } catch (error) {
             console.error('❌ Error loading data:', error);
@@ -155,7 +167,8 @@ class StorageDynamoDB {
                 news: [],
                 animations: [],
                 blocks: [],
-                conductors: []
+                conductors: [],
+                journals: []
             };
         }
     }
@@ -167,7 +180,7 @@ class StorageDynamoDB {
     async load() {
         // Si les données ne sont pas encore chargées, les charger
         if (!this.initialized ||
-            (!this.cache.news && !this.cache.animations && !this.cache.blocks && !this.cache.conductors)) {
+            (!this.cache.news && !this.cache.animations && !this.cache.blocks && !this.cache.conductors && !this.cache.journals)) {
             console.log('📥 Cache vide, rechargement depuis DynamoDB...');
             await this.loadAllData();
         }
@@ -178,6 +191,7 @@ class StorageDynamoDB {
             animations: this.cache.animations || [],
             blocks: this.cache.blocks || [],
             conductors: this.cache.conductors || [],
+            journals: this.cache.journals || [],
             settings: {} // Settings non implémenté pour l'instant
         };
     }
@@ -207,34 +221,37 @@ class StorageDynamoDB {
      */
     async load(filter = null) {
         if (!this.initialized) await this.init();
-        
+
         // Si pas de filtre, retourner tout
         if (!filter || (!filter.userId && !filter.showOnlyMine)) {
             return {
                 news: this.cache.news,
                 animations: this.cache.animations,
                 blocks: this.cache.blocks,
-                conductors: this.cache.conductors
+                conductors: this.cache.conductors,
+                journals: this.cache.journals
             };
         }
-        
+
         // Appliquer le filtre
         const userId = filter.showOnlyMine ? this.userId : filter.userId;
-        
+
         if (userId) {
             return {
                 news: this.cache.news.filter(item => item.userId === userId),
                 animations: this.cache.animations.filter(item => item.userId === userId),
                 blocks: this.cache.blocks.filter(item => item.userId === userId),
-                conductors: this.cache.conductors.filter(item => item.userId === userId)
+                conductors: this.cache.conductors.filter(item => item.userId === userId),
+                journals: this.cache.journals.filter(item => item.userId === userId)
             };
         }
-        
+
         return {
             news: this.cache.news,
             animations: this.cache.animations,
             blocks: this.cache.blocks,
-            conductors: this.cache.conductors
+            conductors: this.cache.conductors,
+            journals: this.cache.journals
         };
     }
 
@@ -741,6 +758,130 @@ class StorageDynamoDB {
         }
         // Retourner l'objet AWS S3 qui a la méthode .promise()
         return this.s3.deleteObject(params);
+    }
+
+    /**
+     * JOURNAUX - Méthodes spécifiques
+     */
+
+    async getAllJournals() {
+        if (!this.initialized) await this.init();
+        return this.cache.journals || [];
+    }
+
+    async saveJournal(journal) {
+        if (!this.initialized) await this.init();
+
+        try {
+            console.log('💾 Saving journal:', journal);
+
+            // Si le journal existe déjà (a un createdAt), faire un update
+            if (journal.createdAt !== undefined) {
+                const { id, createdAt, updatedAt, ...updates } = journal;
+                await this.db.update('journals', journal.id, journal.createdAt, updates);
+            } else {
+                // Sinon créer un nouveau
+                await this.db.create('journals', journal);
+            }
+
+            // Rafraîchir le cache
+            await this.refreshCache('journals');
+
+            console.log('✅ Journal saved successfully');
+            return journal;
+        } catch (error) {
+            console.error('❌ Error saving journal:', error);
+            throw error;
+        }
+    }
+
+    async deleteJournal(journalId) {
+        if (!this.initialized) await this.init();
+
+        try {
+            // Trouver le journal pour obtenir createdAt
+            const journal = this.cache.journals.find(j => j.id === journalId);
+            if (!journal) {
+                console.error('Journal not found:', journalId);
+                return false;
+            }
+
+            console.log('🗑️ Deleting journal:', journalId);
+            const success = await this.db.delete('journals', journalId, journal.createdAt);
+
+            if (success) {
+                // Rafraîchir le cache
+                await this.refreshCache('journals');
+                console.log('✅ Journal deleted successfully');
+            }
+
+            return success;
+        } catch (error) {
+            console.error('❌ Error deleting journal:', error);
+            return false;
+        }
+    }
+
+    /**
+     * CONDUCTEURS - Méthodes spécifiques (compatibilité)
+     */
+
+    async getAllConductors() {
+        if (!this.initialized) await this.init();
+        return this.cache.conductors || [];
+    }
+
+    async saveConductor(conductor) {
+        if (!this.initialized) await this.init();
+
+        try {
+            console.log('💾 Saving conductor:', conductor);
+
+            // Si le conducteur existe déjà (a un createdAt), faire un update
+            if (conductor.createdAt !== undefined) {
+                const { id, createdAt, updatedAt, ...updates } = conductor;
+                await this.db.update('conductors', conductor.id, conductor.createdAt, updates);
+            } else {
+                // Sinon créer un nouveau
+                await this.db.create('conductors', conductor);
+            }
+
+            // Rafraîchir le cache
+            await this.refreshCache('conductors');
+
+            console.log('✅ Conductor saved successfully');
+            return conductor;
+        } catch (error) {
+            console.error('❌ Error saving conductor:', error);
+            throw error;
+        }
+    }
+
+    async deleteConductor(conductorId) {
+        if (!this.initialized) await this.init();
+
+        try {
+            // Trouver le conducteur pour obtenir createdAt
+            const conductor = this.cache.conductors.find(c => c.id === conductorId);
+            if (!conductor) {
+                console.error('Conductor not found:', conductorId);
+                return false;
+            }
+
+            console.log('🗑️ Deleting conductor:', conductorId);
+            const success = await this.db.delete('conductors', conductorId, conductor.createdAt);
+
+            if (success) {
+                // Rafraîchir le cache
+                await this.refreshCache('conductors');
+                console.log('✅ Conductor deleted successfully');
+            }
+
+            return success;
+        } catch (error) {
+            console.error('❌ Error deleting conductor:', error);
+            return false;
+        }
     }
 }
 

@@ -8,11 +8,17 @@ class SaintEspritV3 {
         this.durationManager = null;
         this.currentNews = null;
         this.allNews = [];
+        this.currentConductor = null;
+        this.allConductors = [];
+        this.currentJournal = null;
+        this.allJournals = [];
         this.audioPlayer = null;
         this.audioPlayerUrl = null;
         this.isPlaying = false;
         this.audioEditor = null;
         this.previousView = null; // Pour retour depuis audio editor
+        this.draggedSegment = null;
+        this.currentModal = null;
         this.init();
     }
 
@@ -98,6 +104,10 @@ class SaintEspritV3 {
             // Load data for specific views
             if (viewName === 'news') {
                 this.loadNews();
+            } else if (viewName === 'conductor') {
+                this.loadConductors();
+            } else if (viewName === 'blocks') {
+                this.loadJournals();
             }
         }
     }
@@ -327,6 +337,17 @@ class SaintEspritV3 {
                     <textarea id="news-content" rows="10" placeholder="Contenu de la news...">${this.currentNews.content || ''}</textarea>
                 </div>
 
+                <div class="form-row form-row-2">
+                    <div class="form-group">
+                        <label>Lancement (optionnel)</label>
+                        <textarea id="news-lancement" rows="3" placeholder="Texte de lancement pour le présentateur...">${this.currentNews.lancement || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Pied (optionnel)</label>
+                        <textarea id="news-pied" rows="3" placeholder="Texte de pied pour le présentateur...">${this.currentNews.pied || ''}</textarea>
+                    </div>
+                </div>
+
                 <!-- Audio Upload -->
                 <div class="form-group">
                     <label>Fichier Audio (optionnel)</label>
@@ -391,6 +412,17 @@ class SaintEspritV3 {
         const contentEl = document.getElementById('news-content');
         if (contentEl) {
             contentEl.addEventListener('input', () => this.updateDurations());
+        }
+
+        // Lancement and Pied change -> update reading time
+        const lancementEl = document.getElementById('news-lancement');
+        if (lancementEl) {
+            lancementEl.addEventListener('input', () => this.updateDurations());
+        }
+
+        const piedEl = document.getElementById('news-pied');
+        if (piedEl) {
+            piedEl.addEventListener('input', () => this.updateDurations());
         }
 
         // Audio upload setup
@@ -622,8 +654,13 @@ class SaintEspritV3 {
         const contentEl = document.getElementById('news-content');
         if (!contentEl) return;
 
-        const text = contentEl.value || '';
-        const durations = this.durationManager.calculateTotalDuration(text);
+        // Combiner contenu + lancement + pied pour calcul total
+        const content = contentEl.value || '';
+        const lancement = document.getElementById('news-lancement')?.value || '';
+        const pied = document.getElementById('news-pied')?.value || '';
+        const fullText = content + ' ' + lancement + ' ' + pied;
+
+        const durations = this.durationManager.calculateTotalDuration(fullText);
 
         // Update display
         const readingEl = document.getElementById('reading-duration');
@@ -647,12 +684,15 @@ class SaintEspritV3 {
         this.currentNews.scheduledDate = document.getElementById('news-date')?.value || '';
         this.currentNews.scheduledTime = document.getElementById('news-time')?.value || '';
         this.currentNews.content = document.getElementById('news-content')?.value || '';
+        this.currentNews.lancement = document.getElementById('news-lancement')?.value || '';
+        this.currentNews.pied = document.getElementById('news-pied')?.value || '';
         this.currentNews.updatedAt = Date.now();
 
-        // Calculate duration
+        // Calculate duration (store in seconds for calculations, not formatted)
         if (this.durationManager) {
-            const durations = this.durationManager.calculateTotalDuration(this.currentNews.content);
-            this.currentNews.duration = durations.totalTimeFormatted;
+            const fullText = this.currentNews.content + ' ' + this.currentNews.lancement + ' ' + this.currentNews.pied;
+            const durations = this.durationManager.calculateTotalDuration(fullText);
+            this.currentNews.duration = durations.totalTime; // Store as number (seconds)
         }
 
         try {
@@ -801,6 +841,987 @@ class SaintEspritV3 {
                 }
             });
         }
+    }
+
+    // ===== CONDUCTOR MANAGEMENT =====
+
+    async loadConductors() {
+        if (!this.storage) return;
+
+        try {
+            const data = await this.storage.load();
+            const conductors = data.conductors || [];
+            console.log(`📺 Loaded ${conductors.length} conductors`);
+
+            this.allConductors = conductors;
+
+            const conductorList = document.getElementById('conductor-list');
+            if (conductors.length === 0) {
+                conductorList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📺</div>
+                        <p>Aucun conducteur</p>
+                        <button class="btn btn-secondary" onclick="app.createConductor()">Créer un conducteur</button>
+                    </div>
+                `;
+                return;
+            }
+
+            this.displayConductorsList(conductors);
+
+        } catch (error) {
+            console.error('Error loading conductors:', error);
+        }
+    }
+
+    displayConductorsList(conductors) {
+        const conductorList = document.getElementById('conductor-list');
+        if (!conductorList) return;
+
+        if (conductors.length === 0) {
+            conductorList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <p>Aucun résultat</p>
+                </div>
+            `;
+            return;
+        }
+
+        conductorList.innerHTML = conductors.map(c => `
+            <div class="news-item ${this.currentConductor && this.currentConductor.id === c.id ? 'active' : ''}" onclick="app.editConductor('${c.id}')">
+                <div class="news-title">${c.title || 'Sans titre'}</div>
+                <div class="news-meta">${c.scheduledDate || ''} ${c.scheduledTime || ''} • ${c.segments?.length || 0} segments</div>
+            </div>
+        `).join('');
+    }
+
+    createConductor() {
+        console.log('📺 Creating new conductor...');
+
+        const now = new Date();
+        const userName = localStorage.getItem('saint-esprit-user-fullname') ||
+                        localStorage.getItem('saint-esprit-user-name') ||
+                        'Utilisateur';
+
+        this.currentConductor = {
+            id: `conductor-${Date.now()}`,
+            title: '',
+            scheduledDate: now.toISOString().split('T')[0],
+            scheduledTime: now.toTimeString().slice(0,5),
+            author: userName,
+            segments: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+
+        this.showConductorEditor();
+    }
+
+    async editConductor(conductorId) {
+        console.log(`✏️ Editing conductor ${conductorId}`);
+
+        try {
+            const data = await this.storage.load();
+            const conductor = (data.conductors || []).find(c => c.id === conductorId);
+            if (conductor) {
+                this.currentConductor = conductor;
+                this.showConductorEditor();
+                this.loadConductors(); // Refresh list to show active item
+            }
+        } catch (error) {
+            console.error('Error loading conductor:', error);
+        }
+    }
+
+    showConductorEditor() {
+        const editor = document.getElementById('conductor-editor');
+        if (!editor) return;
+
+        const stats = this.calculateConductorStats();
+
+        editor.innerHTML = `
+            <div class="editor-form">
+                <div class="editor-header">
+                    <h3>${this.currentConductor.id.startsWith('conductor-') && this.currentConductor.id.includes(Date.now().toString().slice(0, -3)) ? 'Nouveau Conducteur' : 'Édition'}</h3>
+                    <div class="editor-actions">
+                        <button class="btn btn-secondary" onclick="app.closeConductorEditor()">Annuler</button>
+                        <button class="btn btn-primary" onclick="app.saveConductor()">💾 Enregistrer</button>
+                    </div>
+                </div>
+
+                <div class="form-row form-row-3">
+                    <div class="form-group">
+                        <label>Titre</label>
+                        <input type="text" id="conductor-title" value="${this.currentConductor.title || ''}" placeholder="Titre du conducteur">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="conductor-date" value="${this.currentConductor.scheduledDate || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Heure de début</label>
+                        <input type="time" id="conductor-time" value="${this.currentConductor.scheduledTime || ''}">
+                    </div>
+                </div>
+
+                <!-- Info bar -->
+                <div class="conductor-header-info">
+                    <div class="conductor-info-item">
+                        <div class="conductor-info-label">Segments</div>
+                        <div class="conductor-info-value" id="conductor-segments-count">${stats.totalSegments}</div>
+                    </div>
+                    <div class="conductor-info-item">
+                        <div class="conductor-info-label">Durée totale</div>
+                        <div class="conductor-info-value" id="conductor-total-duration">${stats.totalDuration}</div>
+                    </div>
+                    <div class="conductor-info-item">
+                        <div class="conductor-info-label">Début</div>
+                        <div class="conductor-info-value" id="conductor-start-time">${this.currentConductor.scheduledTime || '00:00'}</div>
+                    </div>
+                    <div class="conductor-info-item">
+                        <div class="conductor-info-label">Fin estimée</div>
+                        <div class="conductor-info-value" id="conductor-end-time">${stats.endTime}</div>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="conductor-timeline">
+                    <div class="conductor-segments" id="conductor-segments">
+                        ${this.renderSegments()}
+                    </div>
+
+                    <div class="conductor-sidebar">
+                        <!-- Stats card -->
+                        <div class="stats-card">
+                            <div class="stats-title">📊 Statistiques</div>
+                            <div class="stats-row">
+                                <span class="stats-label">📰 News</span>
+                                <span class="stats-value" id="stats-news">${stats.byType.news}</span>
+                            </div>
+                            <div class="stats-row">
+                                <span class="stats-label">🎵 Musique</span>
+                                <span class="stats-value" id="stats-music">${stats.byType.music}</span>
+                            </div>
+                            <div class="stats-row">
+                                <span class="stats-label">📻 Publicités</span>
+                                <span class="stats-value" id="stats-pub">${stats.byType.pub}</span>
+                            </div>
+                            <div class="stats-row">
+                                <span class="stats-label">🎤 Animation</span>
+                                <span class="stats-value" id="stats-animation">${stats.byType.animation}</span>
+                            </div>
+                            <div class="stats-row">
+                                <span class="stats-label">📞 TEL/CODEC</span>
+                                <span class="stats-value" id="stats-codec">${stats.byType.codec}</span>
+                            </div>
+                        </div>
+
+                        <!-- Add segment button -->
+                        <button class="btn btn-primary" style="width: 100%; margin-bottom: 16px;" onclick="app.addSegment()">+ Ajouter un segment</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.setupDragAndDrop();
+    }
+
+    renderSegments() {
+        if (!this.currentConductor.segments || this.currentConductor.segments.length === 0) {
+            return `
+                <div class="empty-state" style="margin-top: 40px;">
+                    <div class="empty-icon">📺</div>
+                    <p>Aucun segment</p>
+                    <button class="btn btn-primary" onclick="app.addSegment()">+ Ajouter un segment</button>
+                </div>
+            `;
+        }
+
+        let currentTime = this.parseTime(this.currentConductor.scheduledTime || '00:00');
+
+        return this.currentConductor.segments.map((segment, index) => {
+            const startTime = this.formatTimeHHMMSS(currentTime);
+            const duration = segment.duration || 60; // Default 1 minute
+            currentTime += duration;
+
+            return `
+                <div class="segment" draggable="true" data-index="${index}">
+                    <div class="segment-header">
+                        <div class="segment-number">${index + 1}</div>
+                        <div class="segment-time">
+                            <div class="segment-timecode">${startTime}</div>
+                            <div class="segment-duration">→ ${this.formatDurationMMSS(duration)}</div>
+                        </div>
+                    </div>
+                    <div class="segment-title">${this.getSegmentIcon(segment.type)} ${segment.title || 'Sans titre'}</div>
+                    <div class="segment-content">${segment.content || ''}</div>
+                    <span class="segment-type type-${segment.type}">${this.getSegmentTypeName(segment.type)}</span>
+                    <div class="segment-actions">
+                        <button onclick="app.editSegment(${index})">✏️ Éditer</button>
+                        <button onclick="app.deleteSegment(${index})">🗑️ Supprimer</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    getSegmentIcon(type) {
+        const icons = {
+            news: '📰',
+            music: '🎵',
+            pub: '📻',
+            animation: '🎤',
+            codec: '📞'
+        };
+        return icons[type] || '📝';
+    }
+
+    getSegmentTypeName(type) {
+        const names = {
+            news: 'News',
+            music: 'Musique',
+            pub: 'Publicité',
+            animation: 'Animation',
+            codec: 'TEL/CODEC'
+        };
+        return names[type] || 'Autre';
+    }
+
+    calculateConductorStats() {
+        if (!this.currentConductor || !this.currentConductor.segments) {
+            return {
+                totalSegments: 0,
+                totalDuration: '00:00',
+                endTime: '00:00',
+                byType: { news: 0, music: 0, pub: 0, animation: 0, codec: 0 }
+            };
+        }
+
+        const segments = this.currentConductor.segments;
+        const totalSeconds = segments.reduce((sum, s) => sum + (s.duration || 0), 0);
+        const startTime = this.parseTime(this.currentConductor.scheduledTime || '00:00');
+        const endTimeSeconds = startTime + totalSeconds;
+
+        const byType = {
+            news: segments.filter(s => s.type === 'news').length,
+            music: segments.filter(s => s.type === 'music').length,
+            pub: segments.filter(s => s.type === 'pub').length,
+            animation: segments.filter(s => s.type === 'animation').length,
+            codec: segments.filter(s => s.type === 'codec').length
+        };
+
+        return {
+            totalSegments: segments.length,
+            totalDuration: this.formatDurationMMSS(totalSeconds),
+            endTime: this.formatTimeHHMM(endTimeSeconds),
+            byType
+        };
+    }
+
+    parseTime(timeStr) {
+        // Parse HH:MM to seconds
+        const parts = timeStr.split(':');
+        return (parseInt(parts[0]) * 3600) + (parseInt(parts[1]) * 60);
+    }
+
+    formatTimeHHMM(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    }
+
+    formatTimeHHMMSS(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    formatDurationMMSS(seconds) {
+        // Convertir en nombre valide, utiliser 0 si invalide
+        const validSeconds = Number(seconds) || 0;
+        const mins = Math.floor(validSeconds / 60);
+        const secs = Math.floor(validSeconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    addSegment() {
+        this.showSegmentModal(null);
+    }
+
+    editSegment(index) {
+        this.showSegmentModal(index);
+    }
+
+    showSegmentModal(segmentIndex) {
+        const isEdit = segmentIndex !== null;
+        const segment = isEdit ? this.currentConductor.segments[segmentIndex] : null;
+
+        // Create modal overlay
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'modal-overlay';
+        modalOverlay.onclick = (e) => {
+            if (e.target === modalOverlay) this.closeSegmentModal();
+        };
+
+        modalOverlay.innerHTML = `
+            <div class="modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>${isEdit ? '✏️ Éditer le segment' : '➕ Nouveau segment'}</h3>
+                    <button class="modal-close" onclick="app.closeSegmentModal()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Type de segment</label>
+                        <select id="segment-type">
+                            <option value="news" ${segment?.type === 'news' ? 'selected' : ''}>📰 News</option>
+                            <option value="music" ${segment?.type === 'music' ? 'selected' : ''}>🎵 Musique</option>
+                            <option value="pub" ${segment?.type === 'pub' ? 'selected' : ''}>📻 Publicité</option>
+                            <option value="animation" ${segment?.type === 'animation' ? 'selected' : ''}>🎤 Animation</option>
+                            <option value="codec" ${segment?.type === 'codec' ? 'selected' : ''}>📞 Insert TEL/CODEC</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Titre</label>
+                        <input type="text" id="segment-title" placeholder="Titre du segment" value="${segment?.title || ''}">
+                    </div>
+
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+                        <div class="form-group">
+                            <label>Durée (minutes)</label>
+                            <input type="number" id="segment-duration-min" placeholder="0" value="${Math.floor((segment?.duration || 60) / 60)}" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Durée (secondes)</label>
+                            <input type="number" id="segment-duration-sec" placeholder="60" value="${(segment?.duration || 60) % 60}" min="0" max="59">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description (optionnel)</label>
+                        <textarea id="segment-content" rows="4" placeholder="Description du segment...">${segment?.content || ''}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="app.closeSegmentModal()">Annuler</button>
+                    <button class="btn btn-primary" onclick="app.saveSegmentModal(${segmentIndex})">💾 Enregistrer</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modalOverlay);
+        this.currentModal = modalOverlay;
+
+        // Focus on title input
+        setTimeout(() => {
+            const titleInput = document.getElementById('segment-title');
+            if (titleInput) titleInput.focus();
+        }, 100);
+    }
+
+    saveSegmentModal(segmentIndex) {
+        const type = document.getElementById('segment-type')?.value || 'news';
+        const title = document.getElementById('segment-title')?.value || '';
+        const durationMin = parseInt(document.getElementById('segment-duration-min')?.value) || 0;
+        const durationSec = parseInt(document.getElementById('segment-duration-sec')?.value) || 0;
+        const content = document.getElementById('segment-content')?.value || '';
+
+        if (!title) {
+            alert('Le titre est obligatoire');
+            return;
+        }
+
+        const duration = (durationMin * 60) + durationSec;
+
+        if (segmentIndex !== null) {
+            // Edit existing segment
+            this.currentConductor.segments[segmentIndex] = {
+                ...this.currentConductor.segments[segmentIndex],
+                type,
+                title,
+                content,
+                duration
+            };
+        } else {
+            // Add new segment
+            const segment = {
+                id: `segment-${Date.now()}`,
+                type,
+                title,
+                content,
+                duration
+            };
+
+            if (!this.currentConductor.segments) {
+                this.currentConductor.segments = [];
+            }
+
+            this.currentConductor.segments.push(segment);
+        }
+
+        this.closeSegmentModal();
+        this.showConductorEditor();
+    }
+
+    closeSegmentModal() {
+        if (this.currentModal) {
+            this.currentModal.remove();
+            this.currentModal = null;
+        }
+    }
+
+    deleteSegment(index) {
+        if (!confirm('Supprimer ce segment ?')) return;
+
+        this.currentConductor.segments.splice(index, 1);
+        this.showConductorEditor();
+    }
+
+    setupDragAndDrop() {
+        const segments = document.querySelectorAll('.segment[draggable="true"]');
+
+        segments.forEach(segment => {
+            segment.addEventListener('dragstart', (e) => {
+                this.draggedSegment = parseInt(e.target.dataset.index);
+                e.target.classList.add('dragging');
+            });
+
+            segment.addEventListener('dragend', (e) => {
+                e.target.classList.remove('dragging');
+            });
+
+            segment.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+
+            segment.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const targetIndex = parseInt(e.currentTarget.dataset.index);
+
+                if (this.draggedSegment !== null && this.draggedSegment !== targetIndex) {
+                    // Swap segments
+                    const segments = this.currentConductor.segments;
+                    const draggedItem = segments[this.draggedSegment];
+                    segments.splice(this.draggedSegment, 1);
+                    segments.splice(targetIndex, 0, draggedItem);
+
+                    this.showConductorEditor();
+                }
+
+                this.draggedSegment = null;
+            });
+        });
+    }
+
+    async saveConductor() {
+        if (!this.storage) {
+            alert('Storage not initialized');
+            return;
+        }
+
+        // Get form values
+        this.currentConductor.title = document.getElementById('conductor-title')?.value || '';
+        this.currentConductor.scheduledDate = document.getElementById('conductor-date')?.value || '';
+        this.currentConductor.scheduledTime = document.getElementById('conductor-time')?.value || '';
+        this.currentConductor.updatedAt = Date.now();
+
+        try {
+            await this.storage.saveItem('conductors', this.currentConductor);
+            console.log('✅ Conductor saved:', this.currentConductor.id);
+
+            // Refresh list
+            await this.loadConductors();
+
+            // Show success
+            this.showNotification('Conducteur enregistré avec succès', 'success');
+        } catch (error) {
+            console.error('❌ Save error:', error);
+            alert('Erreur lors de la sauvegarde');
+        }
+    }
+
+    closeConductorEditor() {
+        this.currentConductor = null;
+        const editor = document.getElementById('conductor-editor');
+        if (editor) {
+            editor.innerHTML = `
+                <div class="editor-placeholder">
+                    <div class="placeholder-icon">📺</div>
+                    <p>Sélectionnez ou créez un conducteur</p>
+                </div>
+            `;
+        }
+        this.loadConductors();
+    }
+
+    // ===== JOURNAUX MANAGEMENT =====
+    async loadJournals() {
+        try {
+            console.log('📋 Loading journals...');
+            const journals = await this.storage.getAllJournals();
+            this.allJournals = journals.sort((a, b) => b.createdAt - a.createdAt);
+
+            const list = document.getElementById('journal-list');
+            if (!list) return;
+
+            if (this.allJournals.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <p>Aucun journal</p>
+                        <button class="btn btn-secondary" onclick="app.createJournal()">Créer un journal</button>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = this.allJournals.map(journal => {
+                const newsCount = journal.newsIds ? journal.newsIds.length : 0;
+                const totalDuration = this.calculateJournalDuration(journal);
+                const targetDuration = journal.targetDuration || 900;
+                const gap = totalDuration - targetDuration;
+                const statusClass = Math.abs(gap) <= (journal.tolerance || 30) ? 'success' : 'warning';
+
+                return `
+                    <div class="list-item ${this.currentJournal && this.currentJournal.id === journal.id ? 'active' : ''}"
+                         onclick="app.editJournal('${journal.id}')">
+                        <div class="list-item-header">
+                            <strong>${journal.title || 'Journal sans titre'}</strong>
+                            <span class="badge ${statusClass}">${this.formatDurationMMSS(totalDuration)}</span>
+                        </div>
+                        <div class="list-item-meta">
+                            ${journal.scheduledDate || ''} ${journal.scheduledTime || ''} • ${newsCount} news
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('❌ Load journals error:', error);
+        }
+    }
+
+    createJournal() {
+        const timestamp = Date.now();
+        this.currentJournal = {
+            id: `journal-${timestamp}`,
+            title: `Journal du ${new Date().toLocaleDateString('fr-FR')}`,
+            scheduledDate: new Date().toISOString().split('T')[0],
+            scheduledTime: '18:00',
+            newsIds: [],
+            targetDuration: 900, // 15 minutes par défaut
+            tolerance: 30, // 30 secondes de tolérance
+            author: this.currentUser?.username || 'Anonyme',
+            createdAt: timestamp,
+            updatedAt: timestamp
+        };
+
+        this.showJournalEditor();
+        this.loadJournals();
+    }
+
+    async editJournal(journalId) {
+        const journal = this.allJournals.find(j => j.id === journalId);
+        if (!journal) return;
+
+        this.currentJournal = { ...journal };
+        this.showJournalEditor();
+    }
+
+    async showJournalEditor() {
+        if (!this.currentJournal) return;
+
+        const editor = document.getElementById('journal-editor');
+        if (!editor) return;
+
+        // S'assurer que les news sont chargées
+        if (!this.allNews || this.allNews.length === 0) {
+            const data = await this.storage.load();
+            this.allNews = data.news || [];
+            console.log(`📰 Loaded ${this.allNews.length} news for journal editor`);
+        }
+
+        // Récupérer les news complètes depuis les IDs
+        const newsInJournal = await this.getNewsFromIds(this.currentJournal.newsIds || []);
+        const totalDuration = newsInJournal.reduce((sum, n) => sum + (n.duration || 0), 0);
+        const targetDuration = this.currentJournal.targetDuration || 900;
+        const gap = totalDuration - targetDuration;
+        const tolerance = this.currentJournal.tolerance || 30;
+
+        let durationStatus = '';
+        if (Math.abs(gap) <= tolerance) {
+            durationStatus = `<div class="duration-alert success">✅ Durée respectée (écart: ${this.formatDurationMMSS(Math.abs(gap))})</div>`;
+        } else if (gap > tolerance) {
+            durationStatus = `<div class="duration-alert warning">⚠️ Trop long de ${this.formatDurationMMSS(gap)}</div>`;
+        } else {
+            durationStatus = `<div class="duration-alert warning">⚠️ Trop court de ${this.formatDurationMMSS(Math.abs(gap))}</div>`;
+        }
+
+        editor.innerHTML = `
+            <div class="editor-content">
+                <div class="editor-header">
+                    <input type="text"
+                           class="title-input"
+                           value="${this.currentJournal.title || ''}"
+                           placeholder="Titre du journal"
+                           onchange="app.currentJournal.title = this.value">
+                    <button class="btn btn-danger" onclick="app.deleteJournal()">🗑️ Supprimer</button>
+                </div>
+
+                <div class="journal-info-bar">
+                    <div class="info-item">
+                        <label>📅 Date</label>
+                        <input type="date"
+                               value="${this.currentJournal.scheduledDate || ''}"
+                               onchange="app.currentJournal.scheduledDate = this.value">
+                    </div>
+                    <div class="info-item">
+                        <label>🕐 Heure</label>
+                        <input type="time"
+                               value="${this.currentJournal.scheduledTime || ''}"
+                               onchange="app.currentJournal.scheduledTime = this.value">
+                    </div>
+                    <div class="info-item">
+                        <label>⏱️ Durée cible</label>
+                        <input type="number"
+                               value="${Math.floor(targetDuration / 60)}"
+                               min="1" max="120"
+                               onchange="app.currentJournal.targetDuration = this.value * 60"
+                               style="width: 80px"> min
+                    </div>
+                    <div class="info-item">
+                        <label>🎯 Tolérance</label>
+                        <input type="number"
+                               value="${tolerance}"
+                               min="0" max="120"
+                               onchange="app.currentJournal.tolerance = parseInt(this.value)"
+                               style="width: 80px"> sec
+                    </div>
+                    <div class="info-item">
+                        <strong>Total: ${this.formatDurationMMSS(totalDuration)}</strong>
+                    </div>
+                </div>
+
+                <div class="journal-stats-bar">
+                    <div class="stat-item">
+                        <span>News</span>
+                        <strong>${newsInJournal.length}</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Durée totale</span>
+                        <strong class="text-success">${this.formatDurationMMSS(totalDuration)}</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Objectif</span>
+                        <strong class="text-primary">${this.formatDurationMMSS(targetDuration)}</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Écart</span>
+                        <strong class="${gap > tolerance ? 'text-warning' : gap < -tolerance ? 'text-warning' : 'text-success'}">${gap >= 0 ? '-' : '+'}${this.formatDurationMMSS(Math.abs(gap))}</strong>
+                    </div>
+                </div>
+
+                ${durationStatus}
+
+                <div class="news-picker">
+                    <label>➕ Ajouter des news</label>
+                    <div class="news-picker-row">
+                        <select id="news-select-${this.currentJournal.id}">
+                            <option value="">Sélectionner une news...</option>
+                            ${this.allNews.map(n => `
+                                <option value="${n.id}">${n.title} (${this.formatDurationMMSS(n.duration || 0)})</option>
+                            `).join('')}
+                        </select>
+                        <button class="btn btn-success btn-sm" onclick="const sel = document.getElementById('news-select-${this.currentJournal.id}'); app.addNewsToJournal(sel.value); sel.value=''">+ Ajouter</button>
+                    </div>
+                </div>
+
+                <h3 class="section-title">📋 News du journal (glisser-déposer pour réorganiser)</h3>
+
+                <div class="journal-news-list" id="journal-news-list">
+                    ${newsInJournal.length === 0 ? `
+                        <div class="empty-state">
+                            <p>Aucune news dans ce journal</p>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="journal-sidebar">
+                    <button class="btn btn-primary" onclick="app.saveJournal()">💾 Enregistrer</button>
+                    <button class="btn btn-secondary" onclick="app.generateConductorFromJournal()">📺 Générer conducteur</button>
+                    <button class="btn btn-secondary" onclick="app.closeJournalEditor()">✕ Fermer</button>
+
+                    <div class="stats-card">
+                        <h4>📊 Statistiques</h4>
+                        <div class="stat-line">
+                            <span>News:</span>
+                            <strong>${newsInJournal.length}</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Durée moyenne:</span>
+                            <strong>${newsInJournal.length > 0 ? this.formatDurationMMSS(totalDuration / newsInJournal.length) : '0:00'}</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Plus courte:</span>
+                            <strong>${newsInJournal.length > 0 ? this.formatDurationMMSS(Math.min(...newsInJournal.map(n => n.duration || 0))) : '0:00'}</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Plus longue:</span>
+                            <strong>${newsInJournal.length > 0 ? this.formatDurationMMSS(Math.max(...newsInJournal.map(n => n.duration || 0))) : '0:00'}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Render news items
+        await this.renderJournalNews();
+
+        // Setup drag and drop
+        this.setupJournalDragAndDrop();
+    }
+
+    async getNewsFromIds(newsIds) {
+        // Récupérer les objets news complets depuis les IDs
+        if (!newsIds || newsIds.length === 0) return [];
+        return this.allNews.filter(n => newsIds.includes(n.id));
+    }
+
+    calculateJournalDuration(journal) {
+        if (!journal.newsIds || journal.newsIds.length === 0) return 0;
+        const newsInJournal = this.allNews.filter(n => journal.newsIds.includes(n.id));
+        return newsInJournal.reduce((sum, n) => sum + (n.duration || 0), 0);
+    }
+
+    async renderJournalNews() {
+        const list = document.getElementById('journal-news-list');
+        if (!list || !this.currentJournal) return;
+
+        const newsInJournal = await this.getNewsFromIds(this.currentJournal.newsIds || []);
+
+        if (newsInJournal.length === 0) {
+            list.innerHTML = `
+                <div class="empty-state">
+                    <p>Aucune news dans ce journal</p>
+                </div>
+            `;
+            return;
+        }
+
+        list.innerHTML = newsInJournal.map((news, index) => {
+            const categoryLabels = {
+                'general': 'Info générale',
+                'international': 'International',
+                'national': 'National',
+                'local': 'Local',
+                'sport': 'Sport',
+                'culture': 'Culture'
+            };
+            const categoryLabel = categoryLabels[news.category] || news.category || 'news';
+
+            // Indicateurs lancement et pied
+            const hasLancement = news.lancement && news.lancement.trim() !== '';
+            const hasPied = news.pied && news.pied.trim() !== '';
+            const indicators = [];
+            if (hasLancement) indicators.push('<span class="badge badge-lancement" title="Contient un lancement">🎤 Lancement</span>');
+            if (hasPied) indicators.push('<span class="badge badge-pied" title="Contient un pied">📝 Pied</span>');
+
+            return `
+                <div class="journal-news-item" data-index="${index}" draggable="true">
+                    <div class="drag-handle">⋮⋮</div>
+                    <div class="news-item-content">
+                        <div class="news-item-header">
+                            <strong>${news.title}</strong>
+                            <span class="news-item-duration">${this.formatDurationMMSS(news.duration || 0)}</span>
+                        </div>
+                        <div class="news-item-meta">
+                            <span class="badge badge-category">${categoryLabel}</span>
+                            ${indicators.join(' ')}
+                        </div>
+                    </div>
+                    <button class="btn-icon" onclick="app.removeNewsFromJournal(${index})" title="Retirer">🗑️</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async addNewsToJournal(newsId) {
+        if (!newsId || !this.currentJournal) return;
+
+        // Initialiser newsIds si nécessaire
+        if (!this.currentJournal.newsIds) {
+            this.currentJournal.newsIds = [];
+        }
+
+        // Vérifier si déjà présent
+        if (this.currentJournal.newsIds.includes(newsId)) {
+            alert('Cette news est déjà dans le journal');
+            return;
+        }
+
+        // Ajouter l'ID (pas l'objet complet!)
+        this.currentJournal.newsIds.push(newsId);
+        this.currentJournal.updatedAt = Date.now();
+
+        // Rafraîchir l'affichage
+        await this.showJournalEditor();
+    }
+
+    async removeNewsFromJournal(index) {
+        if (!this.currentJournal || !this.currentJournal.newsIds) return;
+
+        this.currentJournal.newsIds.splice(index, 1);
+        this.currentJournal.updatedAt = Date.now();
+
+        await this.showJournalEditor();
+    }
+
+    setupJournalDragAndDrop() {
+        const items = document.querySelectorAll('.journal-news-item');
+        let draggedIndex = null;
+
+        items.forEach((item, index) => {
+            item.addEventListener('dragstart', (e) => {
+                draggedIndex = index;
+                item.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            item.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+                draggedIndex = null;
+            });
+
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+
+                const rect = item.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+                if (e.clientY < midpoint) {
+                    item.classList.add('drag-over-top');
+                    item.classList.remove('drag-over-bottom');
+                } else {
+                    item.classList.add('drag-over-bottom');
+                    item.classList.remove('drag-over-top');
+                }
+            });
+
+            item.addEventListener('dragleave', () => {
+                item.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+
+            item.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                item.classList.remove('drag-over-top', 'drag-over-bottom');
+
+                if (draggedIndex === null || draggedIndex === index) return;
+
+                // Réorganiser les IDs
+                const newsIds = [...this.currentJournal.newsIds];
+                const [removed] = newsIds.splice(draggedIndex, 1);
+
+                const rect = item.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+                const targetIndex = e.clientY < midpoint ? index : index + 1;
+
+                newsIds.splice(targetIndex > draggedIndex ? targetIndex - 1 : targetIndex, 0, removed);
+
+                this.currentJournal.newsIds = newsIds;
+                this.currentJournal.updatedAt = Date.now();
+
+                await this.renderJournalNews();
+                this.setupJournalDragAndDrop();
+            });
+        });
+    }
+
+    async saveJournal() {
+        if (!this.currentJournal) return;
+
+        try {
+            this.currentJournal.updatedAt = Date.now();
+
+            console.log('💾 Saving journal:', this.currentJournal);
+            await this.storage.saveJournal(this.currentJournal);
+            console.log('✅ Journal saved:', this.currentJournal.id);
+
+            await this.loadJournals();
+            this.showNotification('Journal enregistré avec succès', 'success');
+        } catch (error) {
+            console.error('❌ Save error:', error);
+            alert('Erreur lors de la sauvegarde');
+        }
+    }
+
+    async deleteJournal() {
+        if (!this.currentJournal) return;
+
+        if (!confirm(`Supprimer le journal "${this.currentJournal.title}" ?`)) return;
+
+        try {
+            await this.storage.deleteJournal(this.currentJournal.id);
+            this.closeJournalEditor();
+            this.showNotification('Journal supprimé', 'success');
+        } catch (error) {
+            console.error('❌ Delete error:', error);
+            alert('Erreur lors de la suppression');
+        }
+    }
+
+    async generateConductorFromJournal() {
+        if (!this.currentJournal) return;
+
+        const newsInJournal = await this.getNewsFromIds(this.currentJournal.newsIds || []);
+
+        if (newsInJournal.length === 0) {
+            alert('Le journal ne contient aucune news');
+            return;
+        }
+
+        const timestamp = Date.now();
+        const newConductor = {
+            id: `conductor-${timestamp}`,
+            title: `Conducteur - ${this.currentJournal.title}`,
+            date: this.currentJournal.scheduledDate || new Date().toISOString().split('T')[0],
+            startTime: this.currentJournal.scheduledTime || '18:00',
+            segments: newsInJournal.map((news, index) => ({
+                id: `seg-${timestamp}-${index}`,
+                type: 'news',
+                title: news.title,
+                content: news.id, // Référence à la news
+                duration: news.duration || 0,
+                order: index
+            })),
+            author: this.currentUser?.username || 'Anonyme',
+            createdAt: timestamp,
+            updatedAt: timestamp
+        };
+
+        this.currentConductor = newConductor;
+
+        // Sauvegarder le conducteur
+        await this.storage.saveConductor(newConductor);
+
+        // Basculer vers la vue conducteur
+        this.switchView('conductor');
+
+        this.showNotification('Conducteur généré avec succès', 'success');
+    }
+
+    closeJournalEditor() {
+        this.currentJournal = null;
+        const editor = document.getElementById('journal-editor');
+        if (editor) {
+            editor.innerHTML = `
+                <div class="editor-placeholder">
+                    <div class="placeholder-icon">📋</div>
+                    <p>Sélectionnez ou créez un journal</p>
+                </div>
+            `;
+        }
+        this.loadJournals();
     }
 }
 
@@ -1741,6 +2762,10 @@ style.textContent = `
     gap: var(--space-md);
 }
 
+.form-row-2 {
+    grid-template-columns: 1fr 1fr;
+}
+
 .form-row-3 {
     grid-template-columns: 1fr 1fr 1fr;
 }
@@ -1884,6 +2909,7 @@ style.textContent = `
 }
 
 @media (max-width: 768px) {
+    .form-row-2,
     .form-row-3 {
         grid-template-columns: 1fr;
     }

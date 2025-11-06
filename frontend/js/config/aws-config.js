@@ -25,6 +25,7 @@ window.AWSConfig = {
         animations: 'saint-esprit-animations',
         blocks: 'saint-esprit-blocks',
         conductors: 'saint-esprit-conductors',
+        journals: 'saint-esprit-journals',
         audio: 'saint-esprit-audio',
         habillage: 'saint-esprit-habillage'
     }

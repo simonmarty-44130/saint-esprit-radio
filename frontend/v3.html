@@ -25,7 +25,7 @@
     </script>
 
     <!-- CSS Ultra-clean -->
-    <link rel="stylesheet" href="v3.css">
+    <link rel="stylesheet" href="v3-1762426265.css">
 </head>
 <body>
 
@@ -146,12 +146,34 @@
             </div>
         </div>
 
-        <!-- BLOCKS VIEW -->
+        <!-- BLOCKS VIEW (JOURNAUX) -->
         <div class="view" id="blocks-view">
             <header class="view-header">
                 <h2>📋 Journaux</h2>
+                <button class="btn btn-primary" onclick="app.createJournal()">+ Nouveau Journal</button>
             </header>
-            <p>Section Journaux - En construction</p>
+
+            <div class="split-view">
+                <!-- Liste des journaux -->
+                <div class="list-panel">
+                    <input type="search" class="search-input" placeholder="Rechercher un journal..." id="journal-search">
+                    <div class="list" id="journal-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">📋</div>
+                            <p>Aucun journal</p>
+                            <button class="btn btn-secondary" onclick="app.createJournal()">Créer un journal</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vue du journal -->
+                <div class="editor-panel" id="journal-editor">
+                    <div class="editor-placeholder">
+                        <div class="placeholder-icon">📋</div>
+                        <p>Sélectionnez ou créez un journal</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- ANIMATION VIEW -->
@@ -166,8 +188,30 @@
         <div class="view" id="conductor-view">
             <header class="view-header">
                 <h2>📺 Conducteur</h2>
+                <button class="btn btn-primary" onclick="app.createConductor()">+ Nouveau Conducteur</button>
             </header>
-            <p>Section Conducteur - En construction</p>
+
+            <div class="split-view">
+                <!-- Liste des conducteurs -->
+                <div class="list-panel">
+                    <input type="search" class="search-input" placeholder="Rechercher un conducteur..." id="conductor-search">
+                    <div class="list" id="conductor-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">📺</div>
+                            <p>Aucun conducteur</p>
+                            <button class="btn btn-secondary" onclick="app.createConductor()">Créer un conducteur</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vue du conducteur -->
+                <div class="editor-panel" id="conductor-editor">
+                    <div class="editor-placeholder">
+                        <div class="placeholder-icon">📺</div>
+                        <p>Sélectionnez ou créez un conducteur</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- ON AIR VIEW -->
@@ -246,19 +290,19 @@
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1462.0.min.js"></script>
 
     <!-- Config (AWS config DOIT être chargé en premier) -->
-    <script src="js/config/aws-config.js?v=3.0.0"></script>
+    <script src="js/config/aws-config.js?v=1762426265"></script>
 
     <!-- Core JS (gardons ce qui fonctionne) -->
     <script src="js/core/utils.js?v=3.0.0"></script>
     <script src="js/core/cognito-auth.js?v=1.2"></script>
-    <script src="js/core/dynamodb-client.js?v=1762169381"></script>
-    <script src="js/core/storage-dynamodb-v2.js?v=1762169381"></script>
-    <script src="js/core/audio-storage.js?v=1762169381"></script>
+    <script src="js/core/dynamodb-client.js?v=1762426265"></script>
+    <script src="js/core/storage-dynamodb-v2.js?v=1762426265"></script>
+    <script src="js/core/audio-storage.js?v=1762426265"></script>
     <script src="js/managers/ContentManager.js?v=1756486244"></script>
     <script src="js/components/NewsDurationManager.js?v=1.0"></script>
 
     <!-- V3 App Logic -->
-    <script src="v3-app.js"></script>
+    <script src="v3-app-1762426265.js"></script>
 
 </body>
 </html>

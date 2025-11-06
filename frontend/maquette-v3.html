@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saint-Esprit v3.0 - Maquette</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: #0f1419;
+            color: #e6edf3;
+            overflow-x: hidden;
+        }
+
+        /* ========================================
+           TOP BAR - Navigation principale
+        ======================================== */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: rgba(22, 27, 34, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 24px;
+            z-index: 1000;
+        }
+
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            color: #58a6ff;
+        }
+
+        .topbar-logo img {
+            height: 32px;
+            width: 32px;
+            border-radius: 6px;
+        }
+
+        .topbar-nav {
+            flex: 1;
+            display: flex;
+            gap: 4px;
+        }
+
+        .topbar-nav-item {
+            padding: 6px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .topbar-nav-item:hover {
+            background: #30363d;
+            color: #e6edf3;
+        }
+
+        .topbar-nav-item.active {
+            background: #1f6feb;
+            color: white;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .topbar-search {
+            width: 240px;
+            padding: 8px 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #e6edf3;
+            font-size: 14px;
+        }
+
+        .topbar-btn {
+            padding: 8px 16px;
+            background: #238636;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .topbar-btn:hover {
+            background: #2ea043;
+        }
+
+        .topbar-btn.danger {
+            background: #da3633;
+        }
+
+        .topbar-btn.danger:hover {
+            background: #f85149;
+        }
+
+        .topbar-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .topbar-user:hover {
+            border-color: #58a6ff;
+        }
+
+        .topbar-user-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1f6feb, #58a6ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* ========================================
+           MAIN CONTENT AREA
+        ======================================== */
+        .main-content {
+            margin-top: 56px;
+            min-height: calc(100vh - 56px);
+        }
+
+        /* ========================================
+           DASHBOARD - Command Center
+        ======================================== */
+        .dashboard {
+            padding: 48px 48px 96px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            margin-bottom: 48px;
+        }
+
+        .dashboard-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #58a6ff, #79c0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .dashboard-subtitle {
+            color: #8b949e;
+            font-size: 16px;
+        }
+
+        /* Quick Stats - Ligne du haut */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(31, 111, 235, 0.1), rgba(88, 166, 255, 0.05));
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: #58a6ff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(31, 111, 235, 0.2);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #58a6ff;
+            line-height: 1;
+        }
+
+        .stat-trend {
+            font-size: 12px;
+            color: #3fb950;
+            margin-top: 8px;
+        }
+
+        /* Main Grid - 2 colonnes */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        /* Cards génériques */
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e6edf3;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        /* Timeline */
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+
+        .timeline-time {
+            font-size: 13px;
+            color: #8b949e;
+            min-width: 60px;
+            font-weight: 600;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-title {
+            font-size: 14px;
+            color: #e6edf3;
+            margin-bottom: 4px;
+        }
+
+        .timeline-meta {
+            font-size: 12px;
+            color: #6e7681;
+        }
+
+        /* Actions rapides */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #1f6feb, #1158c7);
+            border: none;
+            border-radius: 8px;
+            padding: 24px 20px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(31, 111, 235, 0.4);
+        }
+
+        .action-btn-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .action-btn-label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Urgent items */
+        .urgent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .urgent-item {
+            background: rgba(218, 54, 51, 0.1);
+            border: 1px solid #da3633;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .urgent-info {
+            flex: 1;
+        }
+
+        .urgent-title {
+            font-size: 14px;
+            color: #e6edf3;
+            margin-bottom: 4px;
+        }
+
+        .urgent-time {
+            font-size: 12px;
+            color: #f85149;
+        }
+
+        .urgent-btn {
+            padding: 6px 12px;
+            background: #da3633;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* Activity Feed */
+        .activity-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1f6feb, #58a6ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-text {
+            font-size: 13px;
+            color: #e6edf3;
+            margin-bottom: 4px;
+        }
+
+        .activity-time {
+            font-size: 11px;
+            color: #6e7681;
+        }
+
+        /* Live indicator */
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(218, 54, 51, 0.2);
+            border: 1px solid #da3633;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #f85149;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #f85149;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <!-- TOP BAR -->
+    <div class="topbar">
+        <div class="topbar-logo">
+            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #1f6feb, #58a6ff); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                ⚡
+            </div>
+            <span>Saint-Esprit</span>
+        </div>
+
+        <nav class="topbar-nav">
+            <button class="topbar-nav-item active">🏠 Dashboard</button>
+            <button class="topbar-nav-item">📰 News</button>
+            <button class="topbar-nav-item">📋 Journaux</button>
+            <button class="topbar-nav-item">🎙️ Animation</button>
+            <button class="topbar-nav-item">📡 Conducteur</button>
+            <button class="topbar-nav-item">🔴 ON AIR</button>
+        </nav>
+
+        <div class="topbar-actions">
+            <input type="text" class="topbar-search" placeholder="Rechercher... (⌘K)">
+            <button class="topbar-btn">+ Nouveau</button>
+            <div class="topbar-user">
+                <div class="topbar-user-avatar">SM</div>
+                <span style="font-size: 14px;">Simon</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="dashboard">
+            <!-- Header -->
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">Bienvenue, Simon 👋</h1>
+                <p class="dashboard-subtitle">Lundi 3 novembre 2025 • 14:32</p>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-label">News Aujourd'hui</div>
+                    <div class="stat-value">0</div>
+                    <div class="stat-trend">↑ +0 depuis hier</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Journaux Prêts</div>
+                    <div class="stat-value">0</div>
+                    <div class="stat-trend">— Aucun en cours</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Animations</div>
+                    <div class="stat-value">0</div>
+                    <div class="stat-trend">— En attente</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, rgba(218, 54, 51, 0.1), rgba(248, 81, 73, 0.05));">
+                    <div class="stat-label">
+                        <span class="live-indicator">
+                            <span class="live-dot"></span>
+                            LIVE
+                        </span>
+                    </div>
+                    <div class="stat-value" style="color: #f85149;">OFF AIR</div>
+                    <div class="stat-trend" style="color: #6e7681;">Pas de diffusion</div>
+                </div>
+            </div>
+
+            <!-- Main Grid -->
+            <div class="dashboard-grid">
+                <!-- Planning du jour -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📅 Planning du jour</div>
+                        <button style="padding: 6px 12px; background: #238636; border: none; border-radius: 6px; color: white; font-size: 12px; cursor: pointer;">
+                            + Ajouter
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline-item">
+                            <div class="timeline-time">06:00</div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Journal du matin</div>
+                                <div class="timeline-meta">3 news • Prêt à diffuser</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-time">12:00</div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Journal de midi</div>
+                                <div class="timeline-meta">En préparation</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-time">18:00</div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Journal du soir</div>
+                                <div class="timeline-meta">Non démarré</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activité récente -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">⚡ Activité récente</div>
+                    </div>
+                    <div class="card-body" style="padding: 12px 16px;">
+                        <div class="activity-item">
+                            <div class="activity-avatar">SM</div>
+                            <div class="activity-content">
+                                <div class="activity-text">Connexion à Saint-Esprit</div>
+                                <div class="activity-time">Il y a 2 minutes</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-avatar" style="background: linear-gradient(135deg, #238636, #2ea043);">CB</div>
+                            <div class="activity-content">
+                                <div class="activity-text">Clara a créé un journal</div>
+                                <div class="activity-time">Il y a 1 heure</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-avatar" style="background: linear-gradient(135deg, #da3633, #f85149);">JD</div>
+                            <div class="activity-content">
+                                <div class="activity-text">Jean a modifié une news</div>
+                                <div class="activity-time">Il y a 3 heures</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions rapides -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">⚡ Actions rapides</div>
+                </div>
+                <div class="card-body">
+                    <div class="quick-actions">
+                        <button class="action-btn" style="background: linear-gradient(135deg, #1f6feb, #1158c7);">
+                            <div class="action-btn-icon">📰</div>
+                            <div class="action-btn-label">Créer une News</div>
+                        </button>
+                        <button class="action-btn" style="background: linear-gradient(135deg, #8250df, #6639ba);">
+                            <div class="action-btn-icon">📋</div>
+                            <div class="action-btn-label">Nouveau Journal</div>
+                        </button>
+                        <button class="action-btn" style="background: linear-gradient(135deg, #0969da, #0550ae);">
+                            <div class="action-btn-icon">🎙️</div>
+                            <div class="action-btn-label">Animation</div>
+                        </button>
+                        <button class="action-btn" style="background: linear-gradient(135deg, #1a7f37, #2da44e);">
+                            <div class="action-btn-icon">📡</div>
+                            <div class="action-btn-label">Conducteur</div>
+                        </button>
+                        <button class="action-btn" style="background: linear-gradient(135deg, #bf3989, #8250df);">
+                            <div class="action-btn-icon">🎵</div>
+                            <div class="action-btn-label">Audio</div>
+                        </button>
+                        <button class="action-btn" style="background: linear-gradient(135deg, #da3633, #f85149);">
+                            <div class="action-btn-icon">🔴</div>
+                            <div class="action-btn-label">GO LIVE</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

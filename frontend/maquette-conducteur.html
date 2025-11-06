@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conducteur - Saint-Esprit v3.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: #0f1419;
+            color: #e6edf3;
+            overflow-x: hidden;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: rgba(22, 27, 34, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 24px;
+            z-index: 1000;
+        }
+
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            color: #58a6ff;
+        }
+
+        .topbar-nav {
+            flex: 1;
+            display: flex;
+            gap: 4px;
+        }
+
+        .topbar-nav-item {
+            padding: 6px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .topbar-nav-item.active {
+            background: #1f6feb;
+            color: white;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .topbar-btn {
+            padding: 8px 16px;
+            background: #238636;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-top: 56px;
+            min-height: calc(100vh - 56px);
+        }
+
+        .conductor-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        /* Header avec sélection */
+        .conductor-header {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .conductor-select {
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .conductor-select select {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #e6edf3;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .conductor-info {
+            display: flex;
+            gap: 32px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #6e7681;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #58a6ff;
+        }
+
+        /* Timeline */
+        .timeline-container {
+            display: flex;
+            gap: 24px;
+        }
+
+        .timeline-main {
+            flex: 1;
+        }
+
+        .timeline-sidebar {
+            width: 320px;
+        }
+
+        /* Segment de la timeline */
+        .segment {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            cursor: move;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .segment:hover {
+            border-color: #58a6ff;
+            transform: translateX(4px);
+        }
+
+        .segment.current {
+            border-color: #238636;
+            border-width: 2px;
+            background: rgba(35, 134, 54, 0.05);
+        }
+
+        .segment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .segment-number {
+            width: 32px;
+            height: 32px;
+            background: #30363d;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #58a6ff;
+        }
+
+        .segment.current .segment-number {
+            background: #238636;
+            color: white;
+        }
+
+        .segment-time {
+            text-align: right;
+        }
+
+        .segment-timecode {
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: #e6edf3;
+        }
+
+        .segment-duration {
+            font-size: 12px;
+            color: #6e7681;
+        }
+
+        .segment-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e6edf3;
+            margin-bottom: 8px;
+        }
+
+        .segment-content {
+            font-size: 13px;
+            color: #8b949e;
+            line-height: 1.5;
+        }
+
+        .segment-type {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-top: 12px;
+        }
+
+        .type-news {
+            background: rgba(31, 111, 235, 0.2);
+            color: #58a6ff;
+        }
+
+        .type-music {
+            background: rgba(191, 57, 137, 0.2);
+            color: #bc8cff;
+        }
+
+        .type-pub {
+            background: rgba(255, 191, 0, 0.2);
+            color: #fbbf24;
+        }
+
+        .type-animation {
+            background: rgba(35, 134, 54, 0.2);
+            color: #3fb950;
+        }
+
+        /* Carte stats */
+        .stats-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .stats-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #8b949e;
+            margin-bottom: 16px;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .stats-row:last-child {
+            border-bottom: none;
+        }
+
+        .stats-label {
+            font-size: 13px;
+            color: #8b949e;
+        }
+
+        .stats-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e6edf3;
+        }
+
+        /* Progress bar */
+        .progress-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .progress-label {
+            font-size: 13px;
+            color: #8b949e;
+            margin-bottom: 12px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #21262d;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #238636, #3fb950);
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            margin-top: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #3fb950;
+            text-align: center;
+        }
+
+        /* Drag handle */
+        .segment-drag {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #30363d;
+            cursor: move;
+        }
+    </style>
+</head>
+<body>
+    <!-- TOP BAR -->
+    <div class="topbar">
+        <div class="topbar-logo">
+            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #1f6feb, #58a6ff); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px;">⚡</div>
+            <span>Saint-Esprit</span>
+        </div>
+
+        <nav class="topbar-nav">
+            <button class="topbar-nav-item">🏠 Dashboard</button>
+            <button class="topbar-nav-item">📰 News</button>
+            <button class="topbar-nav-item">📋 Journaux</button>
+            <button class="topbar-nav-item">🎙️ Animation</button>
+            <button class="topbar-nav-item active">📡 Conducteur</button>
+            <button class="topbar-nav-item">🔴 ON AIR</button>
+        </nav>
+
+        <div class="topbar-actions">
+            <button class="topbar-btn">+ Ajouter un segment</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="conductor-container">
+            <!-- Header -->
+            <div class="conductor-header">
+                <div class="conductor-select">
+                    <select>
+                        <option>📡 Journal du soir - 18h00</option>
+                        <option>📡 Journal de midi - 12h00</option>
+                        <option>📡 Matinale - 7h00</option>
+                    </select>
+                </div>
+
+                <div class="conductor-info">
+                    <div class="info-item">
+                        <div class="info-label">Segments</div>
+                        <div class="info-value">12</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Durée totale</div>
+                        <div class="info-value">45:30</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Début</div>
+                        <div class="info-value">18:00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="timeline-container">
+                <!-- Timeline principale -->
+                <div class="timeline-main">
+                    <div class="segment current">
+                        <div class="segment-drag">⋮⋮</div>
+                        <div class="segment-header">
+                            <div class="segment-number">1</div>
+                            <div class="segment-time">
+                                <div class="segment-timecode">18:00:00</div>
+                                <div class="segment-duration">→ 3:00</div>
+                            </div>
+                        </div>
+                        <div class="segment-title">🎵 Générique d'ouverture</div>
+                        <div class="segment-content">Saint-Esprit Radio - Journal du soir</div>
+                        <span class="segment-type type-music">Musique</span>
+                    </div>
+
+                    <div class="segment">
+                        <div class="segment-drag">⋮⋮</div>
+                        <div class="segment-header">
+                            <div class="segment-number">2</div>
+                            <div class="segment-time">
+                                <div class="segment-timecode">18:03:00</div>
+                                <div class="segment-duration">→ 1:30</div>
+                            </div>
+                        </div>
+                        <div class="segment-title">🎤 Introduction et présentation</div>
+                        <div class="segment-content">Bienvenue dans le journal du soir, les actualités du jour...</div>
+                        <span class="segment-type type-animation">Animation</span>
+                    </div>
+
+                    <div class="segment">
+                        <div class="segment-drag">⋮⋮</div>
+                        <div class="segment-header">
+                            <div class="segment-number">3</div>
+                            <div class="segment-time">
+                                <div class="segment-timecode">18:04:30</div>
+                                <div class="segment-duration">→ 5:00</div>
+                            </div>
+                        </div>
+                        <div class="segment-title">📰 Actualité Politique</div>
+                        <div class="segment-content">Nouvelle loi sur le climat votée à l'Assemblée nationale...</div>
+                        <span class="segment-type type-news">News</span>
+                    </div>
+
+                    <div class="segment">
+                        <div class="segment-drag">⋮⋮</div>
+                        <div class="segment-header">
+                            <div class="segment-number">4</div>
+                            <div class="segment-time">
+                                <div class="segment-timecode">18:09:30</div>
+                                <div class="segment-duration">→ 2:00</div>
+                            </div>
+                        </div>
+                        <div class="segment-title">📻 Publicité</div>
+                        <div class="segment-content">3 spots : Boulangerie Martin, Garage Dupont, Mairie</div>
+                        <span class="segment-type type-pub">Pub</span>
+                    </div>
+
+                    <div class="segment">
+                        <div class="segment-drag">⋮⋮</div>
+                        <div class="segment-header">
+                            <div class="segment-number">5</div>
+                            <div class="segment-time">
+                                <div class="segment-timecode">18:11:30</div>
+                                <div class="segment-duration">→ 4:30</div>
+                            </div>
+                        </div>
+                        <div class="segment-title">📰 Sport</div>
+                        <div class="segment-content">Victoire du club local en championnat régional...</div>
+                        <span class="segment-type type-news">News</span>
+                    </div>
+
+                    <div class="segment">
+                        <div class="segment-drag">⋮⋮</div>
+                        <div class="segment-header">
+                            <div class="segment-number">6</div>
+                            <div class="segment-time">
+                                <div class="segment-timecode">18:16:00</div>
+                                <div class="segment-duration">→ 3:30</div>
+                            </div>
+                        </div>
+                        <div class="segment-title">🎵 Transition musicale</div>
+                        <div class="segment-content">Playlist du moment</div>
+                        <span class="segment-type type-music">Musique</span>
+                    </div>
+                </div>
+
+                <!-- Sidebar stats -->
+                <div class="timeline-sidebar">
+                    <div class="stats-card">
+                        <div class="stats-title">📊 Statistiques</div>
+                        <div class="stats-row">
+                            <span class="stats-label">📰 News</span>
+                            <span class="stats-value">5</span>
+                        </div>
+                        <div class="stats-row">
+                            <span class="stats-label">🎵 Musique</span>
+                            <span class="stats-value">4</span>
+                        </div>
+                        <div class="stats-row">
+                            <span class="stats-label">📻 Publicités</span>
+                            <span class="stats-value">2</span>
+                        </div>
+                        <div class="stats-row">
+                            <span class="stats-label">🎤 Animation</span>
+                            <span class="stats-value">1</span>
+                        </div>
+                    </div>
+
+                    <div class="progress-card">
+                        <div class="progress-label">Progression</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 45%"></div>
+                        </div>
+                        <div class="progress-text">20:30 / 45:30</div>
+                    </div>
+
+                    <div class="stats-card" style="margin-top: 16px;">
+                        <div class="stats-title">⏰ Horaires</div>
+                        <div class="stats-row">
+                            <span class="stats-label">Début</span>
+                            <span class="stats-value">18:00:00</span>
+                        </div>
+                        <div class="stats-row">
+                            <span class="stats-label">Fin estimée</span>
+                            <span class="stats-value">18:45:30</span>
+                        </div>
+                        <div class="stats-row">
+                            <span class="stats-label">Fin prévue</span>
+                            <span class="stats-value" style="color: #3fb950;">18:45:00</span>
+                        </div>
+                        <div class="stats-row">
+                            <span class="stats-label">Écart</span>
+                            <span class="stats-value" style="color: #f85149;">+0:30</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

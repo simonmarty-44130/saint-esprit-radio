@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journaux - Saint-Esprit v3.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: #0f1419;
+            color: #e6edf3;
+            overflow-x: hidden;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: rgba(22, 27, 34, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 24px;
+            z-index: 1000;
+        }
+
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            color: #58a6ff;
+        }
+
+        .topbar-nav {
+            flex: 1;
+            display: flex;
+            gap: 4px;
+        }
+
+        .topbar-nav-item {
+            padding: 6px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .topbar-nav-item.active {
+            background: #1f6feb;
+            color: white;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .topbar-btn {
+            padding: 8px 16px;
+            background: #238636;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-top: 56px;
+            min-height: calc(100vh - 56px);
+        }
+
+        .journaux-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        .journaux-header {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .journaux-title {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        /* SPLIT VIEW */
+        .split-view {
+            display: flex;
+            gap: 24px;
+            height: calc(100vh - 200px);
+        }
+
+        /* LEFT PANEL - Liste des journaux */
+        .list-panel {
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #e6edf3;
+            font-size: 14px;
+        }
+
+        .journaux-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .journal-item {
+            padding: 16px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .journal-item:hover {
+            background: #21262d;
+            border-color: #58a6ff;
+        }
+
+        .journal-item.active {
+            border-color: #58a6ff;
+            background: rgba(88, 166, 255, 0.1);
+        }
+
+        .journal-item-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .journal-item-meta {
+            font-size: 12px;
+            color: #8b949e;
+        }
+
+        /* RIGHT PANEL - Détails du journal */
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            gap: 24px;
+        }
+
+        /* MAIN EDITOR */
+        .editor-main {
+            flex: 1;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .editor-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #238636;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #21262d;
+            color: #e6edf3;
+            border: 1px solid #30363d;
+        }
+
+        /* FORM */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #8b949e;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #e6edf3;
+            font-size: 14px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        /* INFO BAR */
+        .info-bar {
+            display: flex;
+            gap: 24px;
+            padding: 20px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #6e7681;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #58a6ff;
+            font-family: 'Courier New', monospace;
+        }
+
+        .info-value.success {
+            color: #3fb950;
+        }
+
+        .info-value.warning {
+            color: #d29922;
+        }
+
+        .info-value.danger {
+            color: #f85149;
+        }
+
+        /* SECTIONS */
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* NEWS PICKER */
+        .news-picker {
+            margin-bottom: 24px;
+        }
+
+        .news-picker-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .news-picker-header select {
+            flex: 1;
+        }
+
+        .add-news-btn {
+            padding: 10px 20px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        /* NEWS LIST IN JOURNAL */
+        .journal-news-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .journal-news-item {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: move;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .journal-news-item:hover {
+            border-color: #58a6ff;
+            transform: translateX(4px);
+        }
+
+        .journal-news-item.dragging {
+            opacity: 0.5;
+        }
+
+        .news-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 8px;
+        }
+
+        .news-item-number {
+            width: 28px;
+            height: 28px;
+            background: #30363d;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: #58a6ff;
+        }
+
+        .news-item-duration {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: #3fb950;
+        }
+
+        .news-item-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .news-item-excerpt {
+            font-size: 13px;
+            color: #8b949e;
+            line-height: 1.4;
+        }
+
+        .news-item-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .news-item-actions button {
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .news-item-actions button:hover {
+            border-color: #58a6ff;
+            color: #58a6ff;
+        }
+
+        .news-item-actions button.danger:hover {
+            border-color: #f85149;
+            color: #f85149;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6e7681;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* SIDEBAR */
+        .editor-sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .stats-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .stats-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #8b949e;
+            margin-bottom: 16px;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .stats-row:last-child {
+            border-bottom: none;
+        }
+
+        .stats-label {
+            font-size: 13px;
+            color: #8b949e;
+        }
+
+        .stats-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e6edf3;
+        }
+
+        .action-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .action-card .btn {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .duration-warning {
+            padding: 12px;
+            background: rgba(210, 153, 34, 0.1);
+            border: 1px solid #d29922;
+            border-radius: 6px;
+            color: #d29922;
+            font-size: 13px;
+            margin-top: 12px;
+        }
+
+        .duration-success {
+            padding: 12px;
+            background: rgba(63, 185, 80, 0.1);
+            border: 1px solid #3fb950;
+            border-radius: 6px;
+            color: #3fb950;
+            font-size: 13px;
+            margin-top: 12px;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #484f58;
+        }
+    </style>
+</head>
+<body>
+    <!-- TOP BAR -->
+    <div class="topbar">
+        <div class="topbar-logo">
+            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #1f6feb, #58a6ff); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px;">⚡</div>
+            <span>Saint-Esprit</span>
+        </div>
+
+        <nav class="topbar-nav">
+            <button class="topbar-nav-item">🏠 Dashboard</button>
+            <button class="topbar-nav-item">📰 News</button>
+            <button class="topbar-nav-item active">📋 Journaux</button>
+            <button class="topbar-nav-item">🎙️ Animation</button>
+            <button class="topbar-nav-item">📡 Conducteur</button>
+            <button class="topbar-nav-item">🔴 ON AIR</button>
+        </nav>
+
+        <div class="topbar-actions">
+            <button class="topbar-btn">+ Nouveau Journal</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="journaux-container">
+            <!-- Split View -->
+            <div class="split-view">
+                <!-- LEFT PANEL - Liste des journaux -->
+                <div class="list-panel">
+                    <input type="search" class="search-input" placeholder="Rechercher un journal...">
+
+                    <div class="journaux-list">
+                        <div class="journal-item active">
+                            <div class="journal-item-title">📋 Journal du soir - 18h</div>
+                            <div class="journal-item-meta">05/11/2025 • 12:30 • 5 news</div>
+                        </div>
+
+                        <div class="journal-item">
+                            <div class="journal-item-title">📋 Journal de midi - 12h</div>
+                            <div class="journal-item-meta">05/11/2025 • 08:45 • 4 news</div>
+                        </div>
+
+                        <div class="journal-item">
+                            <div class="journal-item-title">📋 Flash info - 7h</div>
+                            <div class="journal-item-meta">05/11/2025 • 02:30 • 3 news</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT PANEL - Détails du journal -->
+                <div class="editor-panel">
+                    <!-- Main Editor -->
+                    <div class="editor-main">
+                        <div class="editor-header">
+                            <h3>📋 Journal du soir - 18h</h3>
+                            <div class="editor-actions">
+                                <button class="btn btn-secondary">Annuler</button>
+                                <button class="btn btn-primary">💾 Enregistrer</button>
+                            </div>
+                        </div>
+
+                        <!-- Form -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Titre du journal</label>
+                                <input type="text" value="Journal du soir - 18h" placeholder="Titre du journal">
+                            </div>
+                            <div class="form-group">
+                                <label>Date de diffusion</label>
+                                <input type="date" value="2025-11-05">
+                            </div>
+                            <div class="form-group">
+                                <label>Heure de diffusion</label>
+                                <input type="time" value="18:00">
+                            </div>
+                        </div>
+
+                        <!-- Info Bar -->
+                        <div class="info-bar">
+                            <div class="info-item">
+                                <div class="info-label">News</div>
+                                <div class="info-value">5</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Durée totale</div>
+                                <div class="info-value success">12:30</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Objectif</div>
+                                <div class="info-value">15:00</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Écart</div>
+                                <div class="info-value warning">-2:30</div>
+                            </div>
+                        </div>
+
+                        <!-- News Picker -->
+                        <div class="news-picker">
+                            <div class="section-title">➕ Ajouter des news</div>
+                            <div class="news-picker-header">
+                                <select>
+                                    <option>Sélectionner une news...</option>
+                                    <option>📰 Nouvelle loi sur le climat</option>
+                                    <option>📰 Victoire du club local</option>
+                                    <option>📰 Festival de musique ce weekend</option>
+                                    <option>📰 Travaux sur la route principale</option>
+                                </select>
+                                <button class="add-news-btn">+ Ajouter</button>
+                            </div>
+                        </div>
+
+                        <!-- News List -->
+                        <div class="section-title">📰 News du journal (glisser-déposer pour réorganiser)</div>
+                        <div class="journal-news-list">
+                            <div class="journal-news-item" draggable="true">
+                                <div class="news-item-header">
+                                    <div class="news-item-number">1</div>
+                                    <div class="news-item-duration">2:30</div>
+                                </div>
+                                <div class="news-item-title">📰 Nouvelle loi sur le climat votée</div>
+                                <div class="news-item-excerpt">
+                                    L'Assemblée nationale a adopté hier une nouvelle loi ambitieuse sur la transition énergétique...
+                                </div>
+                                <div class="news-item-actions">
+                                    <button>👁️ Voir</button>
+                                    <button>✏️ Éditer</button>
+                                    <button class="danger">🗑️ Retirer</button>
+                                </div>
+                            </div>
+
+                            <div class="journal-news-item" draggable="true">
+                                <div class="news-item-header">
+                                    <div class="news-item-number">2</div>
+                                    <div class="news-item-duration">3:15</div>
+                                </div>
+                                <div class="news-item-title">📰 Victoire du club local en championnat</div>
+                                <div class="news-item-excerpt">
+                                    Le club de football local s'est imposé 3-1 face à son adversaire...
+                                </div>
+                                <div class="news-item-actions">
+                                    <button>👁️ Voir</button>
+                                    <button>✏️ Éditer</button>
+                                    <button class="danger">🗑️ Retirer</button>
+                                </div>
+                            </div>
+
+                            <div class="journal-news-item" draggable="true">
+                                <div class="news-item-header">
+                                    <div class="news-item-number">3</div>
+                                    <div class="news-item-duration">2:00</div>
+                                </div>
+                                <div class="news-item-title">📰 Festival de musique ce weekend</div>
+                                <div class="news-item-excerpt">
+                                    Le festival annuel de musique se tiendra samedi et dimanche sur la place centrale...
+                                </div>
+                                <div class="news-item-actions">
+                                    <button>👁️ Voir</button>
+                                    <button>✏️ Éditer</button>
+                                    <button class="danger">🗑️ Retirer</button>
+                                </div>
+                            </div>
+
+                            <div class="journal-news-item" draggable="true">
+                                <div class="news-item-header">
+                                    <div class="news-item-number">4</div>
+                                    <div class="news-item-duration">1:45</div>
+                                </div>
+                                <div class="news-item-title">📰 Travaux sur la route principale</div>
+                                <div class="news-item-excerpt">
+                                    Des travaux de réfection débuteront lundi prochain sur la départementale...
+                                </div>
+                                <div class="news-item-actions">
+                                    <button>👁️ Voir</button>
+                                    <button>✏️ Éditer</button>
+                                    <button class="danger">🗑️ Retirer</button>
+                                </div>
+                            </div>
+
+                            <div class="journal-news-item" draggable="true">
+                                <div class="news-item-header">
+                                    <div class="news-item-number">5</div>
+                                    <div class="news-item-duration">3:00</div>
+                                </div>
+                                <div class="news-item-title">📰 Interview du maire sur les projets 2025</div>
+                                <div class="news-item-excerpt">
+                                    Le maire nous présente les grands projets qui marqueront l'année 2025...
+                                </div>
+                                <div class="news-item-actions">
+                                    <button>👁️ Voir</button>
+                                    <button>✏️ Éditer</button>
+                                    <button class="danger">🗑️ Retirer</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="editor-sidebar">
+                        <!-- Stats Card -->
+                        <div class="stats-card">
+                            <div class="stats-title">📊 Statistiques</div>
+                            <div class="stats-row">
+                                <span class="stats-label">News totales</span>
+                                <span class="stats-value">5</span>
+                            </div>
+                            <div class="stats-row">
+                                <span class="stats-label">Durée moyenne</span>
+                                <span class="stats-value">2:30</span>
+                            </div>
+                            <div class="stats-row">
+                                <span class="stats-label">Plus courte</span>
+                                <span class="stats-value">1:45</span>
+                            </div>
+                            <div class="stats-row">
+                                <span class="stats-label">Plus longue</span>
+                                <span class="stats-value">3:15</span>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="action-card">
+                            <button class="btn btn-primary">📡 Générer un conducteur</button>
+                            <button class="btn btn-secondary">📄 Exporter en PDF</button>
+                            <button class="btn btn-secondary">📋 Dupliquer</button>
+
+                            <div class="duration-warning">
+                                ⚠️ Il manque 2min30 pour atteindre l'objectif de 15min
+                            </div>
+                        </div>
+
+                        <!-- Target Duration -->
+                        <div class="stats-card">
+                            <div class="stats-title">🎯 Objectif de durée</div>
+                            <div class="form-group">
+                                <label>Durée cible (minutes)</label>
+                                <input type="number" value="15" min="1" max="60">
+                            </div>
+                            <div class="form-group">
+                                <label>Tolérance (secondes)</label>
+                                <input type="number" value="30" min="0" max="120">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
