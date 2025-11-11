@@ -1273,7 +1273,15 @@ class SaintEspritV3 {
             // Audio from S3 - need to download it
             console.log('📥 Downloading audio from S3 for editing...');
             try {
-                const response = await fetch(this.currentNews.audioUrl);
+                const response = await fetch(this.currentNews.audioUrl, {
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'omit',
+                    cache: 'no-cache'
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const blob = await response.blob();
                 audioFile = new File([blob], this.currentNews.audioFileName, { type: 'audio/mpeg' });
                 console.log('✅ Audio downloaded from S3');

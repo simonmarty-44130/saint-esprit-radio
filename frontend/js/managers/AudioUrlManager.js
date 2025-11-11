@@ -136,7 +136,11 @@ class AudioUrlManager {
                     if (sound.audioUrl) {
                         try {
                             // Test simple : HEAD request pour vérifier que l'URL existe
-                            const response = await fetch(sound.audioUrl, { method: 'HEAD' });
+                            const response = await fetch(sound.audioUrl, {
+                                method: 'HEAD',
+                                mode: 'cors',
+                                credentials: 'omit'
+                            });
                             if (response.ok) {
                                 valid++;
                                 console.log(`✅ URL valide: ${sound.name}`);
