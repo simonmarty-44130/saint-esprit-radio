@@ -3663,18 +3663,27 @@ class AudioEditorV3 {
                 showNotification('Audio exported to news successfully!', 'success');
                 console.log('✅ Audio exported to news:', audioResult.url);
 
+                // Mark audio editor as having no changes (to prevent loop in returnToNews)
+                if (this.hasChanges !== undefined) {
+                    this.hasChanges = false;
+                }
+
                 // Reload news list to show updated duration
                 if (window.app.loadNews) {
                     await window.app.loadNews();
                 }
 
-                // Return to news editor to see the updated audio
-                if (window.app.returnToNews) {
-                    window.app.returnToNews();
+                // Return to news editor manually (don't use returnToNews to avoid loop)
+                if (window.app.switchView) {
+                    window.app.switchView('news');
                     // Restore audio info in the UI after a short delay
                     setTimeout(async () => {
-                        await window.app.restoreAudioInfo();
-                        window.app.updateDurations();
+                        if (window.app.restoreAudioInfo) {
+                            await window.app.restoreAudioInfo();
+                        }
+                        if (window.app.updateDurations) {
+                            window.app.updateDurations();
+                        }
                     }, 100);
                 }
             } else {
