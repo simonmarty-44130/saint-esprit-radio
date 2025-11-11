@@ -91,6 +91,30 @@ class SaintEspritV3 {
                 this.filterArchives(e.target.value);
             });
         }
+
+        // Type filter
+        const typeFilter = document.getElementById('filter-type');
+        if (typeFilter) {
+            typeFilter.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
+
+        // Status filter
+        const statusFilter = document.getElementById('filter-status');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
+
+        // Category filter
+        const categoryFilter = document.getElementById('filter-category');
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
     }
 
     switchView(viewName) {
@@ -176,28 +200,36 @@ class SaintEspritV3 {
         try {
             const data = await this.storage.load();
             const allNews = data.news || [];
+            const allAnimations = data.animations || [];
 
-            // Filter out archived news (they appear in Archives tab only)
-            const news = allNews.filter(n => n.status !== 'archived');
-            console.log(`📰 Loaded ${news.length} news (${allNews.length - news.length} archived)`);
+            // Filter out archived items (they appear in Archives tab only)
+            const news = allNews.filter(n => n.status !== 'archived').map(n => ({...n, itemType: 'news'}));
+            const animations = allAnimations.filter(a => a.status !== 'archived').map(a => ({...a, itemType: 'animation'}));
 
-            // Store filtered news list for filtering
-            this.allNews = news;
+            // Combine news and animations
+            const contents = [...news, ...animations];
+            console.log(`📄 Loaded ${contents.length} contenus (${news.length} news, ${animations.length} animations)`);
 
-            const newsList = document.getElementById('news-list');
-            if (news.length === 0) {
-                newsList.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">📰</div>
-                        <p>Aucune news</p>
-                        <button class="btn btn-secondary" onclick="app.createNews()">Créer une news</button>
-                    </div>
-                `;
+            // Store combined list for filtering
+            this.allNews = contents;
+
+            if (contents.length === 0) {
+                const tableBody = document.getElementById('news-table-body');
+                if (tableBody) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="9" style="text-align: center; padding: 40px;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">📄</div>
+                                <div style="color: var(--text-muted);">Aucun contenu</div>
+                            </td>
+                        </tr>
+                    `;
+                }
                 return;
             }
 
-            // Display news list
-            this.displayNewsList(news);
+            // Display contents list
+            this.displayNewsList(contents);
 
         } catch (error) {
             console.error('Error loading news:', error);
@@ -255,6 +287,13 @@ class SaintEspritV3 {
         // Excerpt from content
         const excerpt = news.content ? news.content.substring(0, 80) + '...' : '';
 
+        // Type indicator
+        const isAnimation = news.itemType === 'animation';
+        const typeIcon = isAnimation ? '🎙️' : '📰';
+        const editFunction = isAnimation ? 'editAnimation' : 'editNews';
+        const duplicateFunction = isAnimation ? 'duplicateAnimation' : 'duplicateNews';
+        const deleteFunction = isAnimation ? 'deleteAnimation' : 'deleteNews';
+
         // Priority indicator (based on scheduled date proximity)
         let priorityClass = '';
         if (news.scheduledDate) {
@@ -270,7 +309,7 @@ class SaintEspritV3 {
         }
 
         return `
-            <tr onclick="app.editNews('${news.id}')">
+            <tr onclick="app.${editFunction}('${news.id}')">
                 ${priorityClass ? `<div class="priority-indicator ${priorityClass}"></div>` : ''}
                 <td>
                     <span class="status-badge status-${status}">
@@ -279,7 +318,7 @@ class SaintEspritV3 {
                     </span>
                 </td>
                 <td class="title-cell">
-                    <div class="news-title">${news.title || 'Sans titre'}</div>
+                    <div class="news-title">${typeIcon} ${news.title || 'Sans titre'}</div>
                     ${excerpt ? `<div class="news-excerpt">${excerpt}</div>` : ''}
                 </td>
                 <td>
@@ -316,9 +355,9 @@ class SaintEspritV3 {
                 </td>
                 <td>
                     <div class="actions" onclick="event.stopPropagation()">
-                        <button class="action-btn primary" onclick="app.editNews('${news.id}')" title="Éditer">✏️</button>
-                        <button class="action-btn" onclick="app.duplicateNews('${news.id}')" title="Dupliquer">📋</button>
-                        <button class="action-btn danger" onclick="app.deleteNews('${news.id}')" title="Supprimer">🗑️</button>
+                        <button class="action-btn primary" onclick="app.${editFunction}('${news.id}')" title="Éditer">✏️</button>
+                        <button class="action-btn" onclick="app.${duplicateFunction}('${news.id}')" title="Dupliquer">📋</button>
+                        <button class="action-btn danger" onclick="app.${deleteFunction}('${news.id}')" title="Supprimer">🗑️</button>
                     </div>
                 </td>
             </tr>
@@ -390,16 +429,28 @@ class SaintEspritV3 {
         return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
 
-    updateNewsStats(news) {
+    updateNewsStats(contents) {
+        // Count news and animations separately
+        const newsCount = contents.filter(c => c.itemType === 'news').length;
+        const animCount = contents.filter(c => c.itemType === 'animation').length;
+
         // Update total count
         const totalCount = document.getElementById('news-total-count');
         if (totalCount) {
-            totalCount.textContent = `${news.length} news`;
+            if (newsCount > 0 && animCount > 0) {
+                totalCount.textContent = `${contents.length} contenus (${newsCount} news, ${animCount} animations)`;
+            } else if (newsCount > 0) {
+                totalCount.textContent = `${newsCount} news`;
+            } else if (animCount > 0) {
+                totalCount.textContent = `${animCount} animations`;
+            } else {
+                totalCount.textContent = `0 contenu`;
+            }
         }
 
         // Count by status
         const stats = {
-            total: news.length,
+            total: contents.length,
             draft: 0,
             review: 0,
             ready: 0,
@@ -408,7 +459,7 @@ class SaintEspritV3 {
             totalDuration: 0
         };
 
-        news.forEach(n => {
+        contents.forEach(n => {
             const status = n.status || 'draft';
             if (stats[status] !== undefined) {
                 stats[status]++;
@@ -469,12 +520,12 @@ class SaintEspritV3 {
         const term = searchTerm.toLowerCase().trim();
 
         if (!term) {
-            // No search term, show all news
-            this.displayNewsList(this.allNews);
+            // No search term, apply other filters
+            this.applyFilters();
             return;
         }
 
-        // Filter news by title, content, author, category
+        // Filter by search term
         const filtered = this.allNews.filter(n => {
             return (
                 (n.title && n.title.toLowerCase().includes(term)) ||
@@ -484,8 +535,78 @@ class SaintEspritV3 {
             );
         });
 
+        // Apply additional filters
+        const finalFiltered = this.applyAdditionalFilters(filtered);
+
+        this.displayNewsList(finalFiltered);
+        console.log(`🔍 Filtered: ${finalFiltered.length}/${this.allNews.length} contenus`);
+    }
+
+    applyFilters() {
+        if (!this.allNews) return;
+
+        const typeFilter = document.getElementById('filter-type')?.value || '';
+        const statusFilter = document.getElementById('filter-status')?.value || '';
+        const categoryFilter = document.getElementById('filter-category')?.value || '';
+        const searchTerm = document.getElementById('news-search-input')?.value || '';
+
+        let filtered = this.allNews;
+
+        // Apply search filter
+        if (searchTerm.trim()) {
+            const term = searchTerm.toLowerCase().trim();
+            filtered = filtered.filter(n => {
+                return (
+                    (n.title && n.title.toLowerCase().includes(term)) ||
+                    (n.content && n.content.toLowerCase().includes(term)) ||
+                    (n.author && n.author.toLowerCase().includes(term)) ||
+                    (n.category && n.category.toLowerCase().includes(term))
+                );
+            });
+        }
+
+        // Apply type filter
+        if (typeFilter) {
+            filtered = filtered.filter(n => n.itemType === typeFilter);
+        }
+
+        // Apply status filter
+        if (statusFilter) {
+            filtered = filtered.filter(n => n.status === statusFilter);
+        }
+
+        // Apply category filter
+        if (categoryFilter) {
+            filtered = filtered.filter(n => n.category === categoryFilter);
+        }
+
         this.displayNewsList(filtered);
-        console.log(`🔍 Filtered: ${filtered.length}/${this.allNews.length} news`);
+        console.log(`🔍 Filtered: ${filtered.length}/${this.allNews.length} contenus`);
+    }
+
+    applyAdditionalFilters(items) {
+        const typeFilter = document.getElementById('filter-type')?.value || '';
+        const statusFilter = document.getElementById('filter-status')?.value || '';
+        const categoryFilter = document.getElementById('filter-category')?.value || '';
+
+        let filtered = items;
+
+        // Apply type filter
+        if (typeFilter) {
+            filtered = filtered.filter(n => n.itemType === typeFilter);
+        }
+
+        // Apply status filter
+        if (statusFilter) {
+            filtered = filtered.filter(n => n.status === statusFilter);
+        }
+
+        // Apply category filter
+        if (categoryFilter) {
+            filtered = filtered.filter(n => n.category === categoryFilter);
+        }
+
+        return filtered;
     }
 
     createNews() {
@@ -1103,6 +1224,73 @@ class SaintEspritV3 {
             console.log('✅ News deleted successfully');
         } catch (error) {
             console.error('Error deleting news:', error);
+            alert('Erreur lors de la suppression');
+        }
+    }
+
+    async duplicateAnimation(animationId) {
+        console.log(`📋 Duplicating animation ${animationId}`);
+
+        try {
+            const data = await this.storage.load();
+            const originalAnimation = (data.animations || []).find(a => a.id === animationId);
+
+            if (!originalAnimation) {
+                alert('Animation introuvable');
+                return;
+            }
+
+            // Create duplicate with new ID and timestamp
+            const duplicate = {
+                ...originalAnimation,
+                id: `animation-${Date.now()}`,
+                title: `${originalAnimation.title} (copie)`,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                // Don't copy audio URL (would need to copy file in S3)
+                audioUrl: undefined,
+                audioSize: undefined,
+                audioDuration: undefined
+            };
+
+            this.currentAnimation = duplicate;
+            this.showAnimationEditor();
+            this.showNotification('Animation dupliquée, n\'oubliez pas d\'enregistrer', 'info');
+        } catch (error) {
+            console.error('Error duplicating animation:', error);
+            alert('Erreur lors de la duplication');
+        }
+    }
+
+    async deleteAnimation(animationId) {
+        console.log(`🗑️ Deleting animation ${animationId}`);
+
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette animation ?')) {
+            return;
+        }
+
+        try {
+            const data = await this.storage.load();
+            const animations = data.animations || [];
+            const index = animations.findIndex(a => a.id === animationId);
+
+            if (index === -1) {
+                alert('Animation introuvable');
+                return;
+            }
+
+            // Remove from array
+            animations.splice(index, 1);
+            data.animations = animations;
+
+            // Save
+            await this.storage.save(data);
+            await this.loadNews(); // Reload unified contents view
+
+            this.showNotification('Animation supprimée', 'success');
+            console.log('✅ Animation deleted successfully');
+        } catch (error) {
+            console.error('Error deleting animation:', error);
             alert('Erreur lors de la suppression');
         }
     }

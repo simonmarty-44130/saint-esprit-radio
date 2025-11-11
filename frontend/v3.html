@@ -42,8 +42,8 @@
                 <span>Dashboard</span>
             </button>
             <button class="nav-btn" data-view="news">
-                <span class="icon">📰</span>
-                <span>News</span>
+                <span class="icon">📄</span>
+                <span>Contenus</span>
             </button>
             <button class="nav-btn" data-view="archives">
                 <span class="icon">📦</span>
@@ -52,10 +52,6 @@
             <button class="nav-btn" data-view="blocks">
                 <span class="icon">📋</span>
                 <span>Journaux</span>
-            </button>
-            <button class="nav-btn" data-view="animation">
-                <span class="icon">🎙️</span>
-                <span>Animation</span>
             </button>
             <button class="nav-btn" data-view="conductor">
                 <span class="icon">📺</span>
@@ -120,15 +116,18 @@
             </div>
         </div>
 
-        <!-- NEWS VIEW -->
+        <!-- NEWS VIEW (CONTENUS UNIFIÉS) -->
         <div class="view" id="news-view">
             <!-- HEADER -->
             <div class="news-header">
                 <h1>
-                    📰 Gestion des News
-                    <span class="news-count" id="news-total-count">0 news</span>
+                    📄 Contenus
+                    <span class="news-count" id="news-total-count">0 contenus</span>
                 </h1>
-                <button class="btn btn-primary" onclick="createNews()">➕ Nouvelle News</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary" onclick="createNews()">➕ News</button>
+                    <button class="btn btn-primary" onclick="app.createAnimation()">➕ Animation</button>
+                </div>
             </div>
 
             <!-- TOOLBAR -->
@@ -139,6 +138,15 @@
                 </div>
 
                 <div class="filter-group">
+                    <span class="filter-label">Type:</span>
+                    <select id="filter-type">
+                        <option value="">Tous</option>
+                        <option value="news">📰 News</option>
+                        <option value="animation">🎙️ Animations</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
                     <span class="filter-label">Statut:</span>
                     <select id="filter-status">
                         <option value="">Tous</option>
@@ -146,7 +154,6 @@
                         <option value="review">En relecture</option>
                         <option value="ready">Prêt</option>
                         <option value="published">Publié</option>
-                        <option value="archived">Archivé</option>
                     </select>
                 </div>
 
@@ -162,6 +169,10 @@
                         <option value="economie">Économie</option>
                         <option value="sommaire">Sommaire journal</option>
                         <option value="breve">Brève</option>
+                        <option value="chronique">Chronique</option>
+                        <option value="meteo">Météo</option>
+                        <option value="billet">Billet d'humeur</option>
+                        <option value="speak">Speak</option>
                     </select>
                 </div>
 
