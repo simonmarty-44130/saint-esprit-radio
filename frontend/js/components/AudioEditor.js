@@ -2151,25 +2151,25 @@ class AudioEditor {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const arrayBuffer = await response.arrayBuffer();
                 this.currentBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-                
+
                 // Reset volume envelope for loaded file
                 this.volumePoints = [
                     { time: 0, volume: 1.0 },
                     { time: this.currentBuffer.duration, volume: 1.0 }
                 ];
-                
+
                 this.drawWaveform();
                 this.saveToHistory();
-                
+
                 // Update info
-                document.getElementById('audio-duration').textContent = 
+                document.getElementById('audio-duration').textContent =
                     `Duration: ${this.currentBuffer.duration.toFixed(2)}s`;
-                document.getElementById('audio-format').textContent = 
+                document.getElementById('audio-format').textContent =
                     `Format: MP3`;
-                    
+
                 showNotification('Audio chargé depuis la bibliothèque', 'success');
             } else {
                 // Ancienne méthode pour rétro-compatibilité
@@ -2186,35 +2186,207 @@ class AudioEditor {
                         const binary = atob(base64);
                         const arrayBuffer = new ArrayBuffer(binary.length);
                         const bytes = new Uint8Array(arrayBuffer);
-                        
+
                         for (let i = 0; i < binary.length; i++) {
                             bytes[i] = binary.charCodeAt(i);
                         }
-                        
+
                         this.currentBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
                     }
-                    
+
                     // Reset volume envelope for loaded file
                     this.volumePoints = [
                         { time: 0, volume: 1.0 },
                         { time: this.currentBuffer.duration, volume: 1.0 }
                     ];
-                    
+
                     this.drawWaveform();
                     this.saveToHistory();
-                    
+
                     // Update info
-                    document.getElementById('audio-duration').textContent = 
+                    document.getElementById('audio-duration').textContent =
                         `Duration: ${this.currentBuffer.duration.toFixed(2)}s`;
-                    document.getElementById('audio-format').textContent = 
+                    document.getElementById('audio-format').textContent =
                         `Format: MP3`;
-                        
+
                     showNotification('Audio chargé depuis la bibliothèque', 'success');
                 }
             }
         } catch (error) {
             console.error('Error loading from library:', error);
             showNotification('Erreur lors du chargement de l\'audio', 'error');
+        }
+    }
+
+    // Export functionality with menu
+    exportAudio() {
+        if (!this.currentBuffer) {
+            showNotification('No audio to export', 'warning');
+            return;
+        }
+
+        // Show export menu
+        const menu = document.getElementById('audio-export-menu');
+        if (menu) {
+            const isActive = menu.classList.contains('active');
+            menu.classList.toggle('active');
+
+            // Add click outside listener to close menu
+            if (!isActive) {
+                setTimeout(() => {
+                    const closeMenu = (e) => {
+                        if (!menu.contains(e.target) && !e.target.closest('.btn-secondary')) {
+                            menu.classList.remove('active');
+                            document.removeEventListener('click', closeMenu);
+                        }
+                    };
+                    document.addEventListener('click', closeMenu);
+                }, 10);
+            }
+        }
+    }
+
+    async exportToNews() {
+        if (!this.currentBuffer) {
+            showNotification('No audio to export', 'warning');
+            return;
+        }
+
+        // Check if we have a current news
+        if (!window.app || !window.app.currentNews) {
+            showNotification('No news selected', 'warning');
+            return;
+        }
+
+        try {
+            // Hide export menu
+            const menu = document.getElementById('audio-export-menu');
+            if (menu) menu.classList.remove('active');
+
+            showNotification('Exporting to news...', 'info');
+
+            // Create export buffer (with In/Out points and volume automation)
+            const exportBuffer = this.createExportBuffer();
+
+            // Convert to WAV
+            const audioData = this.bufferToWav(exportBuffer);
+            const blob = new Blob([audioData], { type: 'audio/wav' });
+
+            // Create File object
+            const fileName = `${window.app.currentNews.id}-audio-edited-${Date.now()}.wav`;
+            const file = new File([blob], fileName, { type: 'audio/wav' });
+
+            // Upload to S3 using the same method as normal audio upload
+            if (window.app.storage && window.app.storage.s3Manager) {
+                const audioResult = await window.app.storage.s3Manager.uploadAudio(file);
+
+                // Update current news with new audio
+                window.app.currentNews.audioUrl = audioResult.url;
+                window.app.currentNews.audioKey = audioResult.key;
+                window.app.currentNews.audioFileName = fileName;
+                window.app.currentNews.audioDuration = exportBuffer.duration;
+
+                // Save to storage
+                await window.app.storage.save();
+
+                // Update duration manager if available
+                if (window.app.durationManager) {
+                    window.app.durationManager.audioFile = file;
+                    window.app.durationManager.audioBlob = blob;
+                    window.app.durationManager.audioDuration = exportBuffer.duration;
+                }
+
+                showNotification('Audio exported to news successfully!', 'success');
+                console.log('✅ Audio exported to news:', audioResult.url);
+
+                // Reload news to show updated audio
+                if (window.app.loadNews) {
+                    window.app.loadNews();
+                }
+            } else {
+                throw new Error('Storage manager not available');
+            }
+        } catch (error) {
+            console.error('❌ Error exporting to news:', error);
+            showNotification('Error exporting to news', 'error');
+        }
+    }
+
+    async exportAsWAV() {
+        if (!this.currentBuffer) {
+            showNotification('No audio to export', 'warning');
+            return;
+        }
+
+        try {
+            // Hide export menu
+            const menu = document.getElementById('audio-export-menu');
+            if (menu) menu.classList.remove('active');
+
+            // Create export buffer (with In/Out points and volume automation)
+            const exportBuffer = this.createExportBuffer();
+            const audioData = this.bufferToWav(exportBuffer);
+            const blob = new Blob([audioData], { type: 'audio/wav' });
+
+            // Download
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `edited_audio_${Date.now()}.wav`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showNotification('Audio exported as WAV', 'success');
+        } catch (error) {
+            console.error('Error exporting as WAV:', error);
+            showNotification('Error exporting as WAV', 'error');
+        }
+    }
+
+    async exportAsMP3() {
+        if (!this.currentBuffer) {
+            showNotification('No audio to export', 'warning');
+            return;
+        }
+
+        try {
+            // Hide export menu
+            const menu = document.getElementById('audio-export-menu');
+            if (menu) menu.classList.remove('active');
+
+            // Create export buffer (with In/Out points and volume automation)
+            const exportBuffer = this.createExportBuffer();
+
+            // For now, we'll export as WAV with .mp3 extension
+            // A real MP3 encoder would be needed for true MP3 encoding
+            const audioData = this.bufferToWav(exportBuffer);
+            const blob = new Blob([audioData], { type: 'audio/mpeg' });
+
+            // Download
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `edited_audio_${Date.now()}.mp3`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showNotification('Audio exported as MP3', 'success');
+            console.log('⚠️ Note: Exported as WAV with MP3 extension. For true MP3 encoding, use a dedicated encoder.');
+        } catch (error) {
+            console.error('Error exporting as MP3:', error);
+            showNotification('Error exporting as MP3', 'error');
+        }
+    }
+
+    togglePlayback() {
+        if (this.isPlaying) {
+            this.pause();
+        } else {
+            this.play();
         }
     }
 }

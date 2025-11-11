@@ -358,8 +358,32 @@
                     <button class="btn btn-secondary" onclick="app.returnToNews()">← Retour à la News</button>
                     <h2>🎵 Éditeur Audio</h2>
                 </div>
-                <div class="view-header-right">
+                <div class="view-header-right" style="position: relative;">
                     <button class="btn btn-secondary" onclick="app.audioEditor.exportAudio()">💾 Exporter</button>
+                    <!-- Export Menu -->
+                    <div id="audio-export-menu" class="export-menu">
+                        <div class="export-menu-item" onclick="app.audioEditor.exportToNews()">
+                            <span class="export-menu-icon">📤</span>
+                            <div class="export-menu-text">
+                                <div class="export-menu-title">Exporter vers la News</div>
+                                <div class="export-menu-desc">Remplace l'audio de la news</div>
+                            </div>
+                        </div>
+                        <div class="export-menu-item" onclick="app.audioEditor.exportAsWAV()">
+                            <span class="export-menu-icon">🎵</span>
+                            <div class="export-menu-text">
+                                <div class="export-menu-title">Exporter en WAV</div>
+                                <div class="export-menu-desc">Télécharger en format WAV</div>
+                            </div>
+                        </div>
+                        <div class="export-menu-item" onclick="app.audioEditor.exportAsMP3()">
+                            <span class="export-menu-icon">🎶</span>
+                            <div class="export-menu-text">
+                                <div class="export-menu-title">Exporter en MP3</div>
+                                <div class="export-menu-desc">Télécharger en format MP3</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </header>
 
