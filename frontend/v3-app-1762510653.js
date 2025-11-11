@@ -3635,8 +3635,13 @@ class AudioEditorV3 {
             const file = new File([blob], fileName, { type: 'audio/wav' });
 
             // Upload to S3 using the same method as normal audio upload
-            if (window.app.storage && window.app.storage.s3Manager) {
-                const audioResult = await window.app.storage.s3Manager.uploadAudio(file);
+            if (window.app.storage) {
+                const audioFileId = `${window.app.currentNews.id}-audio-${Date.now()}`;
+
+                const audioResult = await window.app.storage.saveAudioFile(audioFileId, {
+                    data: file,
+                    type: file.type
+                });
 
                 // Update current news with new audio
                 window.app.currentNews.audioUrl = audioResult.url;
@@ -3644,8 +3649,8 @@ class AudioEditorV3 {
                 window.app.currentNews.audioFileName = fileName;
                 window.app.currentNews.audioDuration = exportBuffer.duration;
 
-                // Save to storage
-                await window.app.storage.save();
+                // Save news to storage
+                await window.app.storage.saveItem('news', window.app.currentNews);
 
                 // Update duration manager if available
                 if (window.app.durationManager) {
@@ -3659,7 +3664,7 @@ class AudioEditorV3 {
 
                 // Reload news to show updated audio
                 if (window.app.loadNews) {
-                    window.app.loadNews();
+                    await window.app.loadNews();
                 }
             } else {
                 throw new Error('Storage manager not available');
