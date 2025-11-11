@@ -499,6 +499,7 @@ class SaintEspritV3 {
             id: `news-${Date.now()}`,
             title: '',
             content: '',
+            status: 'draft',
             category: 'general',
             author: userName,
             scheduledDate: now.toISOString().split('T')[0],
@@ -560,7 +561,18 @@ class SaintEspritV3 {
                     </div>
                 </div>
 
-                <div class="form-row form-row-3">
+                <div class="form-row form-row-2">
+                    <div class="form-group">
+                        <label>Statut</label>
+                        <select id="news-status">
+                            <option value="draft" ${(this.currentNews.status || 'draft') === 'draft' ? 'selected' : ''}>Brouillon</option>
+                            <option value="review" ${this.currentNews.status === 'review' ? 'selected' : ''}>En relecture</option>
+                            <option value="ready" ${this.currentNews.status === 'ready' ? 'selected' : ''}>Prêt</option>
+                            <option value="published" ${this.currentNews.status === 'published' ? 'selected' : ''}>Publié</option>
+                            <option value="archived" ${this.currentNews.status === 'archived' ? 'selected' : ''}>Archivé</option>
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label>Catégorie</label>
                         <select id="news-category">
@@ -574,14 +586,16 @@ class SaintEspritV3 {
                             <option value="breve" ${this.currentNews.category === 'breve' ? 'selected' : ''}>Brève</option>
                         </select>
                     </div>
+                </div>
 
+                <div class="form-row form-row-2">
                     <div class="form-group">
-                        <label>Date</label>
+                        <label>Date de diffusion</label>
                         <input type="date" id="news-date" value="${this.currentNews.scheduledDate || ''}">
                     </div>
 
                     <div class="form-group">
-                        <label>Heure</label>
+                        <label>Heure de diffusion</label>
                         <input type="time" id="news-time" value="${this.currentNews.scheduledTime || ''}">
                     </div>
                 </div>
@@ -934,6 +948,7 @@ class SaintEspritV3 {
 
         // Get form values
         this.currentNews.title = document.getElementById('news-title')?.value || '';
+        this.currentNews.status = document.getElementById('news-status')?.value || 'draft';
         this.currentNews.category = document.getElementById('news-category')?.value || 'general';
         this.currentNews.scheduledDate = document.getElementById('news-date')?.value || '';
         this.currentNews.scheduledTime = document.getElementById('news-time')?.value || '';
@@ -974,11 +989,11 @@ class SaintEspritV3 {
             await this.storage.saveItem('news', this.currentNews);
             console.log('✅ News saved:', this.currentNews.id);
 
-            // Refresh list
-            await this.loadNews();
-
-            // Show success
+            // Show success notification
             this.showNotification('News enregistrée avec succès', 'success');
+
+            // Close editor and return to table
+            this.closeEditor();
         } catch (error) {
             console.error('❌ Save error:', error);
             alert('Erreur lors de la sauvegarde');
