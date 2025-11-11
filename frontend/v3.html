@@ -25,7 +25,7 @@
     </script>
 
     <!-- CSS Ultra-clean -->
-    <link rel="stylesheet" href="v3-1762426265.css">
+    <link rel="stylesheet" href="v3-1762443141.css">
 </head>
 <body>
 
@@ -83,32 +83,32 @@
             </header>
 
             <div class="cards-grid">
-                <div class="card" onclick="switchView('news')">
+                <div class="card" onclick="app.switchView('news')">
                     <div class="card-icon">📰</div>
                     <h3>News</h3>
                     <p>Gérer les actualités</p>
                     <div class="card-stat" id="news-count">0 aujourd'hui</div>
                 </div>
 
-                <div class="card" onclick="switchView('blocks')">
+                <div class="card" onclick="app.switchView('blocks')">
                     <div class="card-icon">📋</div>
                     <h3>Journaux</h3>
                     <p>Créer les journaux</p>
                 </div>
 
-                <div class="card" onclick="switchView('animation')">
+                <div class="card" onclick="app.switchView('animation')">
                     <div class="card-icon">🎙️</div>
                     <h3>Animation</h3>
                     <p>Éléments d'animation</p>
                 </div>
 
-                <div class="card" onclick="switchView('conductor')">
+                <div class="card" onclick="app.switchView('conductor')">
                     <div class="card-icon">📺</div>
                     <h3>Conducteur</h3>
                     <p>Organiser l'émission</p>
                 </div>
 
-                <div class="card card-onair" onclick="switchView('onair')">
+                <div class="card card-onair" onclick="app.switchView('onair')">
                     <div class="card-icon">🔴</div>
                     <h3>ON AIR</h3>
                     <p>Diffusion en direct</p>
@@ -180,8 +180,30 @@
         <div class="view" id="animation-view">
             <header class="view-header">
                 <h2>🎙️ Animation</h2>
+                <button class="btn btn-primary" onclick="app.createAnimation()">+ Nouvelle Animation</button>
             </header>
-            <p>Section Animation - En construction</p>
+
+            <div class="split-view">
+                <!-- Liste des animations -->
+                <div class="list-panel">
+                    <input type="search" class="search-input" placeholder="Rechercher une animation..." onkeyup="app.filterAnimations(this.value)">
+                    <div class="list" id="animations-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">🎙️</div>
+                            <p>Aucune animation</p>
+                            <button class="btn btn-secondary" onclick="app.createAnimation()">Créer une animation</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Éditeur d'animation -->
+                <div class="editor-panel" id="animations-editor">
+                    <div class="editor-placeholder">
+                        <div class="placeholder-icon">📝</div>
+                        <p>Sélectionnez ou créez une animation</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- CONDUCTOR VIEW -->
@@ -216,10 +238,117 @@
 
         <!-- ON AIR VIEW -->
         <div class="view" id="onair-view">
-            <header class="view-header">
-                <h2>🔴 ON AIR</h2>
-            </header>
-            <p>Section ON AIR - En construction</p>
+            <!-- Top Bar -->
+            <div class="onair-topbar">
+                <div class="onair-topbar-logo">
+                    <div class="onair-logo-icon">🔴</div>
+                    <span>Saint-Esprit</span>
+                </div>
+
+                <div class="onair-topbar-status">
+                    <div class="onair-live-badge">
+                        <span class="onair-live-dot"></span>
+                        <span>ON AIR</span>
+                    </div>
+                    <div class="onair-topbar-time" id="onair-clock">--:--:--</div>
+                </div>
+
+                <button class="btn btn-secondary" onclick="app.exitOnAir()">✕ Quitter</button>
+            </div>
+
+            <!-- Main Content -->
+            <div class="onair-container">
+                <!-- Main Display Area -->
+                <div class="onair-main-display">
+                    <!-- Segment en cours -->
+                    <div class="onair-current-segment" id="onair-current-segment">
+                        <!-- Timer en pleine largeur -->
+                        <div class="onair-timer-banner">
+                            <div class="onair-timer-label">⏱️ TEMPS RESTANT</div>
+                            <div class="onair-timer-value" id="onair-timer">00:00</div>
+                        </div>
+
+                        <div class="onair-segment-header">
+                            <div>
+                                <div class="onair-segment-badge" id="onair-segment-badge">📰 NEWS EN COURS</div>
+                                <div class="onair-segment-number" id="onair-segment-number">#1</div>
+                            </div>
+                            <div class="onair-segment-title" id="onair-segment-title">Aucun conducteur sélectionné</div>
+                        </div>
+
+                        <!-- Lancement -->
+                        <div class="onair-lancement-section" id="onair-lancement-section" style="display: none;">
+                            <div class="onair-section-label">🎤 LANCEMENT</div>
+                            <div class="onair-lancement-text" id="onair-lancement-text"></div>
+                        </div>
+
+                        <!-- Audio player -->
+                        <div class="onair-audio-section" id="onair-audio-section" style="display: none;">
+                            <div class="onair-section-label">🎵 AUDIO</div>
+                            <div class="onair-audio-controls">
+                                <button class="onair-audio-btn play" id="onair-audio-play" onclick="app.onAirPlayAudio()">▶️ Lire le son</button>
+                                <button class="onair-audio-btn stop" id="onair-audio-stop" onclick="app.onAirStopAudio()" style="display: none;">⏹️ Stop</button>
+                                <div class="onair-audio-info" id="onair-audio-info"></div>
+                            </div>
+                        </div>
+
+                        <!-- Pied -->
+                        <div class="onair-pied-section" id="onair-pied-section" style="display: none;">
+                            <div class="onair-section-label">📝 PIED</div>
+                            <div class="onair-pied-text" id="onair-pied-text"></div>
+                        </div>
+
+                        <!-- Fallback content for non-news segments -->
+                        <div class="onair-segment-content" id="onair-segment-content">
+                            Sélectionnez un conducteur depuis la page Conducteur pour démarrer.
+                        </div>
+                    </div>
+
+                    <!-- Contrôles -->
+                    <div class="onair-controls">
+                        <button class="onair-control-btn secondary" onclick="app.onAirPrevious()" title="Précédent">⏮️</button>
+                        <button class="onair-control-btn secondary" onclick="app.onAirPause()" id="onair-pause-btn" title="Pause">⏸️</button>
+                        <button class="onair-control-btn primary" onclick="app.onAirNext()" title="Suivant">⏭️</button>
+                        <button class="onair-control-btn secondary" onclick="app.onAirStop()" title="Stop">⏹️</button>
+                    </div>
+                </div>
+
+                <!-- Sidebar Info -->
+                <div class="onair-sidebar">
+                    <!-- Segments suivants -->
+                    <div class="onair-upcoming-segments">
+                        <div class="onair-upcoming-title">À venir</div>
+                        <div id="onair-upcoming-list">
+                            <div class="onair-empty-state">
+                                Aucun segment suivant
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info émission -->
+                    <div class="onair-info-card">
+                        <div class="onair-info-title">Infos émission</div>
+                        <div class="onair-info-stats">
+                            <div class="onair-stat-item">
+                                <div class="onair-stat-value" id="onair-stat-segments">0/0</div>
+                                <div class="onair-stat-label">Segments</div>
+                            </div>
+                            <div class="onair-stat-item">
+                                <div class="onair-stat-value" id="onair-stat-elapsed">00:00</div>
+                                <div class="onair-stat-label">Écoulé</div>
+                            </div>
+                            <div class="onair-stat-item">
+                                <div class="onair-stat-value" id="onair-stat-remaining">00:00</div>
+                                <div class="onair-stat-label">Restant</div>
+                            </div>
+                            <div class="onair-stat-item">
+                                <div class="onair-stat-value" id="onair-stat-end">--:--</div>
+                                <div class="onair-stat-label">Fin prévue</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- AUDIO EDITOR VIEW -->
@@ -302,7 +431,7 @@
     <script src="js/components/NewsDurationManager.js?v=1.0"></script>
 
     <!-- V3 App Logic -->
-    <script src="v3-app-1762426265.js"></script>
+    <script src="v3-app-1762510653.js"></script>
 
 </body>
 </html>
