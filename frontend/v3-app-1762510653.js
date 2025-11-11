@@ -77,7 +77,7 @@ class SaintEspritV3 {
         });
 
         // News search
-        const newsSearch = document.getElementById('news-search');
+        const newsSearch = document.getElementById('news-search-input');
         if (newsSearch) {
             newsSearch.addEventListener('input', (e) => {
                 this.filterNews(e.target.value);
@@ -192,25 +192,262 @@ class SaintEspritV3 {
     }
 
     displayNewsList(news) {
-        const newsList = document.getElementById('news-list');
-        if (!newsList) return;
+        const tableBody = document.getElementById('news-table-body');
+        if (!tableBody) return;
 
         if (news.length === 0) {
-            newsList.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon">🔍</div>
-                    <p>Aucun résultat</p>
-                </div>
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+                        <div style="color: var(--text-muted);">Aucun résultat</div>
+                    </td>
+                </tr>
             `;
+            this.updateNewsStats([]);
             return;
         }
 
-        newsList.innerHTML = news.map(n => `
-            <div class="news-item ${this.currentNews && this.currentNews.id === n.id ? 'active' : ''}" onclick="app.editNews('${n.id}')">
-                <div class="news-title">${n.title || 'Sans titre'}</div>
-                <div class="news-meta">${n.scheduledDate || ''} • ${n.author || ''}</div>
-            </div>
-        `).join('');
+        tableBody.innerHTML = news.map(n => this.createNewsRow(n)).join('');
+        this.updateNewsStats(news);
+    }
+
+    createNewsRow(news) {
+        const status = news.status || 'draft';
+        const statusLabels = {
+            'draft': 'Brouillon',
+            'review': 'Relecture',
+            'ready': 'Prêt',
+            'published': 'Publié',
+            'archived': 'Archivé'
+        };
+
+        const statusLabel = statusLabels[status] || 'Brouillon';
+
+        // Get author initials
+        const authorName = news.author || 'Inconnu';
+        const initials = authorName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+        // Format dates
+        const createdDate = this.formatDate(news.createdAt);
+        const updatedDate = this.formatDate(news.updatedAt || news.createdAt);
+        const scheduledDate = this.formatDate(news.scheduledDate);
+
+        // Format duration
+        const duration = news.audioDuration || news.totalDuration || 0;
+        const durationStr = this.formatDuration(duration);
+        const hasDuration = duration > 0;
+        const durationIcon = news.audioUrl ? '🎵' : '⏱️';
+
+        // Excerpt from content
+        const excerpt = news.content ? news.content.substring(0, 80) + '...' : '';
+
+        // Priority indicator (based on scheduled date proximity)
+        let priorityClass = '';
+        if (news.scheduledDate) {
+            const scheduled = new Date(news.scheduledDate);
+            const now = new Date();
+            const hoursUntil = (scheduled - now) / (1000 * 60 * 60);
+
+            if (hoursUntil < 3 && hoursUntil > 0) {
+                priorityClass = 'priority-high';
+            } else if (hoursUntil < 6 && hoursUntil > 0) {
+                priorityClass = 'priority-medium';
+            }
+        }
+
+        return `
+            <tr onclick="app.editNews('${news.id}')">
+                ${priorityClass ? `<div class="priority-indicator ${priorityClass}"></div>` : ''}
+                <td>
+                    <span class="status-badge status-${status}">
+                        <span class="status-indicator"></span>
+                        ${statusLabel}
+                    </span>
+                </td>
+                <td class="title-cell">
+                    <div class="news-title">${news.title || 'Sans titre'}</div>
+                    ${excerpt ? `<div class="news-excerpt">${excerpt}</div>` : ''}
+                </td>
+                <td>
+                    <span class="category-badge">${news.category || 'Général'}</span>
+                </td>
+                <td>
+                    <div class="author-info">
+                        <div class="author-avatar">${initials}</div>
+                        <span class="author-name">${authorName}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="date-info">
+                        <span class="date-primary">${createdDate.short}</span>
+                        <span class="date-secondary">${createdDate.relative}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="date-info">
+                        <span class="date-primary">${updatedDate.short}</span>
+                        <span class="date-secondary">${updatedDate.relative}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="date-info">
+                        <span class="date-primary">${scheduledDate.short}</span>
+                        <span class="date-secondary">${scheduledDate.relative}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="duration ${hasDuration ? 'duration-with-audio' : ''}">
+                        ${durationIcon} ${durationStr}
+                    </div>
+                </td>
+                <td>
+                    <div class="actions" onclick="event.stopPropagation()">
+                        <button class="action-btn primary" onclick="app.editNews('${news.id}')" title="Éditer">✏️</button>
+                        <button class="action-btn" onclick="app.duplicateNews('${news.id}')" title="Dupliquer">📋</button>
+                        <button class="action-btn danger" onclick="app.deleteNews('${news.id}')" title="Supprimer">🗑️</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    formatDate(timestamp) {
+        if (!timestamp) {
+            return { short: '-', relative: '-' };
+        }
+
+        const date = new Date(timestamp);
+        const now = new Date();
+
+        // Short format: "11 Nov 12:34"
+        const day = date.getDate();
+        const month = date.toLocaleDateString('fr-FR', { month: 'short' });
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const short = `${day} ${month} ${hours}:${minutes}`;
+
+        // Relative format
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        let relative;
+        if (diffMins < 1) {
+            relative = 'à l\'instant';
+        } else if (diffMins < 60) {
+            relative = `il y a ${diffMins}min`;
+        } else if (diffHours < 24) {
+            relative = `il y a ${diffHours}h`;
+        } else if (diffDays === 1) {
+            relative = 'hier';
+        } else if (diffDays < 7) {
+            relative = `il y a ${diffDays}j`;
+        } else {
+            relative = date.toLocaleDateString('fr-FR');
+        }
+
+        // For future dates (scheduled)
+        if (diffMs < 0) {
+            const futureHours = Math.abs(diffHours);
+            const futureDays = Math.abs(diffDays);
+
+            if (futureHours < 1) {
+                relative = 'bientôt';
+            } else if (futureHours < 24) {
+                relative = `dans ${futureHours}h`;
+            } else if (futureDays === 1) {
+                relative = 'demain';
+            } else if (futureDays < 7) {
+                relative = `dans ${futureDays}j`;
+            } else {
+                relative = 'à venir';
+            }
+        }
+
+        return { short, relative };
+    }
+
+    formatDuration(seconds) {
+        if (!seconds || seconds === 0) return '00:00';
+
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    updateNewsStats(news) {
+        // Update total count
+        const totalCount = document.getElementById('news-total-count');
+        if (totalCount) {
+            totalCount.textContent = `${news.length} news`;
+        }
+
+        // Count by status
+        const stats = {
+            total: news.length,
+            draft: 0,
+            review: 0,
+            ready: 0,
+            published: 0,
+            archived: 0,
+            totalDuration: 0
+        };
+
+        news.forEach(n => {
+            const status = n.status || 'draft';
+            if (stats[status] !== undefined) {
+                stats[status]++;
+            }
+            stats.totalDuration += n.audioDuration || n.totalDuration || 0;
+        });
+
+        // Update footer stats
+        const updateStat = (selector, value) => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => el.textContent = value);
+        };
+
+        updateStat('.stat-value', stats.total);
+
+        // Update individual status counts if elements exist
+        const statsContainer = document.querySelector('.news-footer .stats');
+        if (statsContainer) {
+            const durationHours = Math.floor(stats.totalDuration / 3600);
+            const durationMins = Math.floor((stats.totalDuration % 3600) / 60);
+
+            statsContainer.innerHTML = `
+                <div class="stat-item">
+                    <span class="stat-label">Total:</span>
+                    <span class="stat-value">${stats.total}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Brouillons:</span>
+                    <span class="stat-value">${stats.draft}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">En relecture:</span>
+                    <span class="stat-value">${stats.review}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Prêts:</span>
+                    <span class="stat-value">${stats.ready}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Publiés:</span>
+                    <span class="stat-value">${stats.published}</span>
+                </div>
+            `;
+        }
+
+        // Update total duration in footer
+        const footerDuration = document.querySelector('.news-footer .stat-item:last-child .stat-value');
+        if (footerDuration) {
+            const durationHours = Math.floor(stats.totalDuration / 3600);
+            const durationMins = Math.floor((stats.totalDuration % 3600) / 60);
+            footerDuration.textContent = `${durationHours}h ${durationMins}min`;
+        }
     }
 
     filterNews(searchTerm) {

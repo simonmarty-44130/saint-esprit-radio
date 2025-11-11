@@ -118,30 +118,118 @@
 
         <!-- NEWS VIEW -->
         <div class="view" id="news-view">
-            <header class="view-header">
-                <h2>📰 News</h2>
-                <button class="btn btn-primary" onclick="createNews()">+ Nouvelle News</button>
-            </header>
+            <!-- HEADER -->
+            <div class="news-header">
+                <h1>
+                    📰 Gestion des News
+                    <span class="news-count" id="news-total-count">0 news</span>
+                </h1>
+                <button class="btn btn-primary" onclick="createNews()">➕ Nouvelle News</button>
+            </div>
 
-            <div class="split-view">
-                <!-- Liste des news -->
-                <div class="list-panel">
-                    <input type="search" class="search-input" placeholder="Rechercher une news..." id="news-search">
-                    <div class="list" id="news-list">
-                        <div class="empty-state">
-                            <div class="empty-icon">📰</div>
-                            <p>Aucune news</p>
-                            <button class="btn btn-secondary" onclick="createNews()">Créer une news</button>
-                        </div>
-                    </div>
+            <!-- TOOLBAR -->
+            <div class="news-toolbar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Rechercher par titre, auteur, contenu..." id="news-search-input">
                 </div>
 
-                <!-- Éditeur de news -->
-                <div class="editor-panel" id="news-editor">
-                    <div class="editor-placeholder">
-                        <div class="placeholder-icon">📝</div>
-                        <p>Sélectionnez ou créez une news</p>
+                <div class="filter-group">
+                    <span class="filter-label">Statut:</span>
+                    <select id="filter-status">
+                        <option value="">Tous</option>
+                        <option value="draft">Brouillon</option>
+                        <option value="review">En relecture</option>
+                        <option value="ready">Prêt</option>
+                        <option value="published">Publié</option>
+                        <option value="archived">Archivé</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Catégorie:</span>
+                    <select id="filter-category">
+                        <option value="">Toutes</option>
+                        <option value="general">Général</option>
+                        <option value="politique">Politique</option>
+                        <option value="sport">Sport</option>
+                        <option value="culture">Culture</option>
+                        <option value="international">International</option>
+                        <option value="economie">Économie</option>
+                        <option value="sommaire">Sommaire journal</option>
+                        <option value="breve">Brève</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Période:</span>
+                    <select id="filter-period">
+                        <option value="all">Toutes</option>
+                        <option value="today">Aujourd'hui</option>
+                        <option value="week">Cette semaine</option>
+                        <option value="month">Ce mois</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- TABLE -->
+            <div class="news-table-container">
+                <table class="news-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 120px;" data-sort="status">Statut <span class="sort-indicator">▼</span></th>
+                            <th style="width: 350px;" data-sort="title">Titre <span class="sort-indicator"></span></th>
+                            <th style="width: 100px;" data-sort="category">Catégorie <span class="sort-indicator"></span></th>
+                            <th style="width: 180px;" data-sort="author">Auteur <span class="sort-indicator"></span></th>
+                            <th style="width: 140px;" data-sort="createdAt">Créé le <span class="sort-indicator"></span></th>
+                            <th style="width: 140px;" data-sort="updatedAt">Modifié le <span class="sort-indicator"></span></th>
+                            <th style="width: 140px;" data-sort="scheduledDate">Diffusion <span class="sort-indicator"></span></th>
+                            <th style="width: 80px;" data-sort="duration">Durée <span class="sort-indicator"></span></th>
+                            <th style="width: 120px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="news-table-body">
+                        <!-- Les lignes seront générées par JS -->
+                        <tr>
+                            <td colspan="9" style="text-align: center; padding: 40px;">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📰</div>
+                                    <p>Aucune news</p>
+                                    <button class="btn btn-secondary" onclick="createNews()">Créer une news</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- FOOTER STATS -->
+            <div class="news-footer">
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Total:</span>
+                        <span class="stat-value" id="stat-total">0</span>
                     </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Brouillons:</span>
+                        <span class="stat-value" id="stat-draft">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">En relecture:</span>
+                        <span class="stat-value" id="stat-review">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Prêts:</span>
+                        <span class="stat-value" id="stat-ready">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Publiés:</span>
+                        <span class="stat-value" id="stat-published">0</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Durée totale:</span>
+                    <span class="stat-value" id="stat-duration">00:00</span>
                 </div>
             </div>
         </div>
