@@ -3634,60 +3634,23 @@ class AudioEditorV3 {
             const fileName = `${window.app.currentNews.id}-audio-edited-${Date.now()}.wav`;
             const file = new File([blob], fileName, { type: 'audio/wav' });
 
-            // Upload to S3 using the same method as normal audio upload
-            if (window.app.storage) {
-                const audioFileId = `${window.app.currentNews.id}-audio-${Date.now()}`;
+            // Mark audio editor as having no changes (to prevent loop)
+            if (this.hasChanges !== undefined) {
+                this.hasChanges = false;
+            }
 
-                const audioResult = await window.app.storage.saveAudioFile(audioFileId, {
-                    data: file,
-                    type: file.type
-                });
+            // Return to news editor first
+            if (window.app.switchView) {
+                window.app.switchView('news');
+            }
 
-                // Update current news with new audio
-                window.app.currentNews.audioUrl = audioResult.url;
-                window.app.currentNews.audioKey = audioResult.key;
-                window.app.currentNews.audioFileName = fileName;
-                window.app.currentNews.audioDuration = exportBuffer.duration;
-                window.app.currentNews.audioSize = blob.size;
-
-                // Save news to storage
-                await window.app.storage.saveItem('news', window.app.currentNews);
-
-                // Update duration manager if available
-                if (window.app.durationManager) {
-                    window.app.durationManager.audioFile = file;
-                    window.app.durationManager.audioBlob = blob;
-                    window.app.durationManager.setAudioDuration(exportBuffer.duration);
-                }
-
+            // Use handleAudioUpload to do all the work (UI, S3, save, etc.)
+            if (window.app.handleAudioUpload) {
+                await window.app.handleAudioUpload(file);
                 showNotification('Audio exported to news successfully!', 'success');
-                console.log('✅ Audio exported to news:', audioResult.url);
-
-                // Mark audio editor as having no changes (to prevent loop in returnToNews)
-                if (this.hasChanges !== undefined) {
-                    this.hasChanges = false;
-                }
-
-                // Reload news list to show updated duration
-                if (window.app.loadNews) {
-                    await window.app.loadNews();
-                }
-
-                // Return to news editor manually (don't use returnToNews to avoid loop)
-                if (window.app.switchView) {
-                    window.app.switchView('news');
-                    // Restore audio info in the UI after a short delay
-                    setTimeout(async () => {
-                        if (window.app.restoreAudioInfo) {
-                            await window.app.restoreAudioInfo();
-                        }
-                        if (window.app.updateDurations) {
-                            window.app.updateDurations();
-                        }
-                    }, 100);
-                }
+                console.log('✅ Audio exported to news');
             } else {
-                throw new Error('Storage manager not available');
+                throw new Error('handleAudioUpload not available');
             }
         } catch (error) {
             console.error('❌ Error exporting to news:', error);
