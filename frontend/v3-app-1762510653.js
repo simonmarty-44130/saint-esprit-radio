@@ -534,6 +534,15 @@ class SaintEspritV3 {
         const editor = document.getElementById('news-editor');
         if (!editor) return;
 
+        // Hide table view, show editor
+        const tableContainer = document.querySelector('.news-table-container');
+        const toolbar = document.querySelector('.news-toolbar');
+        const footer = document.querySelector('.news-footer');
+        if (tableContainer) tableContainer.style.display = 'none';
+        if (toolbar) toolbar.style.display = 'none';
+        if (footer) footer.style.display = 'none';
+        editor.style.display = 'block';
+
         editor.innerHTML = `
             <div class="editor-form">
                 <div class="editor-header">
@@ -983,6 +992,7 @@ class SaintEspritV3 {
         this.currentNews = null;
         const editor = document.getElementById('news-editor');
         if (editor) {
+            editor.style.display = 'none';
             editor.innerHTML = `
                 <div class="editor-placeholder">
                     <div class="placeholder-icon">📝</div>
@@ -990,7 +1000,83 @@ class SaintEspritV3 {
                 </div>
             `;
         }
+
+        // Show table view again
+        const tableContainer = document.querySelector('.news-table-container');
+        const toolbar = document.querySelector('.news-toolbar');
+        const footer = document.querySelector('.news-footer');
+        if (tableContainer) tableContainer.style.display = 'block';
+        if (toolbar) toolbar.style.display = 'flex';
+        if (footer) footer.style.display = 'flex';
+
         this.loadNews();
+    }
+
+    async duplicateNews(newsId) {
+        console.log(`📋 Duplicating news ${newsId}`);
+
+        try {
+            const data = await this.storage.load();
+            const originalNews = (data.news || []).find(n => n.id === newsId);
+
+            if (!originalNews) {
+                alert('News introuvable');
+                return;
+            }
+
+            // Create duplicate with new ID and timestamp
+            const duplicate = {
+                ...originalNews,
+                id: `news-${Date.now()}`,
+                title: `${originalNews.title} (copie)`,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                // Don't copy audio URL (would need to copy file in S3)
+                audioUrl: undefined,
+                audioSize: undefined,
+                audioDuration: undefined
+            };
+
+            this.currentNews = duplicate;
+            this.showNewsEditor();
+            this.showNotification('News dupliquée, n\'oubliez pas d\'enregistrer', 'info');
+        } catch (error) {
+            console.error('Error duplicating news:', error);
+            alert('Erreur lors de la duplication');
+        }
+    }
+
+    async deleteNews(newsId) {
+        console.log(`🗑️ Deleting news ${newsId}`);
+
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette news ?')) {
+            return;
+        }
+
+        try {
+            const data = await this.storage.load();
+            const news = data.news || [];
+            const index = news.findIndex(n => n.id === newsId);
+
+            if (index === -1) {
+                alert('News introuvable');
+                return;
+            }
+
+            // Remove from array
+            news.splice(index, 1);
+            data.news = news;
+
+            // Save
+            await this.storage.save(data);
+            await this.loadNews();
+
+            this.showNotification('News supprimée', 'success');
+            console.log('✅ News deleted successfully');
+        } catch (error) {
+            console.error('Error deleting news:', error);
+            alert('Erreur lors de la suppression');
+        }
     }
 
     // ===== ANIMATIONS =====
