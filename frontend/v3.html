@@ -45,6 +45,10 @@
                 <span class="icon">📰</span>
                 <span>News</span>
             </button>
+            <button class="nav-btn" data-view="archives">
+                <span class="icon">📦</span>
+                <span>Archives</span>
+            </button>
             <button class="nav-btn" data-view="blocks">
                 <span class="icon">📋</span>
                 <span>Journaux</span>
@@ -238,6 +242,90 @@
                 <div class="editor-placeholder">
                     <div class="placeholder-icon">📝</div>
                     <p>Sélectionnez ou créez une news</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ARCHIVES VIEW -->
+        <div class="view" id="archives-view">
+            <!-- HEADER -->
+            <div class="news-header">
+                <h1>
+                    📦 Archives
+                    <span class="news-count" id="archives-total-count">0 archives</span>
+                </h1>
+            </div>
+
+            <!-- TOOLBAR -->
+            <div class="news-toolbar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Rechercher dans les archives..." id="archives-search-input">
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Catégorie:</span>
+                    <select id="archives-filter-category">
+                        <option value="">Toutes</option>
+                        <option value="general">Général</option>
+                        <option value="politique">Politique</option>
+                        <option value="sport">Sport</option>
+                        <option value="culture">Culture</option>
+                        <option value="international">International</option>
+                        <option value="economie">Économie</option>
+                        <option value="sommaire">Sommaire journal</option>
+                        <option value="breve">Brève</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Période:</span>
+                    <select id="archives-filter-period">
+                        <option value="all">Toutes</option>
+                        <option value="week">Cette semaine</option>
+                        <option value="month">Ce mois</option>
+                        <option value="year">Cette année</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- TABLE -->
+            <div class="news-table-container">
+                <table class="news-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="title">Titre</th>
+                            <th data-sort="category">Catégorie</th>
+                            <th data-sort="author">Auteur</th>
+                            <th data-sort="createdAt">Créé le</th>
+                            <th data-sort="updatedAt">Modifié le</th>
+                            <th data-sort="scheduledDate">Diffusé le</th>
+                            <th data-sort="duration">Durée</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archives-table-body">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 40px;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                                <div style="color: var(--text-muted);">Aucune archive</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- FOOTER STATS -->
+            <div class="news-footer">
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Total:</span>
+                        <span class="stat-value" id="archives-stat-total">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Durée totale:</span>
+                        <span class="stat-value" id="archives-stat-duration">0h 0min</span>
+                    </div>
                 </div>
             </div>
         </div>

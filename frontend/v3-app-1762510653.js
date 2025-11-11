@@ -83,6 +83,14 @@ class SaintEspritV3 {
                 this.filterNews(e.target.value);
             });
         }
+
+        // Archives search
+        const archivesSearch = document.getElementById('archives-search-input');
+        if (archivesSearch) {
+            archivesSearch.addEventListener('input', (e) => {
+                this.filterArchives(e.target.value);
+            });
+        }
     }
 
     switchView(viewName) {
@@ -106,6 +114,8 @@ class SaintEspritV3 {
             // Load data for specific views
             if (viewName === 'news') {
                 this.loadNews();
+            } else if (viewName === 'archives') {
+                this.loadArchives();
             } else if (viewName === 'animation') {
                 this.loadAnimations();
             } else if (viewName === 'conductor') {
@@ -1090,6 +1100,256 @@ class SaintEspritV3 {
             console.log('✅ News deleted successfully');
         } catch (error) {
             console.error('Error deleting news:', error);
+            alert('Erreur lors de la suppression');
+        }
+    }
+
+    // ===== ARCHIVES =====
+
+    async loadArchives() {
+        if (!this.storage) return;
+
+        try {
+            const data = await this.storage.load();
+            const allNews = data.news || [];
+
+            // Filter only archived news
+            const archived = allNews.filter(n => n.status === 'archived');
+            console.log(`📦 Loaded ${archived.length} archived news`);
+
+            // Store for filtering
+            this.allArchives = archived;
+
+            this.displayArchivesList(archived);
+
+        } catch (error) {
+            console.error('Error loading archives:', error);
+        }
+    }
+
+    displayArchivesList(archives) {
+        const tableBody = document.getElementById('archives-table-body');
+        if (!tableBody) return;
+
+        if (archives.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                        <div style="color: var(--text-muted);">Aucune archive</div>
+                    </td>
+                </tr>
+            `;
+            this.updateArchivesStats([]);
+            return;
+        }
+
+        tableBody.innerHTML = archives.map(n => this.createArchiveRow(n)).join('');
+        this.updateArchivesStats(archives);
+    }
+
+    createArchiveRow(news) {
+        // Get author initials
+        const authorName = news.author || 'Inconnu';
+        const initials = authorName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+        // Format dates
+        const createdDate = this.formatDate(news.createdAt);
+        const updatedDate = this.formatDate(news.updatedAt || news.createdAt);
+        const scheduledDate = this.formatDate(news.scheduledDate);
+
+        // Format duration
+        const duration = news.audioDuration || news.totalDuration || 0;
+        const durationStr = this.formatDuration(duration);
+        const hasDuration = duration > 0;
+        const durationIcon = news.audioUrl ? '🎵' : '⏱️';
+
+        // Excerpt from content
+        const excerpt = news.content ? news.content.substring(0, 80) + '...' : '';
+
+        return `
+            <tr>
+                <td class="title-cell">
+                    <div class="news-title">${news.title || 'Sans titre'}</div>
+                    ${excerpt ? `<div class="news-excerpt">${excerpt}</div>` : ''}
+                </td>
+                <td>
+                    <span class="category-badge">${news.category || 'Général'}</span>
+                </td>
+                <td>
+                    <div class="author-info">
+                        <div class="author-avatar">${initials}</div>
+                        <span class="author-name">${authorName}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="date-info">
+                        <span class="date-primary">${createdDate.short}</span>
+                        <span class="date-secondary">${createdDate.relative}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="date-info">
+                        <span class="date-primary">${updatedDate.short}</span>
+                        <span class="date-secondary">${updatedDate.relative}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="date-info">
+                        <span class="date-primary">${scheduledDate.short}</span>
+                        <span class="date-secondary">${scheduledDate.relative}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="duration ${hasDuration ? 'duration-with-audio' : ''}">
+                        ${durationIcon} ${durationStr}
+                    </div>
+                </td>
+                <td>
+                    <div class="actions" onclick="event.stopPropagation()">
+                        <button class="action-btn primary" onclick="app.viewArchive('${news.id}')" title="Voir">👁️</button>
+                        <button class="action-btn" onclick="app.restoreNews('${news.id}')" title="Restaurer">♻️</button>
+                        <button class="action-btn danger" onclick="app.deleteNewsForever('${news.id}')" title="Supprimer définitivement">🗑️</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    filterArchives(searchTerm) {
+        if (!this.allArchives) return;
+
+        const term = searchTerm.toLowerCase().trim();
+
+        if (!term) {
+            this.displayArchivesList(this.allArchives);
+            return;
+        }
+
+        const filtered = this.allArchives.filter(n => {
+            return (
+                (n.title && n.title.toLowerCase().includes(term)) ||
+                (n.content && n.content.toLowerCase().includes(term)) ||
+                (n.author && n.author.toLowerCase().includes(term)) ||
+                (n.category && n.category.toLowerCase().includes(term))
+            );
+        });
+
+        this.displayArchivesList(filtered);
+        console.log(`🔍 Filtered archives: ${filtered.length}/${this.allArchives.length}`);
+    }
+
+    updateArchivesStats(archives) {
+        // Update total count
+        const totalCount = document.getElementById('archives-total-count');
+        if (totalCount) {
+            totalCount.textContent = `${archives.length} archive${archives.length > 1 ? 's' : ''}`;
+        }
+
+        // Calculate total duration
+        let totalDuration = 0;
+        archives.forEach(n => {
+            totalDuration += n.audioDuration || n.totalDuration || 0;
+        });
+
+        // Update stats
+        const statTotal = document.getElementById('archives-stat-total');
+        if (statTotal) {
+            statTotal.textContent = archives.length;
+        }
+
+        const statDuration = document.getElementById('archives-stat-duration');
+        if (statDuration) {
+            const hours = Math.floor(totalDuration / 3600);
+            const mins = Math.floor((totalDuration % 3600) / 60);
+            statDuration.textContent = `${hours}h ${mins}min`;
+        }
+    }
+
+    async viewArchive(newsId) {
+        console.log(`👁️ Viewing archive ${newsId}`);
+
+        try {
+            const data = await this.storage.load();
+            const news = (data.news || []).find(n => n.id === newsId);
+            if (news) {
+                // Show as read-only in an alert or modal for now
+                const info = `
+Titre: ${news.title || 'Sans titre'}
+Catégorie: ${news.category || 'Général'}
+Auteur: ${news.author || 'Inconnu'}
+Date: ${news.scheduledDate || '-'}
+
+${news.content || 'Pas de contenu'}
+                `.trim();
+                alert(info);
+            }
+        } catch (error) {
+            console.error('Error viewing archive:', error);
+        }
+    }
+
+    async restoreNews(newsId) {
+        console.log(`♻️ Restoring news ${newsId}`);
+
+        if (!confirm('Restaurer cette news vers le statut "Brouillon" ?')) {
+            return;
+        }
+
+        try {
+            const data = await this.storage.load();
+            const news = (data.news || []).find(n => n.id === newsId);
+
+            if (!news) {
+                alert('Archive introuvable');
+                return;
+            }
+
+            // Change status back to draft
+            news.status = 'draft';
+            news.updatedAt = Date.now();
+
+            // Save
+            await this.storage.saveItem('news', news);
+            await this.loadArchives();
+
+            this.showNotification('News restaurée avec succès', 'success');
+            console.log('✅ News restored');
+        } catch (error) {
+            console.error('Error restoring news:', error);
+            alert('Erreur lors de la restauration');
+        }
+    }
+
+    async deleteNewsForever(newsId) {
+        console.log(`🗑️ Deleting news forever ${newsId}`);
+
+        if (!confirm('⚠️ ATTENTION : Cette action supprimera définitivement cette news. Continuer ?')) {
+            return;
+        }
+
+        try {
+            const data = await this.storage.load();
+            const news = data.news || [];
+            const index = news.findIndex(n => n.id === newsId);
+
+            if (index === -1) {
+                alert('Archive introuvable');
+                return;
+            }
+
+            // Remove from array
+            news.splice(index, 1);
+            data.news = news;
+
+            // Save
+            await this.storage.save(data);
+            await this.loadArchives();
+
+            this.showNotification('Archive supprimée définitivement', 'success');
+            console.log('✅ Archive deleted forever');
+        } catch (error) {
+            console.error('Error deleting archive:', error);
             alert('Erreur lors de la suppression');
         }
     }
