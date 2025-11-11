@@ -181,13 +181,34 @@ class SaintEspritV3 {
 
         try {
             const data = await this.storage.load();
-            const news = data.news || [];
+            const allNews = data.news || [];
+            const allAnimations = data.animations || [];
             const today = new Date().toISOString().split('T')[0];
-            const todayNews = news.filter(n => n.scheduledDate === today);
 
-            const newsCountEl = document.getElementById('news-count');
-            if (newsCountEl) {
-                newsCountEl.textContent = `${todayNews.length} aujourd'hui`;
+            // Filter active contents (non-archived) for today
+            const todayNews = allNews.filter(n => n.status !== 'archived' && n.scheduledDate === today);
+            const todayAnimations = allAnimations.filter(a => a.status !== 'archived' && a.scheduledDate === today);
+            const todayContents = todayNews.length + todayAnimations.length;
+
+            // Count archives
+            const archivedNews = allNews.filter(n => n.status === 'archived');
+            const archivedAnimations = allAnimations.filter(a => a.status === 'archived');
+            const totalArchives = archivedNews.length + archivedAnimations.length;
+
+            // Update contents count
+            const contentsCountEl = document.getElementById('contents-count');
+            if (contentsCountEl) {
+                if (todayNews.length > 0 && todayAnimations.length > 0) {
+                    contentsCountEl.textContent = `${todayContents} aujourd'hui (${todayNews.length} news, ${todayAnimations.length} anim.)`;
+                } else {
+                    contentsCountEl.textContent = `${todayContents} aujourd'hui`;
+                }
+            }
+
+            // Update archives count
+            const archivesCountEl = document.getElementById('archives-count');
+            if (archivesCountEl) {
+                archivesCountEl.textContent = `${totalArchives} archive${totalArchives > 1 ? 's' : ''}`;
             }
         } catch (error) {
             console.error('Error updating dashboard:', error);

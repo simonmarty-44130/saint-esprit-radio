@@ -84,22 +84,23 @@
 
             <div class="cards-grid">
                 <div class="card" onclick="app.switchView('news')">
-                    <div class="card-icon">📰</div>
-                    <h3>News</h3>
-                    <p>Gérer les actualités</p>
-                    <div class="card-stat" id="news-count">0 aujourd'hui</div>
+                    <div class="card-icon">📄</div>
+                    <h3>Contenus</h3>
+                    <p>News et animations</p>
+                    <div class="card-stat" id="contents-count">0 aujourd'hui</div>
+                </div>
+
+                <div class="card" onclick="app.switchView('archives')">
+                    <div class="card-icon">📦</div>
+                    <h3>Archives</h3>
+                    <p>Contenus archivés</p>
+                    <div class="card-stat" id="archives-count">0 archives</div>
                 </div>
 
                 <div class="card" onclick="app.switchView('blocks')">
                     <div class="card-icon">📋</div>
                     <h3>Journaux</h3>
                     <p>Créer les journaux</p>
-                </div>
-
-                <div class="card" onclick="app.switchView('animation')">
-                    <div class="card-icon">🎙️</div>
-                    <h3>Animation</h3>
-                    <p>Éléments d'animation</p>
                 </div>
 
                 <div class="card" onclick="app.switchView('conductor')">
