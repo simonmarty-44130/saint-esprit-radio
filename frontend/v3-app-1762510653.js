@@ -175,10 +175,13 @@ class SaintEspritV3 {
 
         try {
             const data = await this.storage.load();
-            const news = data.news || [];
-            console.log(`📰 Loaded ${news.length} news`);
+            const allNews = data.news || [];
 
-            // Store full news list for filtering
+            // Filter out archived news (they appear in Archives tab only)
+            const news = allNews.filter(n => n.status !== 'archived');
+            console.log(`📰 Loaded ${news.length} news (${allNews.length - news.length} archived)`);
+
+            // Store filtered news list for filtering
             this.allNews = news;
 
             const newsList = document.getElementById('news-list');
@@ -1112,10 +1115,19 @@ class SaintEspritV3 {
         try {
             const data = await this.storage.load();
             const allNews = data.news || [];
+            const allAnimations = data.animations || [];
 
-            // Filter only archived news
-            const archived = allNews.filter(n => n.status === 'archived');
-            console.log(`📦 Loaded ${archived.length} archived news`);
+            // Filter only archived items (news and animations)
+            const archivedNews = allNews.filter(n => n.status === 'archived');
+            const archivedAnimations = allAnimations.filter(a => a.status === 'archived');
+
+            // Combine both with a type marker
+            const archived = [
+                ...archivedNews.map(n => ({...n, itemType: 'news'})),
+                ...archivedAnimations.map(a => ({...a, itemType: 'animation'}))
+            ];
+
+            console.log(`📦 Loaded ${archived.length} archives (${archivedNews.length} news, ${archivedAnimations.length} animations)`);
 
             // Store for filtering
             this.allArchives = archived;
@@ -1167,10 +1179,14 @@ class SaintEspritV3 {
         // Excerpt from content
         const excerpt = news.content ? news.content.substring(0, 80) + '...' : '';
 
+        // Type indicator
+        const typeIcon = news.itemType === 'animation' ? '🎙️' : '📰';
+        const typeLabel = news.itemType === 'animation' ? 'Animation' : 'News';
+
         return `
             <tr>
                 <td class="title-cell">
-                    <div class="news-title">${news.title || 'Sans titre'}</div>
+                    <div class="news-title">${typeIcon} ${news.title || 'Sans titre'}</div>
                     ${excerpt ? `<div class="news-excerpt">${excerpt}</div>` : ''}
                 </td>
                 <td>
@@ -1289,65 +1305,86 @@ ${news.content || 'Pas de contenu'}
         }
     }
 
-    async restoreNews(newsId) {
-        console.log(`♻️ Restoring news ${newsId}`);
+    async restoreNews(itemId) {
+        console.log(`♻️ Restoring item ${itemId}`);
 
-        if (!confirm('Restaurer cette news vers le statut "Brouillon" ?')) {
+        if (!confirm('Restaurer cet élément vers le statut "Brouillon" ?')) {
             return;
         }
 
         try {
             const data = await this.storage.load();
-            const news = (data.news || []).find(n => n.id === newsId);
 
-            if (!news) {
+            // Try to find in news first
+            let item = (data.news || []).find(n => n.id === itemId);
+            let itemType = 'news';
+
+            // If not found, try animations
+            if (!item) {
+                item = (data.animations || []).find(a => a.id === itemId);
+                itemType = 'animation';
+            }
+
+            if (!item) {
                 alert('Archive introuvable');
                 return;
             }
 
             // Change status back to draft
-            news.status = 'draft';
-            news.updatedAt = Date.now();
+            item.status = 'draft';
+            item.updatedAt = Date.now();
 
-            // Save
-            await this.storage.saveItem('news', news);
+            // Save to appropriate collection
+            await this.storage.saveItem(itemType, item);
             await this.loadArchives();
 
-            this.showNotification('News restaurée avec succès', 'success');
-            console.log('✅ News restored');
+            this.showNotification(`${itemType === 'news' ? 'News' : 'Animation'} restaurée avec succès`, 'success');
+            console.log(`✅ ${itemType} restored`);
         } catch (error) {
-            console.error('Error restoring news:', error);
+            console.error('Error restoring item:', error);
             alert('Erreur lors de la restauration');
         }
     }
 
-    async deleteNewsForever(newsId) {
-        console.log(`🗑️ Deleting news forever ${newsId}`);
+    async deleteNewsForever(itemId) {
+        console.log(`🗑️ Deleting item forever ${itemId}`);
 
-        if (!confirm('⚠️ ATTENTION : Cette action supprimera définitivement cette news. Continuer ?')) {
+        if (!confirm('⚠️ ATTENTION : Cette action supprimera définitivement cet élément. Continuer ?')) {
             return;
         }
 
         try {
             const data = await this.storage.load();
-            const news = data.news || [];
-            const index = news.findIndex(n => n.id === newsId);
 
-            if (index === -1) {
-                alert('Archive introuvable');
-                return;
+            // Try to find and delete from news first
+            let news = data.news || [];
+            let index = news.findIndex(n => n.id === itemId);
+            let itemType = 'news';
+
+            if (index !== -1) {
+                news.splice(index, 1);
+                data.news = news;
+            } else {
+                // Try animations
+                let animations = data.animations || [];
+                index = animations.findIndex(a => a.id === itemId);
+                itemType = 'animation';
+
+                if (index === -1) {
+                    alert('Archive introuvable');
+                    return;
+                }
+
+                animations.splice(index, 1);
+                data.animations = animations;
             }
-
-            // Remove from array
-            news.splice(index, 1);
-            data.news = news;
 
             // Save
             await this.storage.save(data);
             await this.loadArchives();
 
             this.showNotification('Archive supprimée définitivement', 'success');
-            console.log('✅ Archive deleted forever');
+            console.log(`✅ ${itemType} deleted forever`);
         } catch (error) {
             console.error('Error deleting archive:', error);
             alert('Erreur lors de la suppression');
@@ -1361,10 +1398,13 @@ ${news.content || 'Pas de contenu'}
 
         try {
             const data = await this.storage.load();
-            const animations = data.animations || [];
-            console.log(`🎙️ Loaded ${animations.length} animations`);
+            const allAnimations = data.animations || [];
 
-            // Store full animations list for filtering
+            // Filter out archived animations (they appear in Archives tab only)
+            const animations = allAnimations.filter(a => a.status !== 'archived');
+            console.log(`🎙️ Loaded ${animations.length} animations (${allAnimations.length - animations.length} archived)`);
+
+            // Store filtered animations list for filtering
             this.allAnimations = animations;
 
             const animationsList = document.getElementById('animations-list');
