@@ -3648,6 +3648,7 @@ class AudioEditorV3 {
                 window.app.currentNews.audioKey = audioResult.key;
                 window.app.currentNews.audioFileName = fileName;
                 window.app.currentNews.audioDuration = exportBuffer.duration;
+                window.app.currentNews.audioSize = blob.size;
 
                 // Save news to storage
                 await window.app.storage.saveItem('news', window.app.currentNews);
@@ -3656,15 +3657,25 @@ class AudioEditorV3 {
                 if (window.app.durationManager) {
                     window.app.durationManager.audioFile = file;
                     window.app.durationManager.audioBlob = blob;
-                    window.app.durationManager.audioDuration = exportBuffer.duration;
+                    window.app.durationManager.setAudioDuration(exportBuffer.duration);
                 }
 
                 showNotification('Audio exported to news successfully!', 'success');
                 console.log('✅ Audio exported to news:', audioResult.url);
 
-                // Reload news to show updated audio
+                // Reload news list to show updated duration
                 if (window.app.loadNews) {
                     await window.app.loadNews();
+                }
+
+                // Return to news editor to see the updated audio
+                if (window.app.returnToNews) {
+                    window.app.returnToNews();
+                    // Restore audio info in the UI after a short delay
+                    setTimeout(async () => {
+                        await window.app.restoreAudioInfo();
+                        window.app.updateDurations();
+                    }, 100);
                 }
             } else {
                 throw new Error('Storage manager not available');
