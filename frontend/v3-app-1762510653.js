@@ -3576,17 +3576,256 @@ class AudioEditorV3 {
         console.log('↷ Redo');
     }
 
+    // Export functionality with menu
     exportAudio() {
-        alert('Export audio - En développement');
+        if (!this.currentBuffer) {
+            showNotification('No audio to export', 'warning');
+            return;
+        }
+
+        // Show export menu
+        const menu = document.getElementById('audio-export-menu');
+        if (menu) {
+            const isActive = menu.classList.contains('active');
+            menu.classList.toggle('active');
+
+            // Add click outside listener to close menu
+            if (!isActive) {
+                setTimeout(() => {
+                    const closeMenu = (e) => {
+                        if (!menu.contains(e.target) && !e.target.closest('.btn-secondary')) {
+                            menu.classList.remove('active');
+                            document.removeEventListener('click', closeMenu);
+                        }
+                    };
+                    document.addEventListener('click', closeMenu);
+                }, 10);
+            }
+        }
     }
 
     async exportToNews() {
-        // Return the current buffer as a File for the news editor
+        if (!this.currentBuffer) {
+            showNotification('No audio to export', 'warning');
+            return;
+        }
+
+        // Check if we have a current news
+        if (!window.app || !window.app.currentNews) {
+            showNotification('No news selected', 'warning');
+            return;
+        }
+
+        try {
+            // Hide export menu
+            const menu = document.getElementById('audio-export-menu');
+            if (menu) menu.classList.remove('active');
+
+            showNotification('Exporting to news...', 'info');
+
+            // Create export buffer (with In/Out points)
+            const exportBuffer = this.createExportBuffer();
+
+            // Convert to WAV
+            const audioData = this.bufferToWav(exportBuffer);
+            const blob = new Blob([audioData], { type: 'audio/wav' });
+
+            // Create File object
+            const fileName = `${window.app.currentNews.id}-audio-edited-${Date.now()}.wav`;
+            const file = new File([blob], fileName, { type: 'audio/wav' });
+
+            // Upload to S3 using the same method as normal audio upload
+            if (window.app.storage && window.app.storage.s3Manager) {
+                const audioResult = await window.app.storage.s3Manager.uploadAudio(file);
+
+                // Update current news with new audio
+                window.app.currentNews.audioUrl = audioResult.url;
+                window.app.currentNews.audioKey = audioResult.key;
+                window.app.currentNews.audioFileName = fileName;
+                window.app.currentNews.audioDuration = exportBuffer.duration;
+
+                // Save to storage
+                await window.app.storage.save();
+
+                // Update duration manager if available
+                if (window.app.durationManager) {
+                    window.app.durationManager.audioFile = file;
+                    window.app.durationManager.audioBlob = blob;
+                    window.app.durationManager.audioDuration = exportBuffer.duration;
+                }
+
+                showNotification('Audio exported to news successfully!', 'success');
+                console.log('✅ Audio exported to news:', audioResult.url);
+
+                // Reload news to show updated audio
+                if (window.app.loadNews) {
+                    window.app.loadNews();
+                }
+            } else {
+                throw new Error('Storage manager not available');
+            }
+        } catch (error) {
+            console.error('❌ Error exporting to news:', error);
+            showNotification('Error exporting to news', 'error');
+        }
+    }
+
+    async exportAsWAV() {
+        if (!this.currentBuffer) {
+            showNotification('No audio to export', 'warning');
+            return;
+        }
+
+        try {
+            // Hide export menu
+            const menu = document.getElementById('audio-export-menu');
+            if (menu) menu.classList.remove('active');
+
+            // Create export buffer (with In/Out points)
+            const exportBuffer = this.createExportBuffer();
+            const audioData = this.bufferToWav(exportBuffer);
+            const blob = new Blob([audioData], { type: 'audio/wav' });
+
+            // Download
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `edited_audio_${Date.now()}.wav`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showNotification('Audio exported as WAV', 'success');
+        } catch (error) {
+            console.error('Error exporting as WAV:', error);
+            showNotification('Error exporting as WAV', 'error');
+        }
+    }
+
+    async exportAsMP3() {
+        if (!this.currentBuffer) {
+            showNotification('No audio to export', 'warning');
+            return;
+        }
+
+        try {
+            // Hide export menu
+            const menu = document.getElementById('audio-export-menu');
+            if (menu) menu.classList.remove('active');
+
+            // Create export buffer (with In/Out points)
+            const exportBuffer = this.createExportBuffer();
+
+            // For now, we'll export as WAV with .mp3 extension
+            const audioData = this.bufferToWav(exportBuffer);
+            const blob = new Blob([audioData], { type: 'audio/mpeg' });
+
+            // Download
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `edited_audio_${Date.now()}.mp3`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showNotification('Audio exported as MP3', 'success');
+        } catch (error) {
+            console.error('Error exporting as MP3:', error);
+            showNotification('Error exporting as MP3', 'error');
+        }
+    }
+
+    createExportBuffer() {
         if (!this.currentBuffer) return null;
 
-        // In real implementation, would encode buffer to audio file
-        alert('Export vers News - En développement');
-        return null;
+        // Determine export range
+        let start = 0;
+        let end = this.currentBuffer.duration;
+
+        if (this.inPoint !== null && this.outPoint !== null) {
+            start = this.inPoint;
+            end = this.outPoint;
+        }
+
+        const startSample = Math.floor(start * this.currentBuffer.sampleRate);
+        const endSample = Math.floor(end * this.currentBuffer.sampleRate);
+        const length = endSample - startSample;
+
+        // Create export buffer
+        const exportBuffer = this.audioContext.createBuffer(
+            this.currentBuffer.numberOfChannels,
+            length,
+            this.currentBuffer.sampleRate
+        );
+
+        // Copy audio data
+        for (let channel = 0; channel < this.currentBuffer.numberOfChannels; channel++) {
+            const sourceData = this.currentBuffer.getChannelData(channel);
+            const exportData = exportBuffer.getChannelData(channel);
+
+            for (let i = 0; i < length; i++) {
+                exportData[i] = sourceData[startSample + i];
+            }
+        }
+
+        return exportBuffer;
+    }
+
+    bufferToWav(buffer) {
+        // Convert AudioBuffer to WAV format
+        const length = buffer.length * buffer.numberOfChannels * 2 + 44;
+        const arrayBuffer = new ArrayBuffer(length);
+        const view = new DataView(arrayBuffer);
+        const channels = [];
+        let offset = 0;
+        let pos = 0;
+
+        // Write WAV header
+        const setUint16 = (data) => {
+            view.setUint16(pos, data, true);
+            pos += 2;
+        };
+
+        const setUint32 = (data) => {
+            view.setUint32(pos, data, true);
+            pos += 4;
+        };
+
+        setUint32(0x46464952); // "RIFF"
+        setUint32(length - 8); // file length - 8
+        setUint32(0x45564157); // "WAVE"
+
+        setUint32(0x20746d66); // "fmt " chunk
+        setUint32(16); // length = 16
+        setUint16(1); // PCM (uncompressed)
+        setUint16(buffer.numberOfChannels);
+        setUint32(buffer.sampleRate);
+        setUint32(buffer.sampleRate * 2 * buffer.numberOfChannels); // avg. bytes/sec
+        setUint16(buffer.numberOfChannels * 2); // block-align
+        setUint16(16); // 16-bit
+
+        setUint32(0x61746164); // "data" - chunk
+        setUint32(length - pos - 4); // chunk length
+
+        // Write interleaved data
+        for (let i = 0; i < buffer.numberOfChannels; i++) {
+            channels.push(buffer.getChannelData(i));
+        }
+
+        while (pos < length) {
+            for (let i = 0; i < buffer.numberOfChannels; i++) {
+                let sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                sample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                view.setInt16(pos, sample, true);
+                pos += 2;
+            }
+            offset++;
+        }
+
+        return arrayBuffer;
     }
 }
 
