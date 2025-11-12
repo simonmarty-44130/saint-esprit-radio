@@ -9,6 +9,7 @@ Application de gestion radio professionnelle avec synchronisation temps réel mu
 - 📋 **Journaux** - Construction de journaux avec drag & drop
 - 🎼 **Conducteur** - Planification d'émissions et conducteurs d'antenne
 - 🎵 **Audio Editor** - Édition audio avec waveform
+- 🎚️ **Éditeur Multipiste** - Montage audio professionnel 4 pistes avec points In/Out
 - 📻 **Mode ON AIR** - Interface simplifiée pour l'antenne
 - 👥 **Multi-utilisateurs** - Synchronisation temps réel entre utilisateurs
 - 📱 **Responsive** - Interface adaptée mobile/tablette/desktop
@@ -83,6 +84,7 @@ aws cloudfront create-invalidation \
 - **Conductor** - Conducteurs d'antenne
 - **Template** - Modèles réutilisables
 - **Audio** - Métadonnées des fichiers audio
+- **MultitrackProjects** - Projets multipiste avec configuration de mix
 - **UserActivity** - Suivi d'activité en temps réel
 - **Settings** - Paramètres utilisateur/global
 
@@ -114,6 +116,37 @@ await appSyncStorage.createNews({
     tags: ["actualité", "local"]
 });
 ```
+
+### Éditeur Multipiste
+
+L'éditeur multipiste permet le montage audio professionnel avec 4 pistes simultanées.
+
+**Fonctionnalités clés :**
+- Import de fichiers audio (glisser-déposer)
+- Enregistrement micro en direct
+- Points In/Out pour découpage précis (raccourcis I/O)
+- Effets audio : normalize, amplify, trim, split
+- Waveforms haute qualité avec cache optimisé
+- Export MP3 320kbps vers S3
+- Sauvegarde automatique des projets
+
+**Raccourcis clavier :**
+- `Espace` : Play/Pause
+- `I` / `O` : Définir points In/Out
+- `Ctrl+X/C/V` : Cut/Copy/Paste
+- `S` : Diviser clip
+- `+` / `-` : Zoom
+- `Ctrl+Z/Y` : Undo/Redo
+
+**Workflow recommandé :**
+1. Importer les rushes audio
+2. Glisser sur les pistes appropriées
+3. Enregistrer la voix (piste 1)
+4. Ajuster volumes et panoramiques
+5. Définir In/Out pour la durée cible
+6. Normaliser et exporter en MP3
+
+**Documentation complète :** [MULTITRACK-EDITOR.md](frontend/MULTITRACK-EDITOR.md)
 
 ### Synchronisation temps réel
 
@@ -194,6 +227,7 @@ aws cloudwatch get-metric-statistics \
 - [Solution Robuste](SOLUTION-ROBUSTE.md) - Architecture complète
 - [Guide d'implémentation](GUIDE-IMPLEMENTATION.md) - Déploiement pas à pas
 - [Migration complète](MIGRATION-COMPLETE.md) - Historique de migration
+- [Éditeur Multipiste](frontend/MULTITRACK-EDITOR.md) - Guide complet de l'éditeur 4 pistes
 
 ## 🤝 Contribution
 
