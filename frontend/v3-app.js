@@ -2461,13 +2461,26 @@ class SaintEspritV3 {
             type: currentSegment.type,
             content: currentSegment.content,
             title: currentSegment.title,
+            newsId: currentSegment.newsId,
+            id: currentSegment.id,
             fullSegment: currentSegment
         });
+        console.log('🔍 Full segment keys:', Object.keys(currentSegment));
 
         // Si c'est une news, afficher lancement, audio et pied
-        if (currentSegment.type === 'news' && currentSegment.content) {
+        if (currentSegment.type === 'news') {
             // Récupérer la news complète
-            const news = await this.getNewsById(currentSegment.content);
+            let news = null;
+
+            // Nouveau format : ID dans content
+            if (currentSegment.content) {
+                news = await this.getNewsById(currentSegment.content);
+            }
+            // Ancien format : chercher par titre
+            else if (currentSegment.title) {
+                console.log('🔍 Vieux conducteur détecté, recherche par titre:', currentSegment.title);
+                news = this.allNews.find(n => n.title === currentSegment.title);
+            }
 
             if (news) {
                 // DEBUG: Log la news complète
