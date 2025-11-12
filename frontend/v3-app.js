@@ -2462,6 +2462,11 @@ class SaintEspritV3 {
             const news = await this.getNewsById(currentSegment.content);
 
             if (news) {
+                // DEBUG: Log la news complète
+                console.log('📰 News chargée pour ON AIR:', news);
+                console.log('  - lancement:', news.lancement);
+                console.log('  - pied:', news.pied);
+
                 // Récupérer les éléments du DOM
                 const contentEl = document.getElementById('onair-segment-content');
                 const lancementSection = document.getElementById('onair-lancement-section');
