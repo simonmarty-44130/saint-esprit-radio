@@ -2730,9 +2730,10 @@ ${news.content || 'Pas de contenu'}
 
             // Remove from array
             conductors.splice(index, 1);
+            data.conductors = conductors;
 
-            // Save updated list
-            await this.storage.saveConductors(conductors);
+            // Save updated data
+            await this.storage.save(data);
 
             // Close editor if this conductor was being edited
             if (this.currentConductor && this.currentConductor.id === conductorId) {
