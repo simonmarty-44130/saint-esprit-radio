@@ -304,22 +304,72 @@ class OnAir {
     displayNewsContent(newsItem, container) {
         // Stocker l'item courant pour la gestion audio
         this.currentContent = newsItem;
-        
-        // Extraire uniquement le texte entre [LANCEMENT] et [DESANNONCE]
-        const launchText = this.extractLaunchText(newsItem.content);
-        
+
+        // Build HTML for news with lancement, audio indicator, and pied
+        let contentHTML = '';
+
+        // Extract text between tags
+        const content = newsItem.content || '';
+        const launchRegex = /\[LANCEMENT\]([\s\S]*?)\[\/LANCEMENT\]/;
+        const desannonceRegex = /\[DESANNONCE\]([\s\S]*?)\[\/DESANNONCE\]/;
+        const launchMatch = content.match(launchRegex);
+        const desannonceMatch = content.match(desannonceRegex);
+
+        // 1. LANCEMENT section
+        if (launchMatch && launchMatch[1] && launchMatch[1].trim()) {
+            contentHTML += `
+                <div class="onair-section">
+                    <div class="onair-section-label">📢 LANCEMENT</div>
+                    <div class="onair-section-content">
+                        ${launchMatch[1].trim().replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 2. AUDIO indicator (if sounds exist)
+        if (newsItem.sounds && newsItem.sounds.length > 0) {
+            contentHTML += `
+                <div class="onair-section">
+                    <div class="onair-section-label">🎵 AUDIO</div>
+                    <div class="onair-section-content audio-indicator">
+                        <em>▶ Lecture audio ci-dessous (${newsItem.sounds.length} son(s))</em>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 3. PIED / DÉSANNONCE section
+        if (desannonceMatch && desannonceMatch[1] && desannonceMatch[1].trim()) {
+            contentHTML += `
+                <div class="onair-section">
+                    <div class="onair-section-label">🎙️ PIED / DÉSANNONCE</div>
+                    <div class="onair-section-content">
+                        ${desannonceMatch[1].trim().replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // If no structured content found, show full content
+        if (!contentHTML) {
+            contentHTML = `
+                <div class="onair-content-text">
+                    ${content ? content.replace(/\n/g, '<br>') : 'Aucun contenu'}
+                </div>
+            `;
+        }
+
         container.innerHTML = `
             <div class="onair-item-content">
                 <div class="onair-item-header">
                     <h2>📰 ${newsItem.title}</h2>
                     <span class="duration">${newsItem.duration || '0:00'}</span>
                 </div>
-                <div class="onair-content-text">
-                    ${launchText ? launchText.replace(/\n/g, '<br>') : 'Aucun contenu'}
-                </div>
+                ${contentHTML}
             </div>
         `;
-        
+
         // Afficher les contrôles audio en bas si des sons existent
         this.setupAudioControls(newsItem);
     }
