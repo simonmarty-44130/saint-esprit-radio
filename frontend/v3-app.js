@@ -872,7 +872,10 @@ class SaintEspritV3 {
             updatedAt: Date.now()
         };
 
-        this.showAnimationEditor();
+        // Wait for DOM to update after view switch
+        setTimeout(() => {
+            this.showAnimationEditor();
+        }, 100);
     }
 
     async editAnimation(animationId) {
