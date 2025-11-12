@@ -2456,6 +2456,14 @@ class SaintEspritV3 {
             titleEl.textContent = currentSegment.title || 'Sans titre';
         }
 
+        // DEBUG: Log le segment actuel
+        console.log('🎬 Segment actuel:', {
+            type: currentSegment.type,
+            content: currentSegment.content,
+            title: currentSegment.title,
+            fullSegment: currentSegment
+        });
+
         // Si c'est une news, afficher lancement, audio et pied
         if (currentSegment.type === 'news' && currentSegment.content) {
             // Récupérer la news complète
