@@ -1683,11 +1683,8 @@ ${news.content || 'Pas de contenu'}
         console.log(`🔍 Filtered: ${filtered.length}/${this.allAnimations.length} animations`);
     }
 
-    createAnimation() {
+    async createAnimation() {
         console.log('📝 Creating new animation...');
-
-        // Switch to animation view first
-        this.switchView('animation');
 
         const now = new Date();
         const userName = localStorage.getItem('saint-esprit-user-fullname') ||
@@ -1719,10 +1716,14 @@ ${news.content || 'Pas de contenu'}
             updatedAt: Date.now()
         };
 
-        // Wait for DOM to update after view switch
-        setTimeout(() => {
-            this.showAnimationEditor();
-        }, 100);
+        // Switch to animation view and wait for animations to load
+        this.switchView('animation');
+
+        // Wait for loadAnimations to complete (it's called by switchView)
+        // Use a longer delay to ensure DOM is ready
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        this.showAnimationEditor();
     }
 
     async editAnimation(animationId) {
@@ -1745,8 +1746,13 @@ ${news.content || 'Pas de contenu'}
     }
 
     showAnimationEditor() {
+        console.log('🎬 showAnimationEditor called');
         const editor = document.getElementById('animations-editor');
-        if (!editor) return;
+        console.log('🎬 editor element found:', !!editor);
+        if (!editor) {
+            console.error('❌ animations-editor element not found!');
+            return;
+        }
 
         editor.innerHTML = `
             <div class="editor-form">
