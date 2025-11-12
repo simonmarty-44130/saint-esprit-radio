@@ -638,7 +638,7 @@
         </div>
 
         <!-- MULTITRACK EDITOR VIEW -->
-        <div class="view" id="multitrack-view" style="display: none;">
+        <div class="view" id="multitrack-view">
             <div class="multitrack-container">
                 <!-- Header -->
                 <div class="multitrack-header">
@@ -653,18 +653,33 @@
                 <!-- Toolbar -->
                 <div class="multitrack-toolbar">
                     <div class="toolbar-section">
-                        <button class="toolbar-btn" id="mt-import-btn" onclick="document.getElementById('mt-file-input').click()" title="Importer audio">📁</button>
+                        <button class="toolbar-btn" id="mt-import-btn" onclick="document.getElementById('mt-file-input').click()" title="Importer audio (📁)">📁</button>
                         <input type="file" id="mt-file-input" accept="audio/*" multiple style="display:none" onchange="app.handleMultitrackFileImport(event)">
                         <button class="toolbar-btn" id="mt-record-btn" onclick="app.toggleMultitrackRecording()" title="Enregistrer (R)">🎤</button>
                     </div>
                     <div class="toolbar-section">
-                        <button class="toolbar-btn" onclick="app.multitrackEditor?.createCrossfade(0, 0, 1, 1.0)" title="Crossfade">⚡</button>
-                        <button class="toolbar-btn" title="Fade In">📈</button>
-                        <button class="toolbar-btn" title="Fade Out">📉</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.cut()" title="Couper (Ctrl+X)">✂️</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.copy()" title="Copier (Ctrl+C)">📄</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.paste()" title="Coller (Ctrl+V)">📋</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.setInPoint()" title="Point IN (I)">⏵</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.setOutPoint()" title="Point OUT (O)">⏴</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.clearInOutPoints()" title="Effacer In/Out">⌧</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.split()" title="Diviser (S)">✂</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.normalize()" title="Normaliser">📊</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.amplify()" title="Amplifier">🔊</button>
                     </div>
                     <div class="toolbar-section">
                         <button class="toolbar-btn" onclick="app.multitrackEditor?.undo()" title="Annuler (Ctrl+Z)">↶</button>
                         <button class="toolbar-btn" onclick="app.multitrackEditor?.redo()" title="Refaire (Ctrl+Y)">↷</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.zoomOut()" title="Dézoomer (-)">🔍-</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.zoomIn()" title="Zoomer (+)">🔍+</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.zoomToFit()" title="Ajuster à la vue (0)">⬌</button>
                     </div>
                 </div>
 
@@ -680,6 +695,17 @@
                     <div class="timecode" id="mt-timecode">00:00.000</div>
                 </div>
 
+                <!-- In/Out Display -->
+                <div class="multitrack-inout-bar">
+                    <div class="inout-info" id="multitrack-inout-display"></div>
+                    <div class="inout-shortcuts">
+                        <span class="shortcut-hint">Espace: Play/Pause</span>
+                        <span class="shortcut-hint">I: Point IN</span>
+                        <span class="shortcut-hint">O: Point OUT</span>
+                        <span class="shortcut-hint">S: Diviser</span>
+                    </div>
+                </div>
+
                 <!-- Timeline -->
                 <div class="multitrack-timeline-container">
                     <canvas id="multitrack-timeline" width="1200" height="40"></canvas>
@@ -688,6 +714,20 @@
                 <!-- Tracks -->
                 <div class="multitrack-tracks-container" id="multitrack-tracks">
                     <canvas id="multitrack-canvas" width="1200" height="400"></canvas>
+                </div>
+
+                <!-- Audio Library (Chutier) -->
+                <div class="multitrack-library-section">
+                    <div class="library-header">
+                        <span class="library-title">📂 Chutier Audio</span>
+                        <span class="library-hint">Glissez les fichiers sur les pistes pour les ajouter</span>
+                    </div>
+                    <div id="multitrack-library" class="multitrack-library">
+                        <div class="library-empty">
+                            <p>Chutier vide</p>
+                            <p class="hint">Importez des fichiers audio</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Export Panel -->

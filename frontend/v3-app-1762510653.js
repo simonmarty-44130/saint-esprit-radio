@@ -3678,6 +3678,200 @@ ${news.content || 'Pas de contenu'}
         // Return to conductor view
         this.switchView('conductor');
     }
+
+    // ==================== MULTITRACK EDITOR METHODS ====================
+
+    /**
+     * Initialiser l'éditeur multipiste
+     */
+    async initMultitrackEditor() {
+        try {
+            if (!this.multitrackEditor) {
+                if (typeof MultitrackEditor === 'undefined') {
+                    console.error('MultitrackEditor class not found');
+                    return false;
+                }
+
+                this.multitrackEditor = new MultitrackEditor();
+                await this.multitrackEditor.init();
+
+                // Setup callback for time updates
+                this.multitrackEditor.onTimeUpdate = (time) => {
+                    this.updateMultitrackTimecode(time);
+                };
+
+                console.log('✅ Multitrack Editor initialized');
+                return true;
+            }
+            return true;
+        } catch (error) {
+            console.error('❌ Failed to initialize Multitrack Editor:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Gérer l'import de fichiers audio
+     */
+    async handleMultitrackFileImport(event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        if (!this.multitrackEditor) {
+            await this.initMultitrackEditor();
+        }
+
+        try {
+            for (const file of files) {
+                await this.multitrackEditor.addToLibrary(file);
+            }
+            showNotification(`${files.length} fichier(s) ajouté(s) à la bibliothèque`, 'success');
+        } catch (error) {
+            console.error('❌ File import failed:', error);
+            showNotification('Erreur lors de l\'import: ' + error.message, 'error');
+        }
+
+        // Reset file input
+        event.target.value = '';
+    }
+
+    /**
+     * Toggle lecture multipiste
+     */
+    toggleMultitrackPlayback() {
+        if (!this.multitrackEditor) return;
+
+        if (this.multitrackEditor.isPlaying) {
+            this.multitrackEditor.pause();
+            const playBtn = document.getElementById('mt-play-btn');
+            if (playBtn) playBtn.textContent = '▶️';
+        } else {
+            this.multitrackEditor.play();
+            const playBtn = document.getElementById('mt-play-btn');
+            if (playBtn) playBtn.textContent = '⏸️';
+        }
+    }
+
+    /**
+     * Toggle enregistrement multipiste
+     */
+    async toggleMultitrackRecording() {
+        if (!this.multitrackEditor) {
+            await this.initMultitrackEditor();
+        }
+
+        const recordBtn = document.getElementById('mt-record-btn');
+
+        if (this.multitrackEditor.isRecording) {
+            await this.multitrackEditor.stopRecording();
+            if (recordBtn) recordBtn.style.background = '';
+            showNotification('Enregistrement arrêté', 'success');
+        } else {
+            // Demander quelle piste utiliser
+            const trackIndex = 0; // Par défaut la première piste vide
+            await this.multitrackEditor.startRecording(trackIndex);
+            if (recordBtn) recordBtn.style.background = '#f85149';
+            showNotification('Enregistrement en cours...', 'info');
+        }
+    }
+
+    /**
+     * Mettre à jour le timecode
+     */
+    updateMultitrackTimecode(time) {
+        const timecodeEl = document.getElementById('mt-timecode');
+        if (!timecodeEl) return;
+
+        const mins = Math.floor(time / 60);
+        const secs = Math.floor(time % 60);
+        const ms = Math.floor((time % 1) * 1000);
+
+        timecodeEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+
+        // Mettre à jour la durée totale
+        if (this.multitrackEditor) {
+            const durationEl = document.getElementById('mt-total-duration');
+            if (durationEl) {
+                const duration = this.multitrackEditor.duration || 0;
+                const durationMins = Math.floor(duration / 60);
+                const durationSecs = Math.floor(duration % 60);
+                durationEl.value = `${durationMins}:${durationSecs.toString().padStart(2, '0')}`;
+            }
+        }
+    }
+
+    /**
+     * Ouvrir la liste des projets multipiste
+     */
+    async openMultitrackProjects() {
+        if (!this.multitrackEditor) {
+            await this.initMultitrackEditor();
+        }
+
+        try {
+            const projects = await this.multitrackEditor.listUserProjects();
+
+            // Créer un modal pour afficher les projets
+            let html = '<div class="modal-overlay" onclick="this.remove()">';
+            html += '<div class="modal-container" onclick="event.stopPropagation()">';
+            html += '<div class="modal-header">';
+            html += '<h2>📂 Mes projets multipiste</h2>';
+            html += '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">✕</button>';
+            html += '</div>';
+            html += '<div class="modal-body">';
+
+            if (projects.length === 0) {
+                html += '<p style="text-align:center;color:#666;padding:40px;">Aucun projet sauvegardé</p>';
+            } else {
+                html += '<div class="projects-list">';
+                projects.forEach(project => {
+                    const date = new Date(project.updatedAt).toLocaleDateString('fr-FR');
+                    const duration = Math.floor(project.duration || 0);
+                    html += `<div class="project-item" onclick="app.loadMultitrackProject('${project.id}')">`;
+                    html += `<div class="project-info">`;
+                    html += `<div class="project-name">${project.name || 'Sans titre'}</div>`;
+                    html += `<div class="project-meta">${date} • ${duration}s • ${project.tracks?.length || 0} pistes</div>`;
+                    html += `</div>`;
+                    html += `<button class="btn btn-sm btn-primary">Ouvrir</button>`;
+                    html += `</div>`;
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
+            html += '</div></div>';
+
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            document.body.appendChild(tempDiv.firstElementChild);
+        } catch (error) {
+            console.error('❌ Failed to load projects:', error);
+            showNotification('Erreur lors du chargement des projets', 'error');
+        }
+    }
+
+    /**
+     * Charger un projet multipiste
+     */
+    async loadMultitrackProject(projectId) {
+        if (!this.multitrackEditor) {
+            await this.initMultitrackEditor();
+        }
+
+        try {
+            // Fermer le modal
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) modal.remove();
+
+            // Charger le projet
+            await this.multitrackEditor.loadProjectFromDynamoDB(projectId);
+
+            showNotification('Projet chargé avec succès', 'success');
+        } catch (error) {
+            console.error('❌ Failed to load project:', error);
+            showNotification('Erreur lors du chargement du projet', 'error');
+        }
+    }
 }
 
 // ===== AUDIO EDITOR V3 =====
@@ -4754,200 +4948,6 @@ class AudioEditorV3 {
         }
 
         return arrayBuffer;
-    }
-
-    // ==================== MULTITRACK EDITOR METHODS ====================
-
-    /**
-     * Initialiser l'éditeur multipiste
-     */
-    async initMultitrackEditor() {
-        try {
-            if (!this.multitrackEditor) {
-                if (typeof MultitrackEditor === 'undefined') {
-                    console.error('MultitrackEditor class not found');
-                    return false;
-                }
-
-                this.multitrackEditor = new MultitrackEditor();
-                await this.multitrackEditor.init();
-
-                // Setup callback for time updates
-                this.multitrackEditor.onTimeUpdate = (time) => {
-                    this.updateMultitrackTimecode(time);
-                };
-
-                console.log('✅ Multitrack Editor initialized');
-                return true;
-            }
-            return true;
-        } catch (error) {
-            console.error('❌ Failed to initialize Multitrack Editor:', error);
-            return false;
-        }
-    }
-
-    /**
-     * Gérer l'import de fichiers audio
-     */
-    async handleMultitrackFileImport(event) {
-        const files = event.target.files;
-        if (!files || files.length === 0) return;
-
-        if (!this.multitrackEditor) {
-            await this.initMultitrackEditor();
-        }
-
-        try {
-            for (const file of files) {
-                await this.multitrackEditor.addToLibrary(file);
-            }
-            showNotification(`${files.length} fichier(s) ajouté(s) à la bibliothèque`, 'success');
-        } catch (error) {
-            console.error('❌ File import failed:', error);
-            showNotification('Erreur lors de l\'import: ' + error.message, 'error');
-        }
-
-        // Reset file input
-        event.target.value = '';
-    }
-
-    /**
-     * Toggle lecture multipiste
-     */
-    toggleMultitrackPlayback() {
-        if (!this.multitrackEditor) return;
-
-        if (this.multitrackEditor.isPlaying) {
-            this.multitrackEditor.pause();
-            const playBtn = document.getElementById('mt-play-btn');
-            if (playBtn) playBtn.textContent = '▶️';
-        } else {
-            this.multitrackEditor.play();
-            const playBtn = document.getElementById('mt-play-btn');
-            if (playBtn) playBtn.textContent = '⏸️';
-        }
-    }
-
-    /**
-     * Toggle enregistrement multipiste
-     */
-    async toggleMultitrackRecording() {
-        if (!this.multitrackEditor) {
-            await this.initMultitrackEditor();
-        }
-
-        const recordBtn = document.getElementById('mt-record-btn');
-
-        if (this.multitrackEditor.isRecording) {
-            await this.multitrackEditor.stopRecording();
-            if (recordBtn) recordBtn.style.background = '';
-            showNotification('Enregistrement arrêté', 'success');
-        } else {
-            // Demander quelle piste utiliser
-            const trackIndex = 0; // Par défaut la première piste vide
-            await this.multitrackEditor.startRecording(trackIndex);
-            if (recordBtn) recordBtn.style.background = '#f85149';
-            showNotification('Enregistrement en cours...', 'info');
-        }
-    }
-
-    /**
-     * Mettre à jour le timecode
-     */
-    updateMultitrackTimecode(time) {
-        const timecodeEl = document.getElementById('mt-timecode');
-        if (!timecodeEl) return;
-
-        const mins = Math.floor(time / 60);
-        const secs = Math.floor(time % 60);
-        const ms = Math.floor((time % 1) * 1000);
-
-        timecodeEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
-
-        // Mettre à jour la durée totale
-        if (this.multitrackEditor) {
-            const durationEl = document.getElementById('mt-total-duration');
-            if (durationEl) {
-                const duration = this.multitrackEditor.duration || 0;
-                const durationMins = Math.floor(duration / 60);
-                const durationSecs = Math.floor(duration % 60);
-                durationEl.value = `${durationMins}:${durationSecs.toString().padStart(2, '0')}`;
-            }
-        }
-    }
-
-    /**
-     * Ouvrir la liste des projets multipiste
-     */
-    async openMultitrackProjects() {
-        if (!this.multitrackEditor) {
-            await this.initMultitrackEditor();
-        }
-
-        try {
-            const projects = await this.multitrackEditor.listUserProjects();
-
-            // Créer un modal pour afficher les projets
-            let html = '<div class="modal-overlay" onclick="this.remove()">';
-            html += '<div class="modal-container" onclick="event.stopPropagation()">';
-            html += '<div class="modal-header">';
-            html += '<h2>📂 Mes projets multipiste</h2>';
-            html += '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">✕</button>';
-            html += '</div>';
-            html += '<div class="modal-body">';
-
-            if (projects.length === 0) {
-                html += '<p style="text-align:center;color:#666;padding:40px;">Aucun projet sauvegardé</p>';
-            } else {
-                html += '<div class="projects-list">';
-                projects.forEach(project => {
-                    const date = new Date(project.updatedAt).toLocaleDateString('fr-FR');
-                    const duration = Math.floor(project.duration || 0);
-                    html += `<div class="project-item" onclick="app.loadMultitrackProject('${project.id}')">`;
-                    html += `<div class="project-info">`;
-                    html += `<div class="project-name">${project.name || 'Sans titre'}</div>`;
-                    html += `<div class="project-meta">${date} • ${duration}s • ${project.tracks?.length || 0} pistes</div>`;
-                    html += `</div>`;
-                    html += `<button class="btn btn-sm btn-primary">Ouvrir</button>`;
-                    html += `</div>`;
-                });
-                html += '</div>';
-            }
-
-            html += '</div>';
-            html += '</div></div>';
-
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
-            document.body.appendChild(tempDiv.firstElementChild);
-        } catch (error) {
-            console.error('❌ Failed to load projects:', error);
-            showNotification('Erreur lors du chargement des projets', 'error');
-        }
-    }
-
-    /**
-     * Charger un projet multipiste
-     */
-    async loadMultitrackProject(projectId) {
-        if (!this.multitrackEditor) {
-            await this.initMultitrackEditor();
-        }
-
-        try {
-            // Fermer le modal
-            const modal = document.querySelector('.modal-overlay');
-            if (modal) modal.remove();
-
-            // Charger le projet
-            await this.multitrackEditor.loadProjectFromDynamoDB(projectId);
-
-            showNotification('Projet chargé avec succès', 'success');
-        } catch (error) {
-            console.error('❌ Failed to load project:', error);
-            showNotification('Erreur lors du chargement du projet', 'error');
-        }
     }
 }
 

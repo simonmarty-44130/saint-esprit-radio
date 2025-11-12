@@ -331,30 +331,31 @@ class MultitrackEditor {
         try {
             const arrayBuffer = await file.arrayBuffer();
             const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-            
+
             // Check if this file is already in the library (by name and duration)
-            const existingClip = this.audioLibrary.find(item => 
-                item.name === file.name && 
+            const existingClip = this.audioLibrary.find(item =>
+                item.name === file.name &&
                 Math.abs(item.duration - audioBuffer.duration) < 0.01
             );
-            
+
             if (existingClip) {
                 console.log('File already in library, skipping duplicate:', file.name);
                 return existingClip;
             }
-            
+
             const clip = {
                 id: Date.now(),
                 name: file.name,
                 buffer: audioBuffer,
                 duration: audioBuffer.duration,
                 type: this.detectAudioType(file.name),
-                waveformData: this.generateWaveformData(audioBuffer)
+                waveformData: this.generateWaveformData(audioBuffer),
+                waveformCache: new Map() // Cache pour différentes tailles de rendu
             };
-            
+
             this.audioLibrary.push(clip);
             this.renderLibrary();
-            
+
             return clip;
         } catch (error) {
             console.error('Error adding audio to library:', error);
@@ -739,21 +740,82 @@ class MultitrackEditor {
     }
 
     drawClipWaveform(libraryItem, x, y, width, height) {
-        if (!libraryItem.waveformData) return;
-        
-        const waveform = libraryItem.waveformData;
-        const samplesPerPixel = waveform.length / width;
-        
-        this.ctx.fillStyle = '#00ff9f55';
-        
-        for (let px = 0; px < width; px++) {
-            const sampleIndex = Math.floor(px * samplesPerPixel);
-            if (sampleIndex < waveform.length) {
-                const sample = waveform[sampleIndex];
-                const barHeight = sample.peak * height * 0.8;
-                this.ctx.fillRect(x + px, y + (height - barHeight) / 2, 1, barHeight);
-            }
+        if (!libraryItem.buffer) return;
+
+        // Arrondir les dimensions pour le cache
+        const cacheKey = `${Math.round(width)}_${Math.round(height)}`;
+
+        // Vérifier le cache
+        if (!libraryItem.waveformCache) {
+            libraryItem.waveformCache = new Map();
         }
+
+        let cachedCanvas = libraryItem.waveformCache.get(cacheKey);
+
+        // Si pas en cache, créer le rendu
+        if (!cachedCanvas) {
+            // Limiter la taille du cache
+            if (libraryItem.waveformCache.size > 5) {
+                const firstKey = libraryItem.waveformCache.keys().next().value;
+                libraryItem.waveformCache.delete(firstKey);
+            }
+
+            const offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = width;
+            offscreenCanvas.height = height;
+            const offscreenCtx = offscreenCanvas.getContext('2d');
+
+            const data = libraryItem.buffer.getChannelData(0);
+            const step = Math.ceil(data.length / width);
+            const amp = height / 2;
+            const centerY = amp;
+
+            // Dark green fill
+            offscreenCtx.fillStyle = '#003300';
+
+            // Create waveform path
+            offscreenCtx.beginPath();
+            offscreenCtx.moveTo(0, centerY);
+
+            // Draw waveform with min/max for each pixel
+            for (let px = 0; px < width; px++) {
+                let min = 1.0;
+                let max = -1.0;
+
+                // Sample the audio data
+                for (let j = 0; j < step; j++) {
+                    const sampleIndex = (px * step) + j;
+                    if (sampleIndex < data.length) {
+                        const datum = data[sampleIndex];
+                        if (datum < min) min = datum;
+                        if (datum > max) max = datum;
+                    }
+                }
+
+                // Scale to amplitude
+                min *= 0.9;
+                max *= 0.9;
+
+                offscreenCtx.lineTo(px, centerY + min * amp);
+                offscreenCtx.lineTo(px, centerY + max * amp);
+            }
+
+            offscreenCtx.lineTo(width, centerY);
+            offscreenCtx.closePath();
+            offscreenCtx.fill();
+
+            // Green outline
+            offscreenCtx.strokeStyle = '#00ff00';
+            offscreenCtx.lineWidth = 1;
+            offscreenCtx.stroke();
+
+            // Mettre en cache
+            libraryItem.waveformCache.set(cacheKey, offscreenCanvas);
+            cachedCanvas = offscreenCanvas;
+        }
+
+        // Dessiner depuis le cache
+        this.ctx.drawImage(cachedCanvas, x, y);
     }
 
     drawFadeIn(x, y, width, height) {
@@ -2107,6 +2169,11 @@ class MultitrackEditor {
         }
     }
 
+    zoomToFit() {
+        // Alias for zoomFit() for UI consistency
+        this.zoomFit();
+    }
+
     getMaxDuration() {
         let max = this.duration;
         this.tracks.forEach(track => {
@@ -2367,15 +2434,227 @@ class MultitrackEditor {
             const newClip = JSON.parse(JSON.stringify(this.clipboard));
             newClip.id = Date.now();
             newClip.position = this.currentTime;
-            
+
             const track = this.tracks[this.activeTrack];
             track.clips.push(newClip);
             track.clips.sort((a, b) => a.position - b.position);
-            
+
             this.render();
             this.saveToHistory();
             showNotification('Clip collé', 'success');
         }
+    }
+
+    // Audio effects (applied to selected clip or all clips in track)
+    normalize() {
+        const selectedClip = this.getSelectedClip();
+        if (!selectedClip) {
+            showNotification('Sélectionnez un clip pour normaliser', 'warning');
+            return;
+        }
+
+        const libraryItem = this.audioLibrary.find(item => item.id === selectedClip.libraryId);
+        if (!libraryItem || !libraryItem.buffer) return;
+
+        const buffer = libraryItem.buffer;
+        let maxValue = 0;
+
+        // Find peak value
+        for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+            const data = buffer.getChannelData(channel);
+            for (let i = 0; i < data.length; i++) {
+                maxValue = Math.max(maxValue, Math.abs(data[i]));
+            }
+        }
+
+        if (maxValue === 0) return;
+
+        // Apply normalization (to -3dB for radio standard)
+        const targetLevel = 0.707; // -3dB in linear
+        const multiplier = targetLevel / maxValue;
+
+        for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+            const data = buffer.getChannelData(channel);
+            for (let i = 0; i < data.length; i++) {
+                data[i] *= multiplier;
+            }
+        }
+
+        // Clear waveform cache
+        if (libraryItem.waveformCache) {
+            libraryItem.waveformCache.clear();
+        }
+
+        this.render();
+        this.saveToHistory();
+        showNotification('Audio normalisé', 'success');
+    }
+
+    amplify() {
+        const selectedClip = this.getSelectedClip();
+        if (!selectedClip) {
+            showNotification('Sélectionnez un clip pour amplifier', 'warning');
+            return;
+        }
+
+        const gainStr = prompt('Gain en dB (-20 à +20):', '6');
+        if (gainStr === null) return;
+
+        const gainDb = parseFloat(gainStr);
+        if (isNaN(gainDb) || gainDb < -20 || gainDb > 20) {
+            showNotification('Valeur invalide. Entre -20 et +20 dB.', 'error');
+            return;
+        }
+
+        const libraryItem = this.audioLibrary.find(item => item.id === selectedClip.libraryId);
+        if (!libraryItem || !libraryItem.buffer) return;
+
+        // Convert dB to linear gain
+        const gainLinear = Math.pow(10, gainDb / 20);
+
+        const buffer = libraryItem.buffer;
+        for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+            const data = buffer.getChannelData(channel);
+            for (let i = 0; i < data.length; i++) {
+                data[i] *= gainLinear;
+                // Clip to prevent distortion
+                data[i] = Math.max(-1, Math.min(1, data[i]));
+            }
+        }
+
+        // Clear waveform cache
+        if (libraryItem.waveformCache) {
+            libraryItem.waveformCache.clear();
+        }
+
+        this.render();
+        this.saveToHistory();
+        showNotification(`Amplification ${gainDb > 0 ? '+' : ''}${gainDb} dB appliquée`, 'success');
+    }
+
+    silence() {
+        const selectedClip = this.getSelectedClip();
+        if (!selectedClip) {
+            showNotification('Sélectionnez un clip pour le rendre silencieux', 'warning');
+            return;
+        }
+
+        const libraryItem = this.audioLibrary.find(item => item.id === selectedClip.libraryId);
+        if (!libraryItem || !libraryItem.buffer) return;
+
+        const buffer = libraryItem.buffer;
+        for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+            const data = buffer.getChannelData(channel);
+            for (let i = 0; i < data.length; i++) {
+                data[i] = 0;
+            }
+        }
+
+        // Clear waveform cache
+        if (libraryItem.waveformCache) {
+            libraryItem.waveformCache.clear();
+        }
+
+        this.render();
+        this.saveToHistory();
+        showNotification('Clip rendu silencieux', 'success');
+    }
+
+    trimStart() {
+        const selectedClip = this.getSelectedClip();
+        if (!selectedClip) {
+            showNotification('Sélectionnez un clip pour le rogner', 'warning');
+            return;
+        }
+
+        // Trim to current playhead position
+        const trimTime = this.currentTime - selectedClip.position;
+        if (trimTime <= 0 || trimTime >= selectedClip.duration) {
+            showNotification('Position invalide pour le rognage', 'warning');
+            return;
+        }
+
+        selectedClip.trimStart = trimTime;
+        selectedClip.duration -= trimTime;
+        selectedClip.position = this.currentTime;
+
+        this.render();
+        this.saveToHistory();
+        showNotification('Début du clip rogné', 'success');
+    }
+
+    trimEnd() {
+        const selectedClip = this.getSelectedClip();
+        if (!selectedClip) {
+            showNotification('Sélectionnez un clip pour le rogner', 'warning');
+            return;
+        }
+
+        // Trim to current playhead position
+        const newDuration = this.currentTime - selectedClip.position;
+        if (newDuration <= 0 || newDuration >= selectedClip.duration) {
+            showNotification('Position invalide pour le rognage', 'warning');
+            return;
+        }
+
+        const trimmedAmount = selectedClip.duration - newDuration;
+        selectedClip.trimEnd = (selectedClip.trimEnd || 0) + trimmedAmount;
+        selectedClip.duration = newDuration;
+
+        this.render();
+        this.saveToHistory();
+        showNotification('Fin du clip rognée', 'success');
+    }
+
+    split() {
+        const selectedClip = this.getSelectedClip();
+        if (!selectedClip) {
+            showNotification('Sélectionnez un clip pour le diviser', 'warning');
+            return;
+        }
+
+        const splitTime = this.currentTime - selectedClip.position;
+        if (splitTime <= 0 || splitTime >= selectedClip.duration) {
+            showNotification('Le curseur doit être à l\'intérieur du clip', 'warning');
+            return;
+        }
+
+        const trackIndex = this.getSelectedTrackIndex();
+        if (trackIndex < 0) return;
+
+        const track = this.tracks[trackIndex];
+
+        // Create second half
+        const secondHalf = {
+            ...selectedClip,
+            id: Date.now(),
+            position: selectedClip.position + splitTime,
+            trimStart: (selectedClip.trimStart || 0) + splitTime,
+            duration: selectedClip.duration - splitTime
+        };
+
+        // Modify first half
+        selectedClip.duration = splitTime;
+        selectedClip.trimEnd = (selectedClip.trimEnd || 0);
+
+        // Add second half
+        track.clips.push(secondHalf);
+        track.clips.sort((a, b) => a.position - b.position);
+
+        this.render();
+        this.saveToHistory();
+        showNotification('Clip divisé', 'success');
+    }
+
+    getSelectedClip() {
+        if (this.selection.clip && this.selection.track >= 0) {
+            return this.selection.clip;
+        }
+        return null;
+    }
+
+    getSelectedTrackIndex() {
+        return this.selection.track;
     }
 
     async record() {
