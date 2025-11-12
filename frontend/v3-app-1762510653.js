@@ -2721,19 +2721,15 @@ ${news.content || 'Pas de contenu'}
         try {
             const data = await this.storage.load();
             const conductors = data.conductors || [];
-            const index = conductors.findIndex(c => c.id === conductorId);
+            const conductor = conductors.find(c => c.id === conductorId);
 
-            if (index === -1) {
+            if (!conductor) {
                 alert('Conducteur introuvable');
                 return;
             }
 
-            // Remove from array
-            conductors.splice(index, 1);
-            data.conductors = conductors;
-
-            // Save updated data
-            await this.storage.save(data);
+            // Delete directly from DynamoDB
+            await this.storage.deleteItem('conductors', conductor.id, conductor.createdAt);
 
             // Close editor if this conductor was being edited
             if (this.currentConductor && this.currentConductor.id === conductorId) {
