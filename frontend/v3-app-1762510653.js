@@ -3243,7 +3243,7 @@ ${news.content || 'Pas de contenu'}
                 const currentSegment = this.currentConductor.segments[this.onAirCurrentIndex];
                 if (!currentSegment) return;
 
-                const segmentDuration = currentSegment.duration || 0;
+                const segmentDuration = Math.floor(currentSegment.duration || 0);
                 const elapsed = Math.floor((Date.now() - this.onAirSegmentStartTime) / 1000);
                 const remaining = segmentDuration - elapsed;
 
@@ -3251,7 +3251,7 @@ ${news.content || 'Pas de contenu'}
                 const timerEl = document.getElementById('onair-timer');
                 if (timerEl) {
                     const mins = Math.floor(Math.abs(remaining) / 60);
-                    const secs = Math.abs(remaining) % 60;
+                    const secs = Math.floor(Math.abs(remaining) % 60);
                     timerEl.textContent = `${remaining < 0 ? '-' : ''}${mins}:${String(secs).padStart(2, '0')}`;
 
                     // Warning if less than 30 seconds
