@@ -441,22 +441,65 @@ class OnAir {
     displayAnimationContent(animItem, container) {
         // Stocker l'item courant pour la gestion audio
         this.currentContent = animItem;
-        
-        // Extraire uniquement le texte entre [LANCEMENT] et [DESANNONCE]
-        const launchText = this.extractLaunchText(animItem.content);
-        
+
+        // Build HTML for animation with lancement, audio indicator, and pied
+        let contentHTML = '';
+
+        // 1. LANCEMENT (before audio)
+        if (animItem.lancement && animItem.lancement.trim()) {
+            contentHTML += `
+                <div class="onair-section">
+                    <div class="onair-section-label">📢 LANCEMENT</div>
+                    <div class="onair-section-content">
+                        ${animItem.lancement.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 2. AUDIO indicator (audio controls will be shown below)
+        if (animItem.audioUrl || animItem.audioFileName) {
+            contentHTML += `
+                <div class="onair-section">
+                    <div class="onair-section-label">🎵 AUDIO</div>
+                    <div class="onair-section-content audio-indicator">
+                        <em>▶ Lecture audio ci-dessous</em>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 3. PIED (after audio)
+        if (animItem.pied && animItem.pied.trim()) {
+            contentHTML += `
+                <div class="onair-section">
+                    <div class="onair-section-label">🎙️ PIED / DÉSANNONCE</div>
+                    <div class="onair-section-content">
+                        ${animItem.pied.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // If no content at all, show fallback
+        if (!contentHTML) {
+            contentHTML = `
+                <div class="onair-content-text">
+                    ${animItem.content ? animItem.content.replace(/\n/g, '<br>') : 'Aucun contenu'}
+                </div>
+            `;
+        }
+
         container.innerHTML = `
             <div class="onair-item-content">
                 <div class="onair-item-header">
                     <h2>🎵 ${animItem.title}</h2>
                     <span class="duration">${animItem.duration || '0:00'}</span>
                 </div>
-                <div class="onair-content-text">
-                    ${launchText ? launchText.replace(/\n/g, '<br>') : 'Aucun contenu'}
-                </div>
+                ${contentHTML}
             </div>
         `;
-        
+
         // Afficher les contrôles audio en bas si des sons existent
         this.setupAudioControls(animItem);
     }
