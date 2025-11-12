@@ -2245,6 +2245,7 @@ ${news.content || 'Pas de contenu'}
             <div class="news-item ${this.currentConductor && this.currentConductor.id === c.id ? 'active' : ''}" onclick="app.editConductor('${c.id}')">
                 <div class="news-title">${c.title || 'Sans titre'}</div>
                 <div class="news-meta">${c.scheduledDate || ''} ${c.scheduledTime || ''} • ${c.segments?.length || 0} segments</div>
+                <button class="btn-delete" onclick="event.stopPropagation(); app.deleteConductor('${c.id}')" title="Supprimer ce conducteur">🗑️</button>
             </div>
         `).join('');
     }
@@ -2708,6 +2709,45 @@ ${news.content || 'Pas de contenu'}
             `;
         }
         this.loadConductors();
+    }
+
+    async deleteConductor(conductorId) {
+        console.log(`🗑️ Deleting conductor ${conductorId}`);
+
+        if (!confirm('Êtes-vous sûr de vouloir supprimer ce conducteur ?')) {
+            return;
+        }
+
+        try {
+            const data = await this.storage.load();
+            const conductors = data.conductors || [];
+            const index = conductors.findIndex(c => c.id === conductorId);
+
+            if (index === -1) {
+                alert('Conducteur introuvable');
+                return;
+            }
+
+            // Remove from array
+            conductors.splice(index, 1);
+
+            // Save updated list
+            await this.storage.saveConductors(conductors);
+
+            // Close editor if this conductor was being edited
+            if (this.currentConductor && this.currentConductor.id === conductorId) {
+                this.closeConductorEditor();
+            }
+
+            // Refresh list
+            await this.loadConductors();
+
+            this.showNotification('Conducteur supprimé avec succès', 'success');
+            console.log('✅ Conductor deleted');
+        } catch (error) {
+            console.error('Error deleting conductor:', error);
+            alert('Erreur lors de la suppression');
+        }
     }
 
     // ===== JOURNAUX MANAGEMENT =====
