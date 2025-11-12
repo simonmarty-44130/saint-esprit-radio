@@ -327,7 +327,7 @@ class StorageDynamoDB {
                 await this.refreshCache(type);
                 
                 // Notifier
-                if (window.app) {
+                if (window.app && typeof window.app.onDatabaseUpdate === 'function') {
                     window.app.onDatabaseUpdate(type, this.cache[type]);
                 }
             }
