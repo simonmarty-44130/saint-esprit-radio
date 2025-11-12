@@ -839,6 +839,9 @@ class SaintEspritV3 {
     createAnimation() {
         console.log('📝 Creating new animation...');
 
+        // Switch to animation view first
+        this.switchView('animation');
+
         const now = new Date();
         const userName = localStorage.getItem('saint-esprit-user-fullname') ||
                         localStorage.getItem('saint-esprit-user-name') ||
