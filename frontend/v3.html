@@ -61,6 +61,10 @@
                 <span class="icon">🔴</span>
                 <span>ON AIR</span>
             </button>
+            <button class="nav-btn" data-view="multitrack">
+                <span class="icon">🎚️</span>
+                <span>Multipiste</span>
+            </button>
         </nav>
 
         <div class="sidebar-footer">
@@ -633,6 +637,94 @@
             </div>
         </div>
 
+        <!-- MULTITRACK EDITOR VIEW -->
+        <div class="view" id="multitrack-view" style="display: none;">
+            <div class="multitrack-container">
+                <!-- Header -->
+                <div class="multitrack-header">
+                    <div class="multitrack-title">🎚️ Éditeur Multipiste</div>
+                    <div class="multitrack-actions">
+                        <button class="btn btn-secondary" onclick="app.openMultitrackProjects()">📂 Projets</button>
+                        <button class="btn btn-secondary" onclick="app.multitrackEditor?.saveProjectToDynamoDB()">💾 Sauvegarder</button>
+                        <button class="btn btn-primary" onclick="app.multitrackEditor?.downloadMP3()">📤 Exporter MP3</button>
+                    </div>
+                </div>
+
+                <!-- Toolbar -->
+                <div class="multitrack-toolbar">
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" id="mt-import-btn" onclick="document.getElementById('mt-file-input').click()" title="Importer audio">📁</button>
+                        <input type="file" id="mt-file-input" accept="audio/*" multiple style="display:none" onchange="app.handleMultitrackFileImport(event)">
+                        <button class="toolbar-btn" id="mt-record-btn" onclick="app.toggleMultitrackRecording()" title="Enregistrer (R)">🎤</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.createCrossfade(0, 0, 1, 1.0)" title="Crossfade">⚡</button>
+                        <button class="toolbar-btn" title="Fade In">📈</button>
+                        <button class="toolbar-btn" title="Fade Out">📉</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.undo()" title="Annuler (Ctrl+Z)">↶</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.redo()" title="Refaire (Ctrl+Y)">↷</button>
+                    </div>
+                </div>
+
+                <!-- Transport Controls -->
+                <div class="multitrack-transport">
+                    <button class="transport-btn" onclick="app.multitrackEditor?.stop()">⏮️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.seekTo(Math.max(0, (app.multitrackEditor?.currentTime || 0) - 5))">⏪</button>
+                    <button class="transport-btn play" id="mt-play-btn" onclick="app.toggleMultitrackPlayback()">▶️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.pause()">⏸️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.stop()">⏹️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.seekTo(Math.min(app.multitrackEditor?.duration || 0, (app.multitrackEditor?.currentTime || 0) + 5))">⏩</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.seekTo(app.multitrackEditor?.duration || 0)">⏭️</button>
+                    <div class="timecode" id="mt-timecode">00:00.000</div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="multitrack-timeline-container">
+                    <canvas id="multitrack-timeline" width="1200" height="40"></canvas>
+                </div>
+
+                <!-- Tracks -->
+                <div class="multitrack-tracks-container" id="multitrack-tracks">
+                    <canvas id="multitrack-canvas" width="1200" height="400"></canvas>
+                </div>
+
+                <!-- Export Panel -->
+                <div class="multitrack-export-panel">
+                    <div class="export-title">⚙️ Options d'export</div>
+                    <div class="export-options">
+                        <div class="export-option">
+                            <label>Format</label>
+                            <select id="mt-export-format">
+                                <option value="mp3-320">MP3 (320 kbps)</option>
+                                <option value="mp3-256">MP3 (256 kbps)</option>
+                                <option value="mp3-192">MP3 (192 kbps)</option>
+                                <option value="mp3-128">MP3 (128 kbps)</option>
+                            </select>
+                        </div>
+                        <div class="export-option">
+                            <label>Nom du fichier</label>
+                            <input type="text" id="mt-export-filename" placeholder="mon-mixage" value="">
+                        </div>
+                        <div class="export-option">
+                            <label>Normalisation</label>
+                            <select id="mt-normalize">
+                                <option value="-3">-3 dB (Radio)</option>
+                                <option value="-6">-6 dB (Podcast)</option>
+                                <option value="-1">-1 dB (Maximum)</option>
+                                <option value="0">Aucune</option>
+                            </select>
+                        </div>
+                        <div class="export-option">
+                            <label>Durée totale</label>
+                            <input type="text" id="mt-total-duration" value="0:00" readonly style="background: #1a1a1a;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- AWS SDK -->
@@ -650,6 +742,10 @@
     <script src="js/managers/ContentManager.js?v=1756486244"></script>
     <script src="js/components/NewsDurationManager.js?v=1.0"></script>
     <script src="js/components/AudioEditor.js?v=1762858797"></script>
+
+    <!-- Multitrack Editor Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+    <script src="js/components/MultitrackEditor.js?v=1.0"></script>
 
     <!-- V3 App Logic -->
     <script src="v3-app-1762510653.js"></script>

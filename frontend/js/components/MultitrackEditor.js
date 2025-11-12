@@ -3284,12 +3284,504 @@ class MultitrackEditor {
         this.stopPlaybackAnimation();
         this.stopRecordingAnimation();
         this.stopVUMeter();
-        
+
         if (this.analyser) {
             this.analyser.disconnect();
         }
         if (this.masterGainNode) {
             this.masterGainNode.disconnect();
+        }
+    }
+
+    // ==================== NOUVELLES FONCTIONNALITÉS ====================
+
+    /**
+     * Exporter le mix en MP3 avec lamejs
+     */
+    async exportToMP3(options = {}) {
+        try {
+            console.log('📤 Exporting mix to MP3...');
+            showNotification('Export MP3 en cours...', 'info');
+
+            const {
+                bitrate = 320,
+                normalize = true,
+                normalizeLevel = -3 // dB
+            } = options;
+
+            // Vérifier que lamejs est chargé
+            if (typeof lamejs === 'undefined') {
+                throw new Error('lamejs not loaded. Please include <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>');
+            }
+
+            // Calculer la durée réelle
+            const duration = this.getActualClipsDuration();
+            if (duration === 0) {
+                showNotification('Aucun audio à exporter', 'warning');
+                return null;
+            }
+
+            // Créer un OfflineAudioContext pour le rendu
+            const sampleRate = 44100;
+            const offlineCtx = new OfflineAudioContext(2, duration * sampleRate, sampleRate);
+
+            // Créer master gain
+            const masterGain = offlineCtx.createGain();
+            masterGain.connect(offlineCtx.destination);
+
+            // Rendre chaque piste
+            this.tracks.forEach(track => {
+                if (track.muted) return;
+                if (this.tracks.some(t => t.solo) && !track.solo) return;
+
+                const trackGain = offlineCtx.createGain();
+                trackGain.gain.value = track.volume;
+                trackGain.connect(masterGain);
+
+                track.clips.forEach(clip => {
+                    const libraryItem = this.audioLibrary.find(item => item.id === clip.libraryId);
+                    if (!libraryItem) return;
+
+                    const source = offlineCtx.createBufferSource();
+                    source.buffer = libraryItem.buffer;
+
+                    const clipGain = offlineCtx.createGain();
+                    clipGain.gain.value = clip.gain || 1.0;
+
+                    // Appliquer fades
+                    if (clip.fadeIn > 0) {
+                        clipGain.gain.setValueAtTime(0, clip.position);
+                        clipGain.gain.linearRampToValueAtTime(clip.gain || 1.0, clip.position + clip.fadeIn);
+                    }
+                    if (clip.fadeOut > 0) {
+                        const fadeStart = clip.position + clip.duration - clip.fadeOut;
+                        clipGain.gain.setValueAtTime(clip.gain || 1.0, fadeStart);
+                        clipGain.gain.linearRampToValueAtTime(0, clip.position + clip.duration);
+                    }
+
+                    source.connect(clipGain);
+                    clipGain.connect(trackGain);
+
+                    source.start(clip.position, clip.trimStart, clip.trimEnd - clip.trimStart);
+                });
+            });
+
+            // Rendre l'audio
+            console.log('🎨 Rendering audio...');
+            const renderedBuffer = await offlineCtx.startRendering();
+
+            // Normaliser si demandé
+            let finalBuffer = renderedBuffer;
+            if (normalize) {
+                finalBuffer = this.normalizeAudioBuffer(renderedBuffer, normalizeLevel);
+            }
+
+            // Encoder en MP3
+            console.log('🔧 Encoding to MP3...');
+            const mp3Blob = this.encodeToMP3(finalBuffer, bitrate);
+
+            showNotification('Export MP3 terminé', 'success');
+            console.log('✅ MP3 export completed');
+
+            return mp3Blob;
+        } catch (error) {
+            console.error('❌ MP3 export failed:', error);
+            showNotification('Erreur lors de l\'export MP3: ' + error.message, 'error');
+            throw error;
+        }
+    }
+
+    /**
+     * Normaliser un AudioBuffer
+     */
+    normalizeAudioBuffer(buffer, targetLevel = -3) {
+        const targetAmplitude = Math.pow(10, targetLevel / 20);
+
+        // Trouver le pic maximum
+        let maxAmplitude = 0;
+        for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+            const data = buffer.getChannelData(channel);
+            for (let i = 0; i < data.length; i++) {
+                const abs = Math.abs(data[i]);
+                if (abs > maxAmplitude) maxAmplitude = abs;
+            }
+        }
+
+        if (maxAmplitude === 0) return buffer;
+
+        // Calculer le gain
+        const gain = Math.min(targetAmplitude / maxAmplitude, 10); // Limiter à +20dB
+
+        // Créer un nouveau buffer normalisé
+        const normalizedBuffer = this.audioContext.createBuffer(
+            buffer.numberOfChannels,
+            buffer.length,
+            buffer.sampleRate
+        );
+
+        for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+            const inputData = buffer.getChannelData(channel);
+            const outputData = normalizedBuffer.getChannelData(channel);
+
+            for (let i = 0; i < inputData.length; i++) {
+                outputData[i] = Math.max(-1, Math.min(1, inputData[i] * gain));
+            }
+        }
+
+        return normalizedBuffer;
+    }
+
+    /**
+     * Encoder un AudioBuffer en MP3 avec lamejs
+     */
+    encodeToMP3(audioBuffer, bitrate = 320) {
+        const channels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
+        const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, bitrate);
+
+        const mp3Data = [];
+        const sampleBlockSize = 1152;
+
+        // Convertir Float32Array en Int16Array
+        const leftChannel = this.floatTo16BitPCM(audioBuffer.getChannelData(0));
+        const rightChannel = channels > 1
+            ? this.floatTo16BitPCM(audioBuffer.getChannelData(1))
+            : leftChannel;
+
+        // Encoder par blocs
+        for (let i = 0; i < leftChannel.length; i += sampleBlockSize) {
+            const leftChunk = leftChannel.subarray(i, i + sampleBlockSize);
+            const rightChunk = rightChannel.subarray(i, i + sampleBlockSize);
+
+            const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+        }
+
+        // Flush l'encoder
+        const mp3buf = mp3encoder.flush();
+        if (mp3buf.length > 0) {
+            mp3Data.push(mp3buf);
+        }
+
+        // Créer le blob
+        return new Blob(mp3Data, { type: 'audio/mp3' });
+    }
+
+    /**
+     * Convertir Float32Array en Int16Array (pour MP3)
+     */
+    floatTo16BitPCM(float32Array) {
+        const int16Array = new Int16Array(float32Array.length);
+        for (let i = 0; i < float32Array.length; i++) {
+            const s = Math.max(-1, Math.min(1, float32Array[i]));
+            int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        return int16Array;
+    }
+
+    /**
+     * Télécharger le mix en MP3
+     */
+    async downloadMP3(filename = null) {
+        try {
+            const blob = await this.exportToMP3();
+            if (!blob) return;
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename || `mixage_${new Date().toISOString().slice(0, 10)}.mp3`;
+            a.click();
+
+            URL.revokeObjectURL(url);
+
+            showNotification('Mix téléchargé', 'success');
+        } catch (error) {
+            console.error('❌ Download failed:', error);
+            showNotification('Erreur lors du téléchargement', 'error');
+        }
+    }
+
+    /**
+     * Créer un crossfade automatique entre deux clips adjacents
+     */
+    createCrossfade(trackIndex, clip1Index, clip2Index, duration = 1.0) {
+        try {
+            const track = this.tracks[trackIndex];
+            if (!track) return false;
+
+            const clip1 = track.clips[clip1Index];
+            const clip2 = track.clips[clip2Index];
+
+            if (!clip1 || !clip2) return false;
+
+            // Vérifier que clip2 est après clip1
+            const clip1End = clip1.position + (clip1.trimEnd - clip1.trimStart);
+            const gap = clip2.position - clip1End;
+
+            // Si les clips sont adjacents ou se chevauchent légèrement
+            if (gap <= duration) {
+                // Rapprocher clip2 pour créer le crossfade
+                clip2.position = clip1End - duration;
+
+                // Appliquer les fades
+                clip1.fadeOut = duration;
+                clip2.fadeIn = duration;
+
+                this.saveToHistory();
+                this.render();
+
+                showNotification(`Crossfade de ${duration}s créé`, 'success');
+                return true;
+            } else {
+                showNotification(`Les clips sont trop éloignés (écart: ${gap.toFixed(2)}s)`, 'warning');
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Crossfade failed:', error);
+            showNotification('Erreur lors de la création du crossfade', 'error');
+            return false;
+        }
+    }
+
+    /**
+     * Uploader un fichier audio vers S3
+     */
+    async uploadAudioToS3(file) {
+        try {
+            const timestamp = Date.now();
+            const userId = localStorage.getItem('saint-esprit-user-id') || 'unknown';
+            const key = `multitrack/${userId}/${timestamp}-${file.name}`;
+
+            // Utiliser le S3 client de l'app
+            if (!window.app || !window.app.storage || !window.app.storage.s3) {
+                console.warn('S3 client not available, skipping upload');
+                return null;
+            }
+
+            const s3 = window.app.storage.s3;
+            const bucket = 'amplify-saintespritaws-di-saintespritstoragebucket-91ui2ognukke';
+
+            const params = {
+                Bucket: bucket,
+                Key: key,
+                Body: file,
+                ContentType: file.type || 'audio/mpeg',
+                ACL: 'private'
+            };
+
+            await s3.upload(params).promise();
+
+            const url = `https://${bucket}.s3.eu-west-3.amazonaws.com/${key}`;
+            console.log('✅ File uploaded to S3:', url);
+
+            return url;
+        } catch (error) {
+            console.error('❌ S3 upload failed:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Sauvegarder le projet dans DynamoDB
+     */
+    async saveProjectToDynamoDB(projectName = null) {
+        try {
+            console.log('💾 Saving project to DynamoDB...');
+            showNotification('Sauvegarde du projet...', 'info');
+
+            // Vérifier que le client DynamoDB est disponible
+            if (!window.app || !window.app.storage || !window.app.storage.db) {
+                throw new Error('DynamoDB client not available');
+            }
+
+            const db = window.app.storage.db;
+            const userId = localStorage.getItem('saint-esprit-user-id') || 'unknown';
+            const timestamp = Date.now();
+
+            // Créer l'ID du projet si nouveau
+            if (!this.projectId) {
+                this.projectId = `multitrack-${timestamp}-${Math.random().toString(36).substr(2, 9)}`;
+            }
+
+            // Uploader les clips vers S3 et sauvegarder les URLs
+            const tracksData = await Promise.all(this.tracks.map(async (track) => {
+                const clipsData = await Promise.all(track.clips.map(async (clip) => {
+                    const libraryItem = this.audioLibrary.find(item => item.id === clip.libraryId);
+                    let s3Url = libraryItem?.s3Url || null;
+
+                    // Si le clip n'a pas encore d'URL S3, l'uploader
+                    if (!s3Url && libraryItem?.file) {
+                        s3Url = await this.uploadAudioToS3(libraryItem.file);
+                    }
+
+                    return {
+                        id: clip.id,
+                        libraryId: clip.libraryId,
+                        position: clip.position,
+                        duration: clip.duration,
+                        trimStart: clip.trimStart,
+                        trimEnd: clip.trimEnd,
+                        fadeIn: clip.fadeIn || 0,
+                        fadeOut: clip.fadeOut || 0,
+                        gain: clip.gain || 1.0,
+                        s3Url: s3Url,
+                        name: libraryItem?.name || 'Unknown'
+                    };
+                }));
+
+                return {
+                    id: track.id,
+                    name: track.name,
+                    volume: track.volume,
+                    muted: track.muted,
+                    solo: track.solo,
+                    color: track.color,
+                    clips: clipsData
+                };
+            }));
+
+            // Créer l'objet projet
+            const projectData = {
+                id: this.projectId,
+                name: projectName || this.projectName || 'Projet sans titre',
+                userId: userId,
+                linkedNewsId: this.linkedNewsId || null,
+                duration: this.getActualClipsDuration(),
+                tracks: tracksData,
+                createdAt: timestamp,
+                updatedAt: timestamp
+            };
+
+            // Sauvegarder dans DynamoDB
+            await db.put('multitrack-projects', projectData);
+
+            showNotification('Projet sauvegardé avec succès', 'success');
+            console.log('✅ Project saved:', this.projectId);
+
+            return this.projectId;
+        } catch (error) {
+            console.error('❌ Save failed:', error);
+            showNotification('Erreur lors de la sauvegarde: ' + error.message, 'error');
+            throw error;
+        }
+    }
+
+    /**
+     * Charger un projet depuis DynamoDB
+     */
+    async loadProjectFromDynamoDB(projectId) {
+        try {
+            console.log('📂 Loading project from DynamoDB:', projectId);
+            showNotification('Chargement du projet...', 'info');
+
+            if (!window.app || !window.app.storage || !window.app.storage.db) {
+                throw new Error('DynamoDB client not available');
+            }
+
+            const db = window.app.storage.db;
+            const projectData = await db.get('multitrack-projects', projectId);
+
+            if (!projectData) {
+                throw new Error('Project not found');
+            }
+
+            // Réinitialiser l'éditeur
+            this.tracks.forEach(track => {
+                track.clips = [];
+            });
+            this.audioLibrary = [];
+
+            // Restaurer les données
+            this.projectId = projectData.id;
+            this.projectName = projectData.name;
+            this.linkedNewsId = projectData.linkedNewsId;
+
+            // Charger les pistes
+            for (let i = 0; i < projectData.tracks.length && i < this.tracks.length; i++) {
+                const trackData = projectData.tracks[i];
+                const track = this.tracks[i];
+
+                track.name = trackData.name;
+                track.volume = trackData.volume;
+                track.muted = trackData.muted;
+                track.solo = trackData.solo;
+
+                // Charger les clips
+                for (const clipData of trackData.clips) {
+                    if (clipData.s3Url) {
+                        // Télécharger et décoder l'audio depuis S3
+                        const response = await fetch(clipData.s3Url);
+                        const arrayBuffer = await response.arrayBuffer();
+                        const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+
+                        // Ajouter à la bibliothèque
+                        const libraryItem = {
+                            id: clipData.libraryId,
+                            name: clipData.name,
+                            buffer: audioBuffer,
+                            duration: audioBuffer.duration,
+                            s3Url: clipData.s3Url,
+                            waveformData: null // Sera généré à la demande
+                        };
+                        this.audioLibrary.push(libraryItem);
+
+                        // Ajouter le clip à la piste
+                        const clip = {
+                            id: clipData.id,
+                            libraryId: clipData.libraryId,
+                            position: clipData.position,
+                            duration: clipData.duration,
+                            trimStart: clipData.trimStart,
+                            trimEnd: clipData.trimEnd,
+                            fadeIn: clipData.fadeIn || 0,
+                            fadeOut: clipData.fadeOut || 0,
+                            gain: clipData.gain || 1.0
+                        };
+                        track.clips.push(clip);
+                    }
+                }
+            }
+
+            // Mettre à jour l'affichage
+            this.render();
+            this.renderLibrary();
+
+            showNotification('Projet chargé avec succès', 'success');
+            console.log('✅ Project loaded:', this.projectId);
+
+            return true;
+        } catch (error) {
+            console.error('❌ Load failed:', error);
+            showNotification('Erreur lors du chargement: ' + error.message, 'error');
+            throw error;
+        }
+    }
+
+    /**
+     * Lister tous les projets de l'utilisateur
+     */
+    async listUserProjects() {
+        try {
+            if (!window.app || !window.app.storage || !window.app.storage.db) {
+                throw new Error('DynamoDB client not available');
+            }
+
+            const db = window.app.storage.db;
+            const userId = localStorage.getItem('saint-esprit-user-id') || 'unknown';
+
+            // Récupérer tous les projets (à filtrer côté client pour l'instant)
+            const allProjects = await db.getAll('multitrack-projects');
+
+            // Filtrer par userId
+            const userProjects = allProjects.filter(p => p.userId === userId);
+
+            return userProjects.sort((a, b) => b.updatedAt - a.updatedAt);
+        } catch (error) {
+            console.error('❌ Failed to list projects:', error);
+            return [];
         }
     }
 }
