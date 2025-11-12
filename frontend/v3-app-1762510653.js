@@ -3315,10 +3315,16 @@ ${news.content || 'Pas de contenu'}
                 const lancementText = document.getElementById('onair-lancement-text');
                 const audioSection = document.getElementById('onair-audio-section');
 
+                // Extraire le lancement du contenu (entre [LANCEMENT] et [/LANCEMENT])
+                const content = news.content || '';
+                const launchRegex = /\[LANCEMENT\]([\s\S]*?)\[\/LANCEMENT\]/;
+                const launchMatch = content.match(launchRegex);
+                const lancementExtracted = launchMatch && launchMatch[1] ? launchMatch[1].trim() : '';
+
                 // Afficher lancement
-                if (news.lancement && news.lancement.trim()) {
+                if (lancementExtracted) {
                     if (lancementSection) lancementSection.style.display = 'block';
-                    if (lancementText) lancementText.textContent = news.lancement;
+                    if (lancementText) lancementText.innerHTML = lancementExtracted.replace(/\n/g, '<br>');
                 } else {
                     if (lancementSection) lancementSection.style.display = 'none';
                 }
@@ -3349,12 +3355,17 @@ ${news.content || 'Pas de contenu'}
                     }
                 }
 
+                // Extraire le pied du contenu (entre [DESANNONCE] et [/DESANNONCE])
+                const desannonceRegex = /\[DESANNONCE\]([\s\S]*?)\[\/DESANNONCE\]/;
+                const desannonceMatch = content.match(desannonceRegex);
+                const piedExtracted = desannonceMatch && desannonceMatch[1] ? desannonceMatch[1].trim() : '';
+
                 // Afficher pied
                 const piedSection = document.getElementById('onair-pied-section');
                 const piedText = document.getElementById('onair-pied-text');
-                if (news.pied && news.pied.trim()) {
+                if (piedExtracted) {
                     if (piedSection) piedSection.style.display = 'block';
-                    if (piedText) piedText.textContent = news.pied;
+                    if (piedText) piedText.innerHTML = piedExtracted.replace(/\n/g, '<br>');
                 } else {
                     if (piedSection) piedSection.style.display = 'none';
                 }
