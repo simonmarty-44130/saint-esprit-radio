@@ -2064,6 +2064,9 @@ ${news.content || 'Pas de contenu'}
 
             // Show success
             this.showNotification('Animation enregistrée avec succès', 'success');
+
+            // Return to content table view
+            this.switchView('news');
         } catch (error) {
             console.error('❌ Save error:', error);
             alert('Erreur lors de la sauvegarde');
@@ -2085,6 +2088,9 @@ ${news.content || 'Pas de contenu'}
             `;
         }
         this.loadAnimations();
+
+        // Return to content table view
+        this.switchView('news');
     }
 
     showNotification(message, type = 'info') {
