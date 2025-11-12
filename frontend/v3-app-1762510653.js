@@ -2245,7 +2245,6 @@ ${news.content || 'Pas de contenu'}
             <div class="news-item ${this.currentConductor && this.currentConductor.id === c.id ? 'active' : ''}" onclick="app.editConductor('${c.id}')">
                 <div class="news-title">${c.title || 'Sans titre'}</div>
                 <div class="news-meta">${c.scheduledDate || ''} ${c.scheduledTime || ''} • ${c.segments?.length || 0} segments</div>
-                <button class="btn-delete" onclick="event.stopPropagation(); app.deleteConductor('${c.id}')" title="Supprimer ce conducteur">🗑️</button>
             </div>
         `).join('');
     }
@@ -2302,6 +2301,9 @@ ${news.content || 'Pas de contenu'}
                         <button class="btn btn-secondary" onclick="app.closeConductorEditor()">Annuler</button>
                         <button class="btn btn-primary" onclick="app.saveConductor()">💾 Enregistrer</button>
                         <button class="btn btn-success" onclick="app.startOnAir()" style="background: #f85149; margin-left: 8px;">🔴 Démarrer On Air</button>
+                        ${!(this.currentConductor.id.startsWith('conductor-') && this.currentConductor.id.includes(Date.now().toString().slice(0, -3))) ?
+                            '<button class="btn btn-danger" onclick="app.deleteConductor(\'' + this.currentConductor.id + '\')" style="margin-left: auto;">🗑️ Supprimer</button>' :
+                            ''}
                     </div>
                 </div>
 
