@@ -326,8 +326,8 @@ class MultitrackEditor {
     }
 
     isActive() {
-        const multitrackSection = document.getElementById('multitrack-section');
-        return multitrackSection && multitrackSection.classList.contains('active');
+        const multitrackView = document.getElementById('multitrack-view');
+        return multitrackView && multitrackView.classList.contains('active');
     }
 
     // Add audio clip to library
