@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saint-Esprit Radio - Newsroom v3</title>
+
+    <!-- Cognito Auth -->
+    <script>
+        const cognitoConfig = {
+            domain: 'saint-esprit-radio-auth.auth.eu-west-3.amazoncognito.com',
+            clientId: '5jst6bnhl26ekdr5a7pu9ik2f5',
+            redirectUri: window.location.origin + window.location.pathname,
+            logoutUri: window.location.origin + '/logout.html',
+            region: 'eu-west-3'
+        };
+
+        window.cognitoLogout = function() {
+            ['saint-esprit-authenticated', 'saint-esprit-auth-code', 'saint-esprit-user',
+             'cognito_id_token', 'cognito_access_token', 'cognito_refresh_token'].forEach(
+                key => localStorage.removeItem(key)
+            );
+            window.location.href = `https://${cognitoConfig.domain}/logout?client_id=${cognitoConfig.clientId}&logout_uri=${encodeURIComponent(cognitoConfig.logoutUri)}`;
+        }
+    </script>
+
+    <!-- CSS Ultra-clean -->
+    <link rel="stylesheet" href="saint-esprit-1762251336.css">
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="logo-saint-esprit-clair-icon-hd.png" alt="Saint-Esprit" class="logo">
+            <h1>Saint-Esprit</h1>
+        </div>
+
+        <nav class="nav">
+            <button class="nav-btn active" data-view="dashboard">
+                <span class="icon">🏠</span>
+                <span>Dashboard</span>
+            </button>
+            <button class="nav-btn" data-view="news">
+                <span class="icon">📰</span>
+                <span>News</span>
+            </button>
+            <button class="nav-btn" data-view="blocks">
+                <span class="icon">📋</span>
+                <span>Journaux</span>
+            </button>
+            <button class="nav-btn" data-view="animation">
+                <span class="icon">🎙️</span>
+                <span>Animation</span>
+            </button>
+            <button class="nav-btn" data-view="conductor">
+                <span class="icon">📺</span>
+                <span>Conducteur</span>
+            </button>
+            <button class="nav-btn" data-view="onair">
+                <span class="icon">🔴</span>
+                <span>ON AIR</span>
+            </button>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info" id="user-info">
+                <span class="user-avatar">👤</span>
+                <span class="user-name" id="user-name">Chargement...</span>
+            </div>
+            <button class="logout-btn" onclick="cognitoLogout()">🚪 Déconnexion</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- DASHBOARD VIEW -->
+        <div class="view active" id="dashboard-view">
+            <header class="view-header">
+                <h2>Bienvenue, <span id="welcome-name">Clara</span></h2>
+                <div class="date" id="current-date"></div>
+            </header>
+
+            <div class="cards-grid">
+                <div class="card" onclick="switchView('news')">
+                    <div class="card-icon">📰</div>
+                    <h3>News</h3>
+                    <p>Gérer les actualités</p>
+                    <div class="card-stat" id="news-count">0 aujourd'hui</div>
+                </div>
+
+                <div class="card" onclick="switchView('blocks')">
+                    <div class="card-icon">📋</div>
+                    <h3>Journaux</h3>
+                    <p>Créer les journaux</p>
+                </div>
+
+                <div class="card" onclick="switchView('animation')">
+                    <div class="card-icon">🎙️</div>
+                    <h3>Animation</h3>
+                    <p>Éléments d'animation</p>
+                </div>
+
+                <div class="card" onclick="switchView('conductor')">
+                    <div class="card-icon">📺</div>
+                    <h3>Conducteur</h3>
+                    <p>Organiser l'émission</p>
+                </div>
+
+                <div class="card card-onair" onclick="switchView('onair')">
+                    <div class="card-icon">🔴</div>
+                    <h3>ON AIR</h3>
+                    <p>Diffusion en direct</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEWS VIEW -->
+        <div class="view" id="news-view">
+            <header class="view-header">
+                <h2>📰 News</h2>
+                <button class="btn btn-primary" onclick="createNews()">+ Nouvelle News</button>
+            </header>
+
+            <div class="split-view">
+                <!-- Liste des news -->
+                <div class="list-panel">
+                    <input type="search" class="search-input" placeholder="Rechercher une news..." id="news-search">
+                    <div class="list" id="news-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">📰</div>
+                            <p>Aucune news</p>
+                            <button class="btn btn-secondary" onclick="createNews()">Créer une news</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Éditeur de news -->
+                <div class="editor-panel" id="news-editor">
+                    <div class="editor-placeholder">
+                        <div class="placeholder-icon">📝</div>
+                        <p>Sélectionnez ou créez une news</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BLOCKS VIEW -->
+        <div class="view" id="blocks-view">
+            <header class="view-header">
+                <h2>📋 Journaux</h2>
+            </header>
+            <p>Section Journaux - En construction</p>
+        </div>
+
+        <!-- ANIMATION VIEW -->
+        <div class="view" id="animation-view">
+            <header class="view-header">
+                <h2>🎙️ Animation</h2>
+            </header>
+            <p>Section Animation - En construction</p>
+        </div>
+
+        <!-- CONDUCTOR VIEW -->
+        <div class="view" id="conductor-view">
+            <header class="view-header">
+                <h2>📺 Conducteur</h2>
+            </header>
+            <p>Section Conducteur - En construction</p>
+        </div>
+
+        <!-- ON AIR VIEW -->
+        <div class="view" id="onair-view">
+            <header class="view-header">
+                <h2>🔴 ON AIR</h2>
+            </header>
+            <p>Section ON AIR - En construction</p>
+        </div>
+
+        <!-- AUDIO EDITOR VIEW -->
+        <div class="view" id="audio-editor-view">
+            <header class="view-header">
+                <div class="view-header-left">
+                    <button class="btn btn-secondary" onclick="app.returnToNews()">← Retour à la News</button>
+                    <h2>🎵 Éditeur Audio</h2>
+                </div>
+                <div class="view-header-right">
+                    <button class="btn btn-secondary" onclick="app.audioEditor.exportAudio()">💾 Exporter</button>
+                </div>
+            </header>
+
+            <div class="audio-editor-container">
+                <!-- Toolbar -->
+                <div class="audio-toolbar">
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" id="play-btn" onclick="app.audioEditor.togglePlayback()" title="Lecture/Pause (Espace)">▶️</button>
+                        <button class="toolbar-btn" onclick="app.audioEditor.stop()" title="Stop">⏹️</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn success" onclick="app.audioEditor.setInPoint()" title="Marquer point IN (I)">⬇️ IN</button>
+                        <button class="toolbar-btn danger" onclick="app.audioEditor.setOutPoint()" title="Marquer point OUT (O)">⬆️ OUT</button>
+                        <button class="toolbar-btn" onclick="app.audioEditor.clearInOut()" title="Effacer IN/OUT">🔄</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" id="cut-btn" onclick="app.audioEditor.cut()" title="Couper (Ctrl+X)" disabled>✂️</button>
+                        <button class="toolbar-btn" id="copy-btn" onclick="app.audioEditor.copy()" title="Copier (Ctrl+C)" disabled>📋</button>
+                        <button class="toolbar-btn" id="paste-btn" onclick="app.audioEditor.paste()" title="Coller (Ctrl+V)" disabled>📌</button>
+                        <button class="toolbar-btn danger" id="delete-btn" onclick="app.audioEditor.deleteSelection()" title="Supprimer (Suppr)" disabled>🗑️</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.audioEditor.normalize()" title="Normaliser">🔊</button>
+                        <button class="toolbar-btn" id="fadein-btn" onclick="app.audioEditor.fadeIn()" title="Fade In" disabled>📈</button>
+                        <button class="toolbar-btn" id="fadeout-btn" onclick="app.audioEditor.fadeOut()" title="Fade Out" disabled>📉</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" id="undo-btn" onclick="app.audioEditor.undo()" title="Annuler (Ctrl+Z)" disabled>↶</button>
+                        <button class="toolbar-btn" id="redo-btn" onclick="app.audioEditor.redo()" title="Refaire (Ctrl+Y)" disabled>↷</button>
+                    </div>
+                </div>
+
+                <!-- Waveform Display -->
+                <div class="waveform-container">
+                    <canvas id="waveform-canvas"></canvas>
+                </div>
+
+                <!-- Transport Controls -->
+                <div class="transport-controls">
+                    <div class="time-display">
+                        <span id="current-time">00:00.000</span>
+                        <span class="separator">/</span>
+                        <span id="total-duration">00:00.000</span>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="btn btn-sm" onclick="app.audioEditor.zoomIn()">🔍+</button>
+                        <button class="btn btn-sm" onclick="app.audioEditor.zoomOut()">🔍-</button>
+                        <button class="btn btn-sm" onclick="app.audioEditor.zoomFit()">⬌ Ajuster</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- AWS SDK -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1462.0.min.js"></script>
+
+    <!-- Config (AWS config DOIT être chargé en premier) -->
+    <script src="js/config/aws-config.js?v=3.0.0"></script>
+
+    <!-- Core JS (gardons ce qui fonctionne) -->
+    <script src="js/core/utils.js?v=3.0.0"></script>
+    <script src="js/core/cognito-auth.js?v=1.2"></script>
+    <script src="js/core/dynamodb-client.js?v=1762169381"></script>
+    <script src="js/core/storage-dynamodb-v2.js?v=1762169381"></script>
+    <script src="js/core/audio-storage.js?v=1762169381"></script>
+    <script src="js/managers/ContentManager.js?v=1756486244"></script>
+    <script src="js/components/NewsDurationManager.js?v=1.0"></script>
+
+    <!-- V3 App Logic -->
+    <script src="saint-esprit-1762251336.js"></script>
+
+</body>
+</html>
