@@ -57,9 +57,13 @@ class MultitrackEditor {
         // Edit modes
         this.editMode = 'normal'; // 'normal' or 'razor'
         
-        // Fade handles feature - load from saved preference
+        // Fade handles feature - enabled by default
         const savedFadeHandles = localStorage.getItem('multitrack-fade-handles');
-        this.fadeHandlesEnabled = savedFadeHandles === 'true' ? true : false;
+        this.fadeHandlesEnabled = savedFadeHandles === 'false' ? false : true; // Default to true
+
+        // Auto-crossfade when clips overlap
+        this.autoCrossfadeEnabled = true;
+        this.defaultCrossfadeDuration = 0.5; // 500ms default crossfade
         
         // News integration
         this.linkedNewsId = null;
@@ -405,21 +409,32 @@ class MultitrackEditor {
     // Add clip to track
     addClipToTrack(libraryItem, trackIndex, position) {
         if (trackIndex < 0 || trackIndex >= this.tracks.length) return;
-        
+
         const track = this.tracks[trackIndex];
-        
-        // Check for overlaps
+
+        // Check for major overlaps (more than 50% of clip duration)
+        // Allow minor overlaps for crossfades
         const endPosition = position + libraryItem.duration;
-        const hasOverlap = track.clips.some(clip => 
-            (position >= clip.position && position < clip.position + clip.duration) ||
-            (endPosition > clip.position && endPosition <= clip.position + clip.duration)
-        );
-        
-        if (hasOverlap) {
-            showNotification('Un clip existe déjà à cette position', 'warning');
+        const maxCrossfadeDuration = Math.min(libraryItem.duration * 0.5, 2.0); // Max 50% or 2 seconds
+
+        const hasMajorOverlap = track.clips.some(clip => {
+            const clipStart = clip.position;
+            const clipEnd = clip.position + clip.duration;
+
+            // Calculate overlap amount
+            const overlapStart = Math.max(position, clipStart);
+            const overlapEnd = Math.min(endPosition, clipEnd);
+            const overlapDuration = Math.max(0, overlapEnd - overlapStart);
+
+            // Block if overlap is too large (more than max crossfade duration)
+            return overlapDuration > maxCrossfadeDuration;
+        });
+
+        if (hasMajorOverlap) {
+            showNotification('Chevauchement trop important - réduisez le chevauchement pour un crossfade', 'warning');
             return;
         }
-        
+
         const clip = {
             id: Date.now(),
             libraryId: libraryItem.id,
@@ -433,10 +448,13 @@ class MultitrackEditor {
             gain: 1.0,
             color: this.getClipColor(libraryItem.type)
         };
-        
+
         track.clips.push(clip);
         track.clips.sort((a, b) => a.position - b.position);
-        
+
+        // Auto-detect and apply crossfades
+        this.detectAndApplyCrossfades(trackIndex);
+
         this.render();
         this.saveToHistory();
     }
@@ -1929,8 +1947,19 @@ class MultitrackEditor {
 
     handleMouseUp(e) {
         if (this.isDragging && this.draggedClip) {
+            // Check for crossfades if we moved a clip
+            if (this.dragType === 'move') {
+                // Find which track the clip is on
+                for (let i = 0; i < this.tracks.length; i++) {
+                    if (this.tracks[i].clips.includes(this.draggedClip)) {
+                        this.detectAndApplyCrossfades(i);
+                        break;
+                    }
+                }
+            }
+
             this.saveToHistory();
-            
+
             // If playing, restart playback to apply changes
             if (this.isPlaying) {
                 const currentPos = this.currentTime;
@@ -3993,6 +4022,48 @@ class MultitrackEditor {
             showNotification('Erreur lors de la création du crossfade', 'error');
             return false;
         }
+    }
+
+    /**
+     * Détecter et appliquer automatiquement les crossfades sur les clips qui se chevauchent
+     */
+    detectAndApplyCrossfades(trackIndex) {
+        if (!this.autoCrossfadeEnabled) return;
+
+        const track = this.tracks[trackIndex];
+        if (!track || track.clips.length < 2) return;
+
+        // Trier les clips par position
+        const sortedClips = [...track.clips].sort((a, b) => a.position - b.position);
+
+        // Parcourir les clips et détecter les chevauchements
+        for (let i = 0; i < sortedClips.length - 1; i++) {
+            const clip1 = sortedClips[i];
+            const clip2 = sortedClips[i + 1];
+
+            const clip1End = clip1.position + clip1.duration;
+            const clip2Start = clip2.position;
+            const overlap = clip1End - clip2Start;
+
+            // Si les clips se chevauchent
+            if (overlap > 0) {
+                // Calculer la durée du crossfade (la moitié du chevauchement ou le default)
+                const crossfadeDuration = Math.min(
+                    overlap,
+                    this.defaultCrossfadeDuration,
+                    clip1.duration / 2,
+                    clip2.duration / 2
+                );
+
+                // Appliquer les fades
+                clip1.fadeOut = crossfadeDuration;
+                clip2.fadeIn = crossfadeDuration;
+
+                console.log(`✨ Auto-crossfade applied: ${crossfadeDuration.toFixed(2)}s between clips on track ${trackIndex}`);
+            }
+        }
+
+        this.render();
     }
 
     /**
