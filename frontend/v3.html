@@ -716,6 +716,13 @@
                     <canvas id="multitrack-canvas" width="1200" height="400"></canvas>
                 </div>
 
+                <!-- Horizontal Scroll Controls -->
+                <div class="multitrack-scroll-controls">
+                    <button class="scroll-btn" onclick="app.multitrackEditor?.scrollLeft()" title="Défiler à gauche (Shift+←)">◀</button>
+                    <input type="range" id="multitrack-scroll" class="multitrack-scrollbar" min="0" max="100" value="0" oninput="app.multitrackEditor?.setScroll(this.value)">
+                    <button class="scroll-btn" onclick="app.multitrackEditor?.scrollRight()" title="Défiler à droite (Shift+→)">▶</button>
+                </div>
+
                 <!-- Audio Library (Chutier) -->
                 <div class="multitrack-library-section">
                     <div class="library-header">

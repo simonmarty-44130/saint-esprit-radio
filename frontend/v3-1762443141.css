@@ -1979,8 +1979,8 @@ body {
     background: #1a1a1a;
     border-radius: 8px;
     padding: 10px;
-    margin-bottom: 20px;
-    overflow-x: auto;
+    margin-bottom: 15px;
+    overflow: hidden;
 }
 
 .multitrack-tracks-container canvas {
@@ -1988,6 +1988,94 @@ body {
     height: 400px;
     display: block;
     cursor: crosshair;
+}
+
+/* Horizontal Scroll Controls */
+.multitrack-scroll-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    background: #1a1a1a;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.scroll-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    border: none;
+    background: #3a3a3a;
+    color: #00ff9f;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.scroll-btn:hover {
+    background: #4a4a4a;
+    transform: scale(1.05);
+}
+
+.scroll-btn:active {
+    transform: scale(0.95);
+}
+
+.multitrack-scrollbar {
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+    background: #3a3a3a;
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.multitrack-scrollbar {
+    --thumb-width: 60px; /* Default value, will be updated dynamically */
+}
+
+.multitrack-scrollbar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: var(--thumb-width, 60px);
+    height: 20px;
+    border-radius: 10px;
+    background: #00ff9f;
+    cursor: grab;
+    transition: background 0.2s, width 0.2s;
+}
+
+.multitrack-scrollbar::-webkit-slider-thumb:hover {
+    background: #00cc7f;
+}
+
+.multitrack-scrollbar::-webkit-slider-thumb:active {
+    cursor: grabbing;
+    background: #00aa6f;
+}
+
+.multitrack-scrollbar::-moz-range-thumb {
+    width: var(--thumb-width, 60px);
+    height: 20px;
+    border-radius: 10px;
+    background: #00ff9f;
+    cursor: grab;
+    border: none;
+    transition: background 0.2s, width 0.2s;
+}
+
+.multitrack-scrollbar::-moz-range-thumb:hover {
+    background: #00cc7f;
+}
+
+.multitrack-scrollbar::-moz-range-thumb:active {
+    cursor: grabbing;
+    background: #00aa6f;
 }
 
 /* Audio Library (Chutier) */

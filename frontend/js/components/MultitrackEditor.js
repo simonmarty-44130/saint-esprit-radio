@@ -295,24 +295,28 @@ class MultitrackEditor {
             this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
             this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
             this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-            
+
             // Drag and drop
             this.canvas.addEventListener('dragover', (e) => this.handleDragOver(e));
             this.canvas.addEventListener('drop', (e) => this.handleDrop(e));
         }
-        
+
         // Timeline click events
         if (this.timelineCanvas) {
             this.timelineCanvas.addEventListener('mousedown', (e) => this.handleTimelineClick(e));
         }
-        
+
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (this.isActive()) {
+                // Prevent Space from scrolling the page
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                }
                 this.handleKeyboard(e);
             }
         });
-        
+
         // Window resize
         window.addEventListener('resize', () => {
             if (this.isActive()) {
@@ -667,20 +671,36 @@ class MultitrackEditor {
     drawTrack(track, index) {
         const y = index * track.height;
         const width = this.canvas.width;
-        
-        // Track background
-        this.ctx.fillStyle = index % 2 === 0 ? '#1a1a1a' : '#151515';
+
+        // Track background with subtle gradient
+        const gradient = this.ctx.createLinearGradient(0, y, 0, y + track.height);
+        if (index % 2 === 0) {
+            gradient.addColorStop(0, '#1f1f1f');
+            gradient.addColorStop(1, '#1a1a1a');
+        } else {
+            gradient.addColorStop(0, '#181818');
+            gradient.addColorStop(1, '#151515');
+        }
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, y, width, track.height);
-        
+
+        // Subtle inner shadow at top of track
+        const shadowGradient = this.ctx.createLinearGradient(0, y, 0, y + 10);
+        shadowGradient.addColorStop(0, 'rgba(0, 0, 0, 0.3)');
+        shadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        this.ctx.fillStyle = shadowGradient;
+        this.ctx.fillRect(0, y, width, 10);
+
         // Track border
         this.ctx.strokeStyle = '#333';
+        this.ctx.lineWidth = 1;
         this.ctx.strokeRect(0, y, width, track.height);
-        
+
         // Draw clips
         track.clips.forEach(clip => {
             this.drawClip(clip, track, y);
         });
-        
+
         // Track header (on a separate fixed area in real implementation)
         this.drawTrackHeader(track, index);
     }
@@ -688,62 +708,92 @@ class MultitrackEditor {
     drawClip(clip, track, trackY) {
         const libraryItem = this.audioLibrary.find(item => item.id === clip.libraryId);
         if (!libraryItem) return;
-        
+
         const headerWidth = 120; // Account for track header
         const x = headerWidth + clip.position * this.pixelsPerSecond * this.zoomLevel - this.scrollX;
         const width = clip.duration * this.pixelsPerSecond * this.zoomLevel;
         const height = track.height - 10;
         const y = trackY + 5;
-        
+
         // Don't draw if outside visible area
         if (x + width < headerWidth || x > this.canvas.width) return;
-        
-        // Clip background
-        this.ctx.fillStyle = clip.color + '33'; // Semi-transparent
-        this.ctx.fillRect(x, y, width, height);
-        
-        // Clip border (highlight if selected)
+
         const isSelected = this.selection.clip && this.selection.clip.id === clip.id;
+        const cornerRadius = 8;
+
+        // Modern clip background with gradient
+        this.ctx.save();
+
+        // Create rounded rectangle path
+        this.ctx.beginPath();
+        this.ctx.roundRect(x, y, width, height, cornerRadius);
+        this.ctx.clip();
+
+        // Gradient background based on track color
+        const gradient = this.ctx.createLinearGradient(x, y, x, y + height);
+        gradient.addColorStop(0, clip.color + '40'); // More transparent at top
+        gradient.addColorStop(1, clip.color + '20'); // Less transparent at bottom
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(x, y, width, height);
+
+        // Draw waveform
+        this.drawClipWaveform(libraryItem, x, y, width, height, clip.color);
+
+        this.ctx.restore();
+
+        // Clip border with rounded corners and shadow
+        this.ctx.save();
+        if (isSelected) {
+            // Drop shadow for selected clip
+            this.ctx.shadowColor = 'rgba(255, 255, 0, 0.6)';
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowOffsetX = 0;
+            this.ctx.shadowOffsetY = 2;
+        } else {
+            // Subtle shadow for non-selected clips
+            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            this.ctx.shadowBlur = 8;
+            this.ctx.shadowOffsetX = 0;
+            this.ctx.shadowOffsetY = 2;
+        }
+
         this.ctx.strokeStyle = isSelected ? '#ffff00' : clip.color;
         this.ctx.lineWidth = isSelected ? 3 : 2;
-        this.ctx.strokeRect(x, y, width, height);
-        
-        // Add selection glow if selected
-        if (isSelected) {
-            this.ctx.shadowColor = '#ffff00';
-            this.ctx.shadowBlur = 10;
-            this.ctx.strokeRect(x, y, width, height);
-            this.ctx.shadowBlur = 0;
-        }
-        
-        // Draw waveform
-        this.drawClipWaveform(libraryItem, x, y, width, height);
-        
-        // Clip name
+        this.ctx.beginPath();
+        this.ctx.roundRect(x, y, width, height, cornerRadius);
+        this.ctx.stroke();
+
+        this.ctx.restore();
+
+        // Clip name with better visibility
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        this.ctx.fillRect(x + 2, y + 2, Math.min(width - 4, 120), 18);
         this.ctx.fillStyle = '#fff';
-        this.ctx.font = '11px sans-serif';
-        this.ctx.fillText(clip.name, x + 5, y + 15);
-        
+        this.ctx.font = 'bold 11px sans-serif';
+        this.ctx.fillText(clip.name, x + 6, y + 14);
+        this.ctx.restore();
+
         // Fade handles and curves - only if enabled
         if (this.fadeHandlesEnabled) {
             if (clip.fadeIn > 0) {
                 this.drawFadeIn(x, y, clip.fadeIn * this.pixelsPerSecond * this.zoomLevel, height);
             }
             if (clip.fadeOut > 0) {
-                this.drawFadeOut(x + width - clip.fadeOut * this.pixelsPerSecond * this.zoomLevel, 
+                this.drawFadeOut(x + width - clip.fadeOut * this.pixelsPerSecond * this.zoomLevel,
                                 y, clip.fadeOut * this.pixelsPerSecond * this.zoomLevel, height);
             }
-            
+
             // Draw fade handles (interactive corners)
             this.drawFadeHandles(x, y, width, height, isSelected, clip);
         }
     }
 
-    drawClipWaveform(libraryItem, x, y, width, height) {
+    drawClipWaveform(libraryItem, x, y, width, height, color) {
         if (!libraryItem.buffer) return;
 
-        // Arrondir les dimensions pour le cache
-        const cacheKey = `${Math.round(width)}_${Math.round(height)}`;
+        // Arrondir les dimensions pour le cache (include color in cache key)
+        const cacheKey = `${Math.round(width)}_${Math.round(height)}_${color}`;
 
         // Vérifier le cache
         if (!libraryItem.waveformCache) {
@@ -770,8 +820,11 @@ class MultitrackEditor {
             const amp = height / 2;
             const centerY = amp;
 
-            // Dark green fill
-            offscreenCtx.fillStyle = '#003300';
+            // Create gradient fill based on track color
+            const gradient = offscreenCtx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, color + 'CC'); // More opaque at top
+            gradient.addColorStop(0.5, color + '99'); // Medium in center
+            gradient.addColorStop(1, color + '66'); // More transparent at bottom
 
             // Create waveform path
             offscreenCtx.beginPath();
@@ -802,11 +855,12 @@ class MultitrackEditor {
 
             offscreenCtx.lineTo(width, centerY);
             offscreenCtx.closePath();
+            offscreenCtx.fillStyle = gradient;
             offscreenCtx.fill();
 
-            // Green outline
-            offscreenCtx.strokeStyle = '#00ff00';
-            offscreenCtx.lineWidth = 1;
+            // Bright outline with track color
+            offscreenCtx.strokeStyle = color + 'FF'; // Full opacity
+            offscreenCtx.lineWidth = 1.5;
             offscreenCtx.stroke();
 
             // Mettre en cache
@@ -909,11 +963,18 @@ class MultitrackEditor {
         // Draw track header info on the left side of the track
         const y = index * track.height;
         const headerWidth = 120;
-        
-        // Header background
-        this.ctx.fillStyle = '#222';
+
+        // Header background with gradient
+        const gradient = this.ctx.createLinearGradient(0, y, 0, y + track.height);
+        gradient.addColorStop(0, '#2a2a2a');
+        gradient.addColorStop(1, '#1a1a1a');
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, y, headerWidth, track.height);
-        
+
+        // Track color indicator bar on left edge
+        this.ctx.fillStyle = track.color;
+        this.ctx.fillRect(0, y, 4, track.height);
+
         // Recording indicator for armed tracks
         if (track.armed && this.isRecording) {
             // Pulsing red background
@@ -921,52 +982,116 @@ class MultitrackEditor {
             this.ctx.fillStyle = `rgba(255, 0, 0, ${pulse * 0.2})`;
             this.ctx.fillRect(0, y, headerWidth, track.height);
         }
-        
-        // Track name
+
+        // Track name with shadow for depth
+        this.ctx.save();
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.shadowBlur = 3;
         this.ctx.fillStyle = track.armed ? '#ff3333' : '#fff';
         this.ctx.font = 'bold 12px sans-serif';
         this.ctx.fillText(track.name, 10, y + 20);
-        
-        // Draw control indicators
+        this.ctx.restore();
+
+        // Draw control indicators with modern look
         const buttonsY = y + 35;
         const buttonSize = 20;
         const buttonSpacing = 25;
-        
-        // Mute button
-        this.ctx.fillStyle = track.muted ? '#ff3333' : '#444';
-        this.ctx.fillRect(10, buttonsY, buttonSize, buttonSize);
+
+        // Mute button with rounded corners and gradient
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.roundRect(10, buttonsY, buttonSize, buttonSize, 4);
+        if (track.muted) {
+            const btnGradient = this.ctx.createLinearGradient(10, buttonsY, 10, buttonsY + buttonSize);
+            btnGradient.addColorStop(0, '#ff5555');
+            btnGradient.addColorStop(1, '#cc0000');
+            this.ctx.fillStyle = btnGradient;
+        } else {
+            this.ctx.fillStyle = '#333';
+        }
+        this.ctx.fill();
+        this.ctx.strokeStyle = track.muted ? '#ff3333' : '#555';
+        this.ctx.lineWidth = 1;
+        this.ctx.stroke();
         this.ctx.fillStyle = track.muted ? '#fff' : '#888';
         this.ctx.font = 'bold 10px sans-serif';
         this.ctx.textAlign = 'center';
         this.ctx.fillText('M', 20, buttonsY + 14);
-        
-        // Solo button
-        this.ctx.fillStyle = track.solo ? '#ffaa00' : '#444';
-        this.ctx.fillRect(10 + buttonSpacing, buttonsY, buttonSize, buttonSize);
+        this.ctx.restore();
+
+        // Solo button with rounded corners and gradient
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.roundRect(10 + buttonSpacing, buttonsY, buttonSize, buttonSize, 4);
+        if (track.solo) {
+            const btnGradient = this.ctx.createLinearGradient(10 + buttonSpacing, buttonsY, 10 + buttonSpacing, buttonsY + buttonSize);
+            btnGradient.addColorStop(0, '#ffcc00');
+            btnGradient.addColorStop(1, '#ff9900');
+            this.ctx.fillStyle = btnGradient;
+        } else {
+            this.ctx.fillStyle = '#333';
+        }
+        this.ctx.fill();
+        this.ctx.strokeStyle = track.solo ? '#ffaa00' : '#555';
+        this.ctx.lineWidth = 1;
+        this.ctx.stroke();
         this.ctx.fillStyle = track.solo ? '#fff' : '#888';
         this.ctx.fillText('S', 20 + buttonSpacing, buttonsY + 14);
-        
-        // Arm button
-        this.ctx.fillStyle = track.armed ? '#ff0000' : '#444';
-        this.ctx.fillRect(10 + buttonSpacing * 2, buttonsY, buttonSize, buttonSize);
+        this.ctx.restore();
+
+        // Arm button with rounded corners and gradient
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.roundRect(10 + buttonSpacing * 2, buttonsY, buttonSize, buttonSize, 4);
+        if (track.armed) {
+            const btnGradient = this.ctx.createLinearGradient(10 + buttonSpacing * 2, buttonsY, 10 + buttonSpacing * 2, buttonsY + buttonSize);
+            btnGradient.addColorStop(0, '#ff4444');
+            btnGradient.addColorStop(1, '#cc0000');
+            this.ctx.fillStyle = btnGradient;
+        } else {
+            this.ctx.fillStyle = '#333';
+        }
+        this.ctx.fill();
+        this.ctx.strokeStyle = track.armed ? '#ff3333' : '#555';
+        this.ctx.lineWidth = 1;
+        this.ctx.stroke();
         this.ctx.fillStyle = track.armed ? '#fff' : '#888';
         this.ctx.fillText('R', 20 + buttonSpacing * 2, buttonsY + 14);
-        
-        // Volume indicator
-        this.ctx.fillStyle = '#666';
-        this.ctx.fillRect(10, buttonsY + 25, 75, 4);
-        this.ctx.fillStyle = '#00ff9f';
-        this.ctx.fillRect(10, buttonsY + 25, 75 * track.volume, 4);
-        
+        this.ctx.restore();
+
+        // Volume indicator with modern gradient bar
+        this.ctx.save();
+        // Background track
+        this.ctx.fillStyle = '#222';
+        this.ctx.beginPath();
+        this.ctx.roundRect(10, buttonsY + 25, 75, 6, 3);
+        this.ctx.fill();
+        // Volume bar with gradient
+        if (track.volume > 0) {
+            const volGradient = this.ctx.createLinearGradient(10, buttonsY + 25, 10 + 75 * track.volume, buttonsY + 25);
+            volGradient.addColorStop(0, '#00ff9f');
+            volGradient.addColorStop(1, '#00cc7f');
+            this.ctx.fillStyle = volGradient;
+            this.ctx.beginPath();
+            this.ctx.roundRect(10, buttonsY + 25, 75 * track.volume, 6, 3);
+            this.ctx.fill();
+        }
+        this.ctx.restore();
+
         this.ctx.textAlign = 'left';
-        
-        // Draw separator
+
+        // Draw separator with shadow for depth
+        this.ctx.save();
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.shadowBlur = 5;
+        this.ctx.shadowOffsetX = 2;
         this.ctx.strokeStyle = '#444';
         this.ctx.lineWidth = 1;
         this.ctx.beginPath();
         this.ctx.moveTo(headerWidth, y);
         this.ctx.lineTo(headerWidth, y + track.height);
         this.ctx.stroke();
+        this.ctx.restore();
     }
 
     drawInOutPoints() {
@@ -1880,15 +2005,25 @@ class MultitrackEditor {
         // Navigation with arrow keys
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
-            const step = e.shiftKey ? this.fastStepSize : this.stepSize;
-            this.movePlayhead(-step);
+            if (e.shiftKey) {
+                // Shift+Left: Scroll view to the left
+                this.scrollLeft();
+            } else {
+                // Left: Move playhead
+                this.movePlayhead(-this.stepSize);
+            }
             return;
         }
-        
+
         if (e.key === 'ArrowRight') {
             e.preventDefault();
-            const step = e.shiftKey ? this.fastStepSize : this.stepSize;
-            this.movePlayhead(step);
+            if (e.shiftKey) {
+                // Shift+Right: Scroll view to the right
+                this.scrollRight();
+            } else {
+                // Right: Move playhead
+                this.movePlayhead(this.stepSize);
+            }
             return;
         }
         
@@ -2152,11 +2287,13 @@ class MultitrackEditor {
     zoomIn() {
         this.zoomLevel = Math.min(10, this.zoomLevel * 1.2);
         this.render();
+        this.updateScrollbar();
     }
 
     zoomOut() {
         this.zoomLevel = Math.max(0.1, this.zoomLevel / 1.2);
         this.render();
+        this.updateScrollbar();
     }
 
     zoomFit() {
@@ -2166,6 +2303,7 @@ class MultitrackEditor {
             this.zoomLevel = this.canvas.width / (maxDuration * this.pixelsPerSecond);
             this.scrollX = 0;
             this.render();
+            this.updateScrollbar();
         }
     }
 
@@ -2255,13 +2393,25 @@ class MultitrackEditor {
     }
     
     updateScrollbar() {
-        // Update the horizontal scrollbar position
+        // Update the horizontal scrollbar position and thumb size
         const scrollbar = document.getElementById('multitrack-scroll');
         if (scrollbar) {
             const totalWidth = this.duration * this.pixelsPerSecond * this.zoomLevel;
             const visibleWidth = this.canvas.width - 120;
             const scrollPercent = (this.scrollX / (totalWidth - visibleWidth)) * 100;
             scrollbar.value = Math.max(0, Math.min(100, scrollPercent));
+
+            // Calculate thumb width proportional to zoom level
+            // Get the actual width of the scrollbar in pixels
+            const scrollbarWidth = scrollbar.offsetWidth || 800; // Fallback to 800px
+
+            // Calculate what percentage of the timeline is visible
+            const visibleRatio = totalWidth > 0 ? Math.min(1, visibleWidth / totalWidth) : 1;
+
+            // Calculate thumb width in pixels (minimum 30px, maximum is scrollbar width)
+            const thumbWidthPx = Math.max(30, Math.min(scrollbarWidth, scrollbarWidth * visibleRatio));
+
+            scrollbar.style.setProperty('--thumb-width', `${thumbWidthPx}px`);
         }
     }
     
@@ -2331,6 +2481,26 @@ class MultitrackEditor {
         const maxScroll = Math.max(0, this.getMaxDuration() * this.pixelsPerSecond * this.zoomLevel - this.canvas.width);
         this.scrollX = (value / 100) * maxScroll;
         this.render();
+        this.updateScrollbar();
+    }
+
+    scrollLeft() {
+        // Scroll left by 10% of visible width
+        const viewWidth = this.canvas.width - 120; // Account for header
+        const scrollAmount = viewWidth * 0.1;
+        this.scrollX = Math.max(0, this.scrollX - scrollAmount);
+        this.render();
+        this.updateScrollbar();
+    }
+
+    scrollRight() {
+        // Scroll right by 10% of visible width
+        const viewWidth = this.canvas.width - 120; // Account for header
+        const scrollAmount = viewWidth * 0.1;
+        const maxScroll = Math.max(0, this.getMaxDuration() * this.pixelsPerSecond * this.zoomLevel - viewWidth);
+        this.scrollX = Math.min(maxScroll, this.scrollX + scrollAmount);
+        this.render();
+        this.updateScrollbar();
     }
 
     cut() {
