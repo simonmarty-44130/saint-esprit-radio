@@ -671,10 +671,25 @@ class SaintEspritApp {
                         <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Paramètres</h3>
                         <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Configuration</p>
                     </div>
+
+                    <!-- Thor Podcast - Titre & Résumé -->
+                    <a href="https://titre.thorpodcast.link" target="_blank" style="text-decoration: none; cursor: pointer; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2); transition: all 0.3s ease; border: 2px solid transparent; display: block;">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">📝</div>
+                        <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Titre & Résumé</h3>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Générateur Thor Podcast</p>
+                    </a>
+
+                    <!-- Thor Podcast - Article Web -->
+                    <a href="https://web.thorpodcast.link" target="_blank" style="text-decoration: none; cursor: pointer; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2); transition: all 0.3s ease; border: 2px solid transparent; display: block;">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">📰</div>
+                        <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Article Web</h3>
+                        <p style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">Générateur Thor Podcast</p>
+                    </a>
                 </div>
 
                 <style>
-                    .dashboard-container > div > div:hover {
+                    .dashboard-container > div > div:hover,
+                    .dashboard-container > div > a:hover {
                         transform: translateY(-4px) scale(1.02);
                         box-shadow: 0 12px 32px rgba(0,0,0,0.15);
                         border-color: rgba(255,255,255,0.3);

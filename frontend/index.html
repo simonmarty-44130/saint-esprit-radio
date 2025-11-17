@@ -3,308 +3,811 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saint Esprit - Système de Newsroom v2.1.1</title>
+    <title>Saint-Esprit Radio - Newsroom v3</title>
 
-    <!-- Cognito Auth inline -->
+    <!-- Cognito Auth -->
     <script>
-        // Configuration Cognito pour le bouton de déconnexion
         const cognitoConfig = {
             domain: 'saint-esprit-radio-auth.auth.eu-west-3.amazoncognito.com',
             clientId: '5jst6bnhl26ekdr5a7pu9ik2f5',
-            redirectUri: window.location.origin + '/',
+            redirectUri: window.location.origin + window.location.pathname,
             logoutUri: window.location.origin + '/logout.html',
             region: 'eu-west-3'
         };
 
-        // Fonction de déconnexion
         window.cognitoLogout = function() {
-            localStorage.removeItem('saint-esprit-authenticated');
-            localStorage.removeItem('saint-esprit-auth-code');
-            localStorage.removeItem('saint-esprit-user');
-            localStorage.removeItem('cognito_id_token');
-            localStorage.removeItem('cognito_access_token');
-            localStorage.removeItem('cognito_refresh_token');
-            const logoutUrl = `https://${cognitoConfig.domain}/logout?` +
-                `client_id=${cognitoConfig.clientId}&` +
-                `logout_uri=${encodeURIComponent(cognitoConfig.logoutUri)}`;
-            window.location.href = logoutUrl;
+            ['saint-esprit-authenticated', 'saint-esprit-auth-code', 'saint-esprit-user',
+             'cognito_id_token', 'cognito_access_token', 'cognito_refresh_token'].forEach(
+                key => localStorage.removeItem(key)
+            );
+            window.location.href = `https://${cognitoConfig.domain}/logout?client_id=${cognitoConfig.clientId}&logout_uri=${encodeURIComponent(cognitoConfig.logoutUri)}`;
         }
-
-        // Ne plus intercepter le code OAuth - laisser cognito-auth.js gérer tout
     </script>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/core/reset-v3.css">
-    <link rel="stylesheet" href="css/core/utilities.css">
-    <link rel="stylesheet" href="css/layout-v2.css?v=1762171000">
-    <link rel="stylesheet" href="css/components/buttons.css">
-    <link rel="stylesheet" href="css/components/forms.css">
-    <link rel="stylesheet" href="css/components/modals.css">
-    <link rel="stylesheet" href="css/components/tables.css">
-    <link rel="stylesheet" href="css/components/sidebar-force.css?v=1762170000">
-    <link rel="stylesheet" href="css/sections/dashboard.css">
-    <link rel="stylesheet" href="css/sections/news.css">
-    <link rel="stylesheet" href="css/sections/blocks.css">
-    <link rel="stylesheet" href="css/sections/animation.css">
-    <link rel="stylesheet" href="css/sections/conductor.css">
-    <link rel="stylesheet" href="css/theme-white-override.css?v=2.0">
-
-    <!-- V3 Design System - DOIT ÊTRE EN DERNIER pour avoir la priorité -->
-    <link rel="stylesheet" href="css/v3-design.css?v=1.1">
+    <!-- CSS Ultra-clean -->
+    <link rel="stylesheet" href="v3-1762443141.css">
 </head>
-<body data-current-tab="dashboard">
+<body>
 
-    <!-- ==================================
-         SIDEBAR NAVIGATION (Dashboard only)
-         ================================== -->
-    <nav id="sidebar">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
         <div class="sidebar-header">
-            <img src="logo-saint-esprit-clair.png" alt="Saint-Esprit" class="logo-expanded" style="height: 90px; width: auto;">
-            <img src="logo-saint-esprit-clair-icon-hd.png" alt="Saint-Esprit" class="logo-collapsed" style="height: 45px; width: auto;">
+            <img src="logo-saint-esprit-clair-icon-hd.png" alt="Saint-Esprit" class="logo">
+            <h1>Saint-Esprit</h1>
         </div>
 
-        <div class="nav-container">
-            <div class="nav-section">
-                <div class="nav-section-title">Accueil</div>
-                <button class="nav-item active" data-tab="dashboard">
-                    <span class="nav-icon">🏠</span>
-                    <span class="nav-text">Dashboard</span>
-                    <span class="nav-shortcut">F1</span>
-                </button>
-            </div>
+        <nav class="nav">
+            <button class="nav-btn active" data-view="dashboard">
+                <span class="icon">🏠</span>
+                <span>Dashboard</span>
+            </button>
+            <button class="nav-btn" data-view="news">
+                <span class="icon">📄</span>
+                <span>Contenus</span>
+            </button>
+            <button class="nav-btn" data-view="archives">
+                <span class="icon">📦</span>
+                <span>Archives</span>
+            </button>
+            <button class="nav-btn" data-view="blocks">
+                <span class="icon">📋</span>
+                <span>Journaux</span>
+            </button>
+            <button class="nav-btn" data-view="conductor">
+                <span class="icon">📺</span>
+                <span>Conducteur</span>
+            </button>
+            <button class="nav-btn" data-view="onair">
+                <span class="icon">🔴</span>
+                <span>ON AIR</span>
+            </button>
+            <button class="nav-btn" data-view="multitrack">
+                <span class="icon">🎚️</span>
+                <span>Multipiste</span>
+            </button>
+        </nav>
 
-            <div class="nav-section">
-                <div class="nav-section-title">📝 Contenu</div>
-                <button class="nav-item" data-tab="news">
-                    <span class="nav-icon">📰</span>
-                    <span class="nav-text">News</span>
-                    <span class="nav-shortcut">F2</span>
-                </button>
-                <button class="nav-item" data-tab="blocks">
-                    <span class="nav-icon">📋</span>
-                    <span class="nav-text">Journaux</span>
-                    <span class="nav-shortcut">F3</span>
-                </button>
-                <button class="nav-item" data-tab="animation">
-                    <span class="nav-icon">🎙️</span>
-                    <span class="nav-text">Animation</span>
-                    <span class="nav-shortcut">F4</span>
-                </button>
+        <div class="sidebar-footer">
+            <div class="user-info" id="user-info">
+                <span class="user-avatar">👤</span>
+                <span class="user-name" id="user-name">Chargement...</span>
             </div>
+            <button class="logout-btn" onclick="cognitoLogout()">🚪 Déconnexion</button>
+        </div>
+    </aside>
 
-            <div class="nav-section">
-                <div class="nav-section-title">📡 Diffusion</div>
-                <button class="nav-item" data-tab="conductor">
-                    <span class="nav-icon">📋</span>
-                    <span class="nav-text">Conducteur</span>
-                    <span class="nav-shortcut">F9</span>
-                </button>
-                <button class="nav-item" data-tab="onair">
-                    <span class="nav-icon">🔴</span>
-                    <span class="nav-text">ON AIR</span>
-                    <span class="nav-shortcut">Shift+F9</span>
-                </button>
-            </div>
+    <!-- MAIN CONTENT -->
+    <main class="main">
 
-            <div class="nav-section">
-                <div class="nav-section-title">Configuration</div>
-                <button class="nav-item" data-tab="settings">
-                    <span class="nav-icon">⚙️</span>
-                    <span class="nav-text">Paramètres</span>
-                    <span class="nav-shortcut">F10</span>
-                </button>
+        <!-- DASHBOARD VIEW -->
+        <div class="view active" id="dashboard-view">
+            <header class="view-header">
+                <h2>Bienvenue, <span id="welcome-name">Clara</span></h2>
+                <div class="date" id="current-date"></div>
+            </header>
+
+            <div class="cards-grid">
+                <div class="card" onclick="app.switchView('news')">
+                    <div class="card-icon">📄</div>
+                    <h3>Contenus</h3>
+                    <p>News et animations</p>
+                    <div class="card-stat" id="contents-count">0 aujourd'hui</div>
+                </div>
+
+                <div class="card" onclick="app.switchView('archives')">
+                    <div class="card-icon">📦</div>
+                    <h3>Archives</h3>
+                    <p>Contenus archivés</p>
+                    <div class="card-stat" id="archives-count">0 archives</div>
+                </div>
+
+                <div class="card" onclick="app.switchView('blocks')">
+                    <div class="card-icon">📋</div>
+                    <h3>Journaux</h3>
+                    <p>Créer les journaux</p>
+                </div>
+
+                <div class="card" onclick="app.switchView('conductor')">
+                    <div class="card-icon">📺</div>
+                    <h3>Conducteur</h3>
+                    <p>Organiser l'émission</p>
+                </div>
+
+                <div class="card card-onair" onclick="app.switchView('onair')">
+                    <div class="card-icon">🔴</div>
+                    <h3>ON AIR</h3>
+                    <p>Diffusion en direct</p>
+                </div>
+
+                <a href="https://titre.thorpodcast.link" target="_blank" class="card card-external" style="text-decoration: none; color: inherit;">
+                    <div class="card-icon">📝</div>
+                    <h3>Titre &amp; Résumé</h3>
+                    <p>Générer depuis le conducteur</p>
+                </a>
+
+                <a href="https://web.thorpodcast.link" target="_blank" class="card card-external" style="text-decoration: none; color: inherit;">
+                    <div class="card-icon">🌐</div>
+                    <h3>Article Web</h3>
+                    <p>Générer depuis un MP3</p>
+                </a>
             </div>
         </div>
-    </nav>
 
-    <!-- ==================================
-         MAIN CONTENT
-         ================================== -->
-    <div class="main-content">
-
-        <!-- HEADER -->
-        <header class="header">
-            <!-- Logo (visible hors dashboard) -->
-            <div class="header-logo" onclick="app.switchTab('dashboard')">
-                <img src="logo-saint-esprit-clair-icon-hd.png" alt="Saint-Esprit">
-                <span class="header-logo-text">Saint-Esprit</span>
-            </div>
-
-            <!-- Navigation horizontale (visible hors dashboard) -->
-            <nav class="header-nav">
-                <button class="header-nav-item" data-tab="news" onclick="app.switchTab('news')">📰 News</button>
-                <button class="header-nav-item" data-tab="blocks" onclick="app.switchTab('blocks')">📋 Journaux</button>
-                <button class="header-nav-item" data-tab="animation" onclick="app.switchTab('animation')">🎙️ Animation</button>
-                <button class="header-nav-item" data-tab="conductor" onclick="app.switchTab('conductor')">📋 Conducteur</button>
-                <button class="header-nav-item" data-tab="onair" onclick="app.switchTab('onair')">🔴 ON AIR</button>
-                <button class="header-nav-item" data-tab="settings" onclick="app.switchTab('settings')">⚙️</button>
-            </nav>
-
-            <!-- Timer Display (visible sur dashboard) -->
-            <div class="timer-display" id="main-timer-display">
-                <div class="timer-item">
-                    <div class="timer-label">TIME</div>
-                    <div class="timer-value" id="current-time">00:00:00</div>
+        <!-- NEWS VIEW (CONTENUS UNIFIÉS) -->
+        <div class="view" id="news-view">
+            <!-- HEADER -->
+            <div class="news-header">
+                <h1>
+                    📄 Contenus
+                    <span class="news-count" id="news-total-count">0 contenus</span>
+                </h1>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary" onclick="createNews()">➕ News</button>
+                    <button class="btn btn-primary" onclick="app.createAnimation()">➕ Animation</button>
                 </div>
             </div>
 
-            <!-- Controls (toujours visible) -->
-            <div class="header-controls">
-                <span id="user-display"></span>
-                <button class="quick-action logout" onclick="window.cognitoLogout()">🚪</button>
+            <!-- TOOLBAR -->
+            <div class="news-toolbar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Rechercher par titre, auteur, contenu..." id="news-search-input">
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Type:</span>
+                    <select id="filter-type">
+                        <option value="">Tous</option>
+                        <option value="news">📰 News</option>
+                        <option value="animation">🎙️ Animations</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Statut:</span>
+                    <select id="filter-status">
+                        <option value="">Tous</option>
+                        <option value="draft">Brouillon</option>
+                        <option value="review">En relecture</option>
+                        <option value="ready">Prêt</option>
+                        <option value="published">Publié</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Catégorie:</span>
+                    <select id="filter-category">
+                        <option value="">Toutes</option>
+                        <option value="general">Général</option>
+                        <option value="politique">Politique</option>
+                        <option value="sport">Sport</option>
+                        <option value="culture">Culture</option>
+                        <option value="international">International</option>
+                        <option value="economie">Économie</option>
+                        <option value="sommaire">Sommaire journal</option>
+                        <option value="breve">Brève</option>
+                        <option value="chronique">Chronique</option>
+                        <option value="meteo">Météo</option>
+                        <option value="billet">Billet d'humeur</option>
+                        <option value="speak">Speak</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Période:</span>
+                    <select id="filter-period">
+                        <option value="all">Toutes</option>
+                        <option value="today">Aujourd'hui</option>
+                        <option value="week">Cette semaine</option>
+                        <option value="month">Ce mois</option>
+                    </select>
+                </div>
             </div>
-        </header>
 
-        <!-- MAIN CONTAINER (contenu scrollable) -->
-        <div class="main-container">
-
-            <!-- DASHBOARD SECTION -->
-            <div id="dashboard-section" class="section active">
-                <!-- Dashboard content injected by JS -->
+            <!-- TABLE -->
+            <div class="news-table-container">
+                <table class="news-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 120px;" data-sort="status">Statut <span class="sort-indicator">▼</span></th>
+                            <th style="width: 350px;" data-sort="title">Titre <span class="sort-indicator"></span></th>
+                            <th style="width: 100px;" data-sort="category">Catégorie <span class="sort-indicator"></span></th>
+                            <th style="width: 180px;" data-sort="author">Auteur <span class="sort-indicator"></span></th>
+                            <th style="width: 140px;" data-sort="createdAt">Créé le <span class="sort-indicator"></span></th>
+                            <th style="width: 140px;" data-sort="updatedAt">Modifié le <span class="sort-indicator"></span></th>
+                            <th style="width: 140px;" data-sort="scheduledDate">Diffusion <span class="sort-indicator"></span></th>
+                            <th style="width: 80px;" data-sort="duration">Durée <span class="sort-indicator"></span></th>
+                            <th style="width: 120px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="news-table-body">
+                        <!-- Les lignes seront générées par JS -->
+                        <tr>
+                            <td colspan="9" style="text-align: center; padding: 40px;">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📰</div>
+                                    <p>Aucune news</p>
+                                    <button class="btn btn-secondary" onclick="createNews()">Créer une news</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <!-- NEWS SECTION -->
-            <div id="news-section" class="section">
-                <aside class="sidebar">
-                    <div class="sidebar-header">
-                        <h2>Liste des News</h2>
-                        <button class="btn btn-primary" onclick="app.newsManager.create()">+ Nouveau</button>
+            <!-- FOOTER STATS -->
+            <div class="news-footer">
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Total:</span>
+                        <span class="stat-value" id="stat-total">0</span>
                     </div>
-                    <input type="text" placeholder="Rechercher..." id="news-search">
-                    <div id="news-list" class="news-list"></div>
-                </aside>
-                <main class="content-area">
-                    <div class="welcome-screen">
-                        <h2>Bienvenue dans la section News</h2>
-                        <p>Créez et gérez vos actualités</p>
-                        <button class="btn btn-primary" onclick="app.newsManager.create()">📰 Créer une News</button>
+                    <div class="stat-item">
+                        <span class="stat-label">Brouillons:</span>
+                        <span class="stat-value" id="stat-draft">0</span>
                     </div>
-                    <div id="news-editor" class="editor-container hidden"></div>
-                </main>
-            </div>
-
-            <!-- BLOCKS SECTION -->
-            <div id="blocks-section" class="section">
-                <aside class="sidebar">
-                    <div class="sidebar-header">
-                        <h2>Liste des Journaux</h2>
-                        <button class="btn btn-primary" onclick="app.blockManager.create()">+ Nouveau</button>
+                    <div class="stat-item">
+                        <span class="stat-label">En relecture:</span>
+                        <span class="stat-value" id="stat-review">0</span>
                     </div>
-                    <input type="text" placeholder="Rechercher..." id="blocks-search">
-                    <div id="blocks-list" class="blocks-list"></div>
-                </aside>
-                <main class="content-area">
-                    <div class="welcome-screen">
-                        <h2>Bienvenue dans la section Journaux</h2>
-                        <p>Créez et gérez vos journaux</p>
-                        <button class="btn btn-primary" onclick="app.blockManager.create()">📋 Créer un Journal</button>
+                    <div class="stat-item">
+                        <span class="stat-label">Prêts:</span>
+                        <span class="stat-value" id="stat-ready">0</span>
                     </div>
-                    <div id="blocks-editor" class="editor-container hidden"></div>
-                </main>
-            </div>
-
-            <!-- ANIMATION SECTION -->
-            <div id="animation-section" class="section">
-                <aside class="sidebar">
-                    <div class="sidebar-header">
-                        <h2>Liste des Animations</h2>
-                        <button class="btn btn-primary" onclick="app.animationManager.create()">+ Nouveau</button>
+                    <div class="stat-item">
+                        <span class="stat-label">Publiés:</span>
+                        <span class="stat-value" id="stat-published">0</span>
                     </div>
-                    <input type="text" placeholder="Rechercher..." id="animation-search">
-                    <div id="animation-list" class="animation-list"></div>
-                </aside>
-                <main class="content-area">
-                    <div class="welcome-screen">
-                        <h2>Bienvenue dans la section Animation</h2>
-                        <p>Créez et gérez vos éléments d'animation</p>
-                        <button class="btn btn-primary" onclick="app.animationManager.create()">🎙️ Créer une Animation</button>
-                    </div>
-                    <div id="animation-editor" class="editor-container hidden"></div>
-                </main>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Durée totale:</span>
+                    <span class="stat-value" id="stat-duration">00:00</span>
+                </div>
             </div>
 
-            <!-- CONDUCTOR SECTION -->
-            <div id="conductor-section" class="section">
-                <main class="content-area">
-                    <!-- Conductor content will be injected here -->
-                </main>
+            <!-- NEWS EDITOR -->
+            <div class="editor-panel" id="news-editor" style="display: none;">
+                <div class="editor-placeholder">
+                    <div class="placeholder-icon">📝</div>
+                    <p>Sélectionnez ou créez une news</p>
+                </div>
             </div>
-
-            <!-- ON AIR SECTION -->
-            <div id="onair-section" class="section">
-                <main class="content-area">
-                    <!-- On Air content will be injected here -->
-                </main>
-            </div>
-
-            <!-- SETTINGS SECTION -->
-            <div id="settings-section" class="section">
-                <main class="content-area">
-                    <!-- Settings content will be injected here -->
-                </main>
-            </div>
-
         </div>
-    </div>
 
-    <!-- Modal Container -->
-    <div id="modal-container"></div>
+        <!-- ARCHIVES VIEW -->
+        <div class="view" id="archives-view">
+            <!-- HEADER -->
+            <div class="news-header">
+                <h1>
+                    📦 Archives
+                    <span class="news-count" id="archives-total-count">0 archives</span>
+                </h1>
+            </div>
+
+            <!-- TOOLBAR -->
+            <div class="news-toolbar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Rechercher dans les archives..." id="archives-search-input">
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Catégorie:</span>
+                    <select id="archives-filter-category">
+                        <option value="">Toutes</option>
+                        <option value="general">Général</option>
+                        <option value="politique">Politique</option>
+                        <option value="sport">Sport</option>
+                        <option value="culture">Culture</option>
+                        <option value="international">International</option>
+                        <option value="economie">Économie</option>
+                        <option value="sommaire">Sommaire journal</option>
+                        <option value="breve">Brève</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Période:</span>
+                    <select id="archives-filter-period">
+                        <option value="all">Toutes</option>
+                        <option value="week">Cette semaine</option>
+                        <option value="month">Ce mois</option>
+                        <option value="year">Cette année</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- TABLE -->
+            <div class="news-table-container">
+                <table class="news-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="title">Titre</th>
+                            <th data-sort="category">Catégorie</th>
+                            <th data-sort="author">Auteur</th>
+                            <th data-sort="createdAt">Créé le</th>
+                            <th data-sort="updatedAt">Modifié le</th>
+                            <th data-sort="scheduledDate">Diffusé le</th>
+                            <th data-sort="duration">Durée</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archives-table-body">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 40px;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                                <div style="color: var(--text-muted);">Aucune archive</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- FOOTER STATS -->
+            <div class="news-footer">
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Total:</span>
+                        <span class="stat-value" id="archives-stat-total">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Durée totale:</span>
+                        <span class="stat-value" id="archives-stat-duration">0h 0min</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BLOCKS VIEW (JOURNAUX) -->
+        <div class="view" id="blocks-view">
+            <header class="view-header">
+                <h2>📋 Journaux</h2>
+                <button class="btn btn-primary" onclick="app.createJournal()">+ Nouveau Journal</button>
+            </header>
+
+            <div class="split-view">
+                <!-- Liste des journaux -->
+                <div class="list-panel">
+                    <input type="search" class="search-input" placeholder="Rechercher un journal..." id="journal-search">
+                    <div class="list" id="journal-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">📋</div>
+                            <p>Aucun journal</p>
+                            <button class="btn btn-secondary" onclick="app.createJournal()">Créer un journal</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vue du journal -->
+                <div class="editor-panel" id="journal-editor">
+                    <div class="editor-placeholder">
+                        <div class="placeholder-icon">📋</div>
+                        <p>Sélectionnez ou créez un journal</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANIMATION VIEW -->
+        <div class="view" id="animation-view">
+            <header class="view-header">
+                <h2>🎙️ Animation</h2>
+                <button class="btn btn-primary" onclick="app.createAnimation()">+ Nouvelle Animation</button>
+            </header>
+
+            <div class="split-view">
+                <!-- Liste des animations -->
+                <div class="list-panel">
+                    <input type="search" class="search-input" placeholder="Rechercher une animation..." onkeyup="app.filterAnimations(this.value)">
+                    <div class="list" id="animations-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">🎙️</div>
+                            <p>Aucune animation</p>
+                            <button class="btn btn-secondary" onclick="app.createAnimation()">Créer une animation</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Éditeur d'animation -->
+                <div class="editor-panel" id="animations-editor">
+                    <div class="editor-placeholder">
+                        <div class="placeholder-icon">📝</div>
+                        <p>Sélectionnez ou créez une animation</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONDUCTOR VIEW -->
+        <div class="view" id="conductor-view">
+            <header class="view-header">
+                <h2>📺 Conducteur</h2>
+                <button class="btn btn-primary" onclick="app.createConductor()">+ Nouveau Conducteur</button>
+            </header>
+
+            <div class="split-view">
+                <!-- Liste des conducteurs -->
+                <div class="list-panel">
+                    <input type="search" class="search-input" placeholder="Rechercher un conducteur..." id="conductor-search">
+                    <div class="list" id="conductor-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">📺</div>
+                            <p>Aucun conducteur</p>
+                            <button class="btn btn-secondary" onclick="app.createConductor()">Créer un conducteur</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vue du conducteur -->
+                <div class="editor-panel" id="conductor-editor">
+                    <div class="editor-placeholder">
+                        <div class="placeholder-icon">📺</div>
+                        <p>Sélectionnez ou créez un conducteur</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ON AIR VIEW -->
+        <div class="view" id="onair-view">
+            <!-- Top Bar -->
+            <div class="onair-topbar">
+                <div class="onair-topbar-logo">
+                    <div class="onair-logo-icon">🔴</div>
+                    <span>Saint-Esprit</span>
+                </div>
+
+                <div class="onair-topbar-status">
+                    <div class="onair-live-badge">
+                        <span class="onair-live-dot"></span>
+                        <span>ON AIR</span>
+                    </div>
+                    <div class="onair-topbar-time" id="onair-clock">--:--:--</div>
+                </div>
+
+                <button class="btn btn-secondary" onclick="app.exitOnAir()">✕ Quitter</button>
+            </div>
+
+            <!-- Main Content -->
+            <div class="onair-container">
+                <!-- Main Display Area -->
+                <div class="onair-main-display">
+                    <!-- Segment en cours -->
+                    <div class="onair-current-segment" id="onair-current-segment">
+                        <!-- Timer en pleine largeur -->
+                        <div class="onair-timer-banner">
+                            <div class="onair-timer-label">⏱️ TEMPS RESTANT</div>
+                            <div class="onair-timer-value" id="onair-timer">00:00</div>
+                        </div>
+
+                        <div class="onair-segment-header">
+                            <div>
+                                <div class="onair-segment-badge" id="onair-segment-badge">📰 NEWS EN COURS</div>
+                                <div class="onair-segment-number" id="onair-segment-number">#1</div>
+                            </div>
+                            <div class="onair-segment-title" id="onair-segment-title">Aucun conducteur sélectionné</div>
+                        </div>
+
+                        <!-- Lancement -->
+                        <div class="onair-lancement-section" id="onair-lancement-section" style="display: none;">
+                            <div class="onair-section-label">🎤 LANCEMENT</div>
+                            <div class="onair-lancement-text" id="onair-lancement-text"></div>
+                        </div>
+
+                        <!-- Audio player -->
+                        <div class="onair-audio-section" id="onair-audio-section" style="display: none;">
+                            <div class="onair-section-label">🎵 AUDIO</div>
+                            <div class="onair-audio-controls">
+                                <button class="onair-audio-btn play" id="onair-audio-play" onclick="app.onAirPlayAudio()">▶️ Lire le son</button>
+                                <button class="onair-audio-btn stop" id="onair-audio-stop" onclick="app.onAirStopAudio()" style="display: none;">⏹️ Stop</button>
+                                <div class="onair-audio-info" id="onair-audio-info"></div>
+                            </div>
+                        </div>
+
+                        <!-- Pied -->
+                        <div class="onair-pied-section" id="onair-pied-section" style="display: none;">
+                            <div class="onair-section-label">📝 PIED</div>
+                            <div class="onair-pied-text" id="onair-pied-text"></div>
+                        </div>
+
+                        <!-- Fallback content for non-news segments -->
+                        <div class="onair-segment-content" id="onair-segment-content">
+                            Sélectionnez un conducteur depuis la page Conducteur pour démarrer.
+                        </div>
+                    </div>
+
+                    <!-- Contrôles -->
+                    <div class="onair-controls">
+                        <button class="onair-control-btn secondary" onclick="app.onAirPrevious()" title="Précédent">⏮️</button>
+                        <button class="onair-control-btn secondary" onclick="app.onAirPause()" id="onair-pause-btn" title="Pause">⏸️</button>
+                        <button class="onair-control-btn primary" onclick="app.onAirNext()" title="Suivant">⏭️</button>
+                        <button class="onair-control-btn secondary" onclick="app.onAirStop()" title="Stop">⏹️</button>
+                    </div>
+                </div>
+
+                <!-- Sidebar Info -->
+                <div class="onair-sidebar">
+                    <!-- Segments suivants -->
+                    <div class="onair-upcoming-segments">
+                        <div class="onair-upcoming-title">À venir</div>
+                        <div id="onair-upcoming-list">
+                            <div class="onair-empty-state">
+                                Aucun segment suivant
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info émission -->
+                    <div class="onair-info-card">
+                        <div class="onair-info-title">Infos émission</div>
+                        <div class="onair-info-stats">
+                            <div class="onair-stat-item">
+                                <div class="onair-stat-value" id="onair-stat-segments">0/0</div>
+                                <div class="onair-stat-label">Segments</div>
+                            </div>
+                            <div class="onair-stat-item">
+                                <div class="onair-stat-value" id="onair-stat-elapsed">00:00</div>
+                                <div class="onair-stat-label">Écoulé</div>
+                            </div>
+                            <div class="onair-stat-item">
+                                <div class="onair-stat-value" id="onair-stat-remaining">00:00</div>
+                                <div class="onair-stat-label">Restant</div>
+                            </div>
+                            <div class="onair-stat-item">
+                                <div class="onair-stat-value" id="onair-stat-end">--:--</div>
+                                <div class="onair-stat-label">Fin prévue</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AUDIO EDITOR VIEW -->
+        <div class="view" id="audio-editor-view">
+            <header class="view-header">
+                <div class="view-header-left">
+                    <button class="btn btn-secondary" onclick="app.returnToNews()">← Retour à la News</button>
+                    <h2>🎵 Éditeur Audio</h2>
+                </div>
+                <div class="view-header-right" style="position: relative;">
+                    <button class="btn btn-secondary" onclick="app.audioEditor.exportAudio()">💾 Exporter</button>
+                    <!-- Export Menu -->
+                    <div id="audio-export-menu" class="export-menu">
+                        <div class="export-menu-item" onclick="app.audioEditor.exportToNews()">
+                            <span class="export-menu-icon">📤</span>
+                            <div class="export-menu-text">
+                                <div class="export-menu-title">Exporter vers la News</div>
+                                <div class="export-menu-desc">Remplace l'audio de la news</div>
+                            </div>
+                        </div>
+                        <div class="export-menu-item" onclick="app.audioEditor.exportAsWAV()">
+                            <span class="export-menu-icon">🎵</span>
+                            <div class="export-menu-text">
+                                <div class="export-menu-title">Exporter en WAV</div>
+                                <div class="export-menu-desc">Télécharger en format WAV</div>
+                            </div>
+                        </div>
+                        <div class="export-menu-item" onclick="app.audioEditor.exportAsMP3()">
+                            <span class="export-menu-icon">🎶</span>
+                            <div class="export-menu-text">
+                                <div class="export-menu-title">Exporter en MP3</div>
+                                <div class="export-menu-desc">Télécharger en format MP3</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="audio-editor-container">
+                <!-- Toolbar -->
+                <div class="audio-toolbar">
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" id="play-btn" onclick="app.audioEditor.togglePlayback()" title="Lecture/Pause (Espace)">▶️</button>
+                        <button class="toolbar-btn" onclick="app.audioEditor.stop()" title="Stop">⏹️</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn success" onclick="app.audioEditor.setInPoint()" title="Marquer point IN (I)">⬇️ IN</button>
+                        <button class="toolbar-btn danger" onclick="app.audioEditor.setOutPoint()" title="Marquer point OUT (O)">⬆️ OUT</button>
+                        <button class="toolbar-btn" onclick="app.audioEditor.clearInOut()" title="Effacer IN/OUT">🔄</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" id="cut-btn" onclick="app.audioEditor.cut()" title="Couper (Ctrl+X)" disabled>✂️</button>
+                        <button class="toolbar-btn" id="copy-btn" onclick="app.audioEditor.copy()" title="Copier (Ctrl+C)" disabled>📋</button>
+                        <button class="toolbar-btn" id="paste-btn" onclick="app.audioEditor.paste()" title="Coller (Ctrl+V)" disabled>📌</button>
+                        <button class="toolbar-btn danger" id="delete-btn" onclick="app.audioEditor.deleteSelection()" title="Supprimer (Suppr)" disabled>🗑️</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.audioEditor.normalize()" title="Normaliser">🔊</button>
+                        <button class="toolbar-btn" id="fadein-btn" onclick="app.audioEditor.fadeIn()" title="Fade In" disabled>📈</button>
+                        <button class="toolbar-btn" id="fadeout-btn" onclick="app.audioEditor.fadeOut()" title="Fade Out" disabled>📉</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" id="undo-btn" onclick="app.audioEditor.undo()" title="Annuler (Ctrl+Z)" disabled>↶</button>
+                        <button class="toolbar-btn" id="redo-btn" onclick="app.audioEditor.redo()" title="Refaire (Ctrl+Y)" disabled>↷</button>
+                    </div>
+                </div>
+
+                <!-- Waveform Display -->
+                <div class="waveform-container">
+                    <canvas id="waveform-canvas"></canvas>
+                </div>
+
+                <!-- Transport Controls -->
+                <div class="transport-controls">
+                    <div class="time-display">
+                        <span id="current-time">00:00.000</span>
+                        <span class="separator">/</span>
+                        <span id="total-duration">00:00.000</span>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="btn btn-sm" onclick="app.audioEditor.zoomIn()">🔍+</button>
+                        <button class="btn btn-sm" onclick="app.audioEditor.zoomOut()">🔍-</button>
+                        <button class="btn btn-sm" onclick="app.audioEditor.zoomFit()">⬌ Ajuster</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MULTITRACK EDITOR VIEW -->
+        <div class="view" id="multitrack-view">
+            <div class="multitrack-container">
+                <!-- Header -->
+                <div class="multitrack-header">
+                    <div class="multitrack-title">🎚️ Éditeur Multipiste</div>
+                    <div class="multitrack-actions">
+                        <button class="btn btn-secondary" onclick="app.openMultitrackProjects()">📂 Projets</button>
+                        <button class="btn btn-secondary" onclick="app.multitrackEditor?.saveProjectToDynamoDB()">💾 Sauvegarder</button>
+                        <button class="btn btn-primary" onclick="app.multitrackEditor?.downloadMP3()">📤 Exporter MP3</button>
+                    </div>
+                </div>
+
+                <!-- Toolbar -->
+                <div class="multitrack-toolbar">
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" id="mt-import-btn" onclick="document.getElementById('mt-file-input').click()" title="Importer audio (📁)">📁</button>
+                        <input type="file" id="mt-file-input" accept="audio/*" multiple style="display:none" onchange="app.handleMultitrackFileImport(event)">
+                        <button class="toolbar-btn" id="mt-record-btn" onclick="app.toggleMultitrackRecording()" title="Enregistrer (R)">🎤</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.cut()" title="Couper (Ctrl+X)">✂️</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.copy()" title="Copier (Ctrl+C)">📄</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.paste()" title="Coller (Ctrl+V)">📋</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.setInPoint()" title="Point IN (I)">⏵</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.setOutPoint()" title="Point OUT (O)">⏴</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.clearInOutPoints()" title="Effacer In/Out">⌧</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.split()" title="Diviser (S)">✂</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.normalize()" title="Normaliser">📊</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.amplify()" title="Amplifier">🔊</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.undo()" title="Annuler (Ctrl+Z)">↶</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.redo()" title="Refaire (Ctrl+Y)">↷</button>
+                    </div>
+                    <div class="toolbar-section">
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.zoomOut()" title="Dézoomer (-)">🔍-</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.zoomIn()" title="Zoomer (+)">🔍+</button>
+                        <button class="toolbar-btn" onclick="app.multitrackEditor?.zoomToFit()" title="Ajuster à la vue (0)">⬌</button>
+                    </div>
+                </div>
+
+                <!-- Transport Controls -->
+                <div class="multitrack-transport">
+                    <button class="transport-btn" onclick="app.multitrackEditor?.stop()">⏮️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.seekTo(Math.max(0, (app.multitrackEditor?.currentTime || 0) - 5))">⏪</button>
+                    <button class="transport-btn play" id="mt-play-btn" onclick="app.toggleMultitrackPlayback()">▶️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.pause()">⏸️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.stop()">⏹️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.seekTo(Math.min(app.multitrackEditor?.duration || 0, (app.multitrackEditor?.currentTime || 0) + 5))">⏩</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.seekTo(app.multitrackEditor?.duration || 0)">⏭️</button>
+                    <div class="timecode" id="mt-timecode">00:00.000</div>
+                </div>
+
+                <!-- In/Out Display -->
+                <div class="multitrack-inout-bar">
+                    <div class="inout-info" id="multitrack-inout-display"></div>
+                    <div class="inout-shortcuts">
+                        <span class="shortcut-hint">Espace: Play/Pause</span>
+                        <span class="shortcut-hint">I: Point IN</span>
+                        <span class="shortcut-hint">O: Point OUT</span>
+                        <span class="shortcut-hint">S: Diviser</span>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="multitrack-timeline-container">
+                    <canvas id="multitrack-timeline" width="1200" height="40"></canvas>
+                </div>
+
+                <!-- Tracks -->
+                <div class="multitrack-tracks-container" id="multitrack-tracks">
+                    <canvas id="multitrack-canvas" width="1200" height="400"></canvas>
+                </div>
+
+                <!-- Horizontal Scroll Controls -->
+                <div class="multitrack-scroll-controls">
+                    <button class="scroll-btn" onclick="app.multitrackEditor?.scrollLeft()" title="Défiler à gauche (Shift+←)">◀</button>
+                    <input type="range" id="multitrack-scroll" class="multitrack-scrollbar" min="0" max="100" value="0" oninput="app.multitrackEditor?.setScroll(this.value)">
+                    <button class="scroll-btn" onclick="app.multitrackEditor?.scrollRight()" title="Défiler à droite (Shift+→)">▶</button>
+                </div>
+
+                <!-- Audio Library (Chutier) -->
+                <div class="multitrack-library-section">
+                    <div class="library-header">
+                        <span class="library-title">📂 Chutier Audio</span>
+                        <span class="library-hint">Glissez les fichiers sur les pistes pour les ajouter</span>
+                    </div>
+                    <div id="multitrack-library" class="multitrack-library">
+                        <div class="library-empty">
+                            <p>Chutier vide</p>
+                            <p class="hint">Importez des fichiers audio</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Panel -->
+                <div class="multitrack-export-panel">
+                    <div class="export-title">⚙️ Options d'export</div>
+                    <div class="export-options">
+                        <div class="export-option">
+                            <label>Format</label>
+                            <select id="mt-export-format">
+                                <option value="mp3-320">MP3 (320 kbps)</option>
+                                <option value="mp3-256">MP3 (256 kbps)</option>
+                                <option value="mp3-192">MP3 (192 kbps)</option>
+                                <option value="mp3-128">MP3 (128 kbps)</option>
+                            </select>
+                        </div>
+                        <div class="export-option">
+                            <label>Nom du fichier</label>
+                            <input type="text" id="mt-export-filename" placeholder="mon-mixage" value="">
+                        </div>
+                        <div class="export-option">
+                            <label>Normalisation</label>
+                            <select id="mt-normalize">
+                                <option value="-3">-3 dB (Radio)</option>
+                                <option value="-6">-6 dB (Podcast)</option>
+                                <option value="-1">-1 dB (Maximum)</option>
+                                <option value="0">Aucune</option>
+                            </select>
+                        </div>
+                        <div class="export-option">
+                            <label>Durée totale</label>
+                            <input type="text" id="mt-total-duration" value="0:00" readonly style="background: #1a1a1a;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
 
     <!-- AWS SDK -->
-    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1462.0.min.js?v=1757350310"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1462.0.min.js"></script>
 
-    <!-- Core Scripts -->
-    <script src="js/config/aws-config.js?v=3.0.0"></script>
+    <!-- Config (AWS config DOIT être chargé en premier) -->
+    <script src="js/config/aws-config.js?v=1762426265"></script>
+
+    <!-- Core JS (gardons ce qui fonctionne) -->
     <script src="js/core/utils.js?v=3.0.0"></script>
-    <script src="js/utils/audio-url-fixer.js?v=3.0.0"></script>
-    <script src="js/core/constants.js?v=3.0.0"></script>
     <script src="js/core/cognito-auth.js?v=1.2"></script>
-    <script src="js/core/dynamodb-client.js?v=1762169381"></script>
-    <script src="js/core/storage-dynamodb-v2.js?v=1762169381"></script>
-    <script src="js/core/cache-manager.js?v=1762169381"></script>
-    <script src="js/core/audio-storage.js?v=1762169381"></script>
-    <script src="js/core/conductor-storage.js?v=1762169381"></script>
-    <script src="js/core/sync-wrapper.js?v=1755899484"></script>
-    <script src="js/core/cross-user-manager.js?v=1.2"></script>
-
-    <!-- Utils -->
-    <script src="js/utils/block-metrics.js?v=1.0"></script>
-
-    <!-- Managers -->
-    <script src="js/managers/ContentManagerHelpers.js?v=1755899484"></script>
+    <script src="js/core/dynamodb-client.js?v=1762426265"></script>
+    <script src="js/core/storage-dynamodb-v2.js?v=1762426265"></script>
+    <script src="js/core/audio-storage.js?v=1762426265"></script>
     <script src="js/managers/ContentManager.js?v=1756486244"></script>
-    <script src="js/managers/BlockManager.js?v=1756697800"></script>
-    <script src="js/managers/ConductorManager.js?v=1756484402"></script>
-    <script src="js/managers/ConductorTemplateManager.js?v=1755899484"></script>
-    <script src="js/managers/AudioManager.js?v=1757260400"></script>
-    <script src="js/managers/AudioS3Manager.js?v=1755899484"></script>
-    <script src="js/managers/AudioUrlManager.js?v=1755899484"></script>
-    <script src="js/managers/RecurrenceManager.js?v=1755899484"></script>
-    <script src="js/managers/ExportManager.js?v=1755899484"></script>
-    <script src="js/managers/ArchivesManager.js?v=1756492980"></script>
-
-    <!-- Components -->
-    <script src="js/components/Editor.js?v=1755899484"></script>
-    <script src="js/components/Rundown.js?v=1755899484"></script>
-    <script src="js/components/OnAir.js?v=1757350310"></script>
-    <script src="js/components/Settings.js?v=1755899484"></script>
-    <script src="js/components/Blocks.js?v=1755899484"></script>
-    <script src="js/components/UserFilter.js?v=1.0"></script>
-    <script src="js/components/ChroniquesInvites.js?v=1.0"></script>
-    <script src="js/components/AudioEditor.js?v=1756417514"></script>
-    <script src="js/components/MultitrackEditor.js?v=1755899484"></script>
-    <script src="js/components/Fridge.js?v=1755899484"></script>
     <script src="js/components/NewsDurationManager.js?v=1.0"></script>
+    <script src="js/components/AudioEditor.js?v=1762858797"></script>
 
-    <!-- Modules -->
-    <script src="js/modules/StudiosCalendar.js?v=1.0"></script>
-    <script src="js/modules/EmissionEditor.js?v=1.0"></script>
-    <script src="js/modules/VolunteerOptimizations.js?v=1.0"></script>
+    <!-- Multitrack Editor Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+    <script src="js/components/MultitrackEditor.js?v=1763074441"></script>
 
-    <!-- Dev Tools -->
-    <script src="js/utils/dev-tools.js?v=1.0"></script>
+    <!-- V3 App Logic -->
+    <script src="v3-app-1762510653.js"></script>
 
-    <!-- Main App -->
-    <script src="js/app.js?v=1762169381"></script>
 </body>
 </html>

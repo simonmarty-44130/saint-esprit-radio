@@ -759,17 +759,17 @@ class SaintEspritV3 {
                 </div>
 
                 <div class="form-group">
-                    <label>Contenu</label>
+                    <label>Contenu <span id="content-reading-time" style="color: var(--primary); font-weight: normal; font-size: 0.85em;">(0:00)</span></label>
                     <textarea id="news-content" rows="10" placeholder="Contenu de la news...">${this.currentNews.content || ''}</textarea>
                 </div>
 
                 <div class="form-row form-row-2">
                     <div class="form-group">
-                        <label>Lancement (optionnel)</label>
+                        <label>Lancement <span id="lancement-reading-time" style="color: var(--primary); font-weight: normal; font-size: 0.85em;">(0:00)</span></label>
                         <textarea id="news-lancement" rows="3" placeholder="Texte de lancement pour le présentateur...">${this.currentNews.lancement || ''}</textarea>
                     </div>
                     <div class="form-group">
-                        <label>Pied (optionnel)</label>
+                        <label>Pied <span id="pied-reading-time" style="color: var(--primary); font-weight: normal; font-size: 0.85em;">(0:00)</span></label>
                         <textarea id="news-pied" rows="3" placeholder="Texte de pied pour le présentateur...">${this.currentNews.pied || ''}</textarea>
                     </div>
                 </div>
@@ -1088,7 +1088,7 @@ class SaintEspritV3 {
 
         const durations = this.durationManager.calculateTotalDuration(fullText);
 
-        // Update display
+        // Update main display
         const readingEl = document.getElementById('reading-duration');
         const audioEl = document.getElementById('audio-duration');
         const totalEl = document.getElementById('total-duration');
@@ -1096,6 +1096,28 @@ class SaintEspritV3 {
         if (readingEl) readingEl.textContent = durations.readingTimeFormatted;
         if (audioEl) audioEl.textContent = durations.audioTimeFormatted;
         if (totalEl) totalEl.textContent = durations.totalTimeFormatted;
+
+        // Update individual field reading times
+        const formatTime = (seconds) => {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `(${mins}:${secs.toString().padStart(2, '0')})`;
+        };
+
+        // Content reading time
+        const contentTime = this.durationManager.calculateTotalDuration(content).readingTime;
+        const contentTimeEl = document.getElementById('content-reading-time');
+        if (contentTimeEl) contentTimeEl.textContent = formatTime(contentTime);
+
+        // Lancement reading time
+        const lancementTime = this.durationManager.calculateTotalDuration(lancement).readingTime;
+        const lancementTimeEl = document.getElementById('lancement-reading-time');
+        if (lancementTimeEl) lancementTimeEl.textContent = formatTime(lancementTime);
+
+        // Pied reading time
+        const piedTime = this.durationManager.calculateTotalDuration(pied).readingTime;
+        const piedTimeEl = document.getElementById('pied-reading-time');
+        if (piedTimeEl) piedTimeEl.textContent = formatTime(piedTime);
     }
 
     async saveNews() {
@@ -1229,23 +1251,23 @@ class SaintEspritV3 {
         try {
             const data = await this.storage.load();
             const news = data.news || [];
-            const index = news.findIndex(n => n.id === newsId);
+            const newsToDelete = news.find(n => n.id === newsId);
 
-            if (index === -1) {
+            if (!newsToDelete) {
                 alert('News introuvable');
                 return;
             }
 
-            // Remove from array
-            news.splice(index, 1);
-            data.news = news;
-
-            // Save
-            await this.storage.save(data);
-            await this.loadNews();
-
-            this.showNotification('News supprimée', 'success');
-            console.log('✅ News deleted successfully');
+            // Delete from DynamoDB using deleteItem
+            const success = await this.storage.deleteItem('news', newsId, newsToDelete.createdAt);
+            
+            if (success) {
+                await this.loadNews();
+                this.showNotification('News supprimée', 'success');
+                console.log('✅ News deleted successfully');
+            } else {
+                alert('Erreur lors de la suppression');
+            }
         } catch (error) {
             console.error('Error deleting news:', error);
             alert('Erreur lors de la suppression');
@@ -1296,23 +1318,23 @@ class SaintEspritV3 {
         try {
             const data = await this.storage.load();
             const animations = data.animations || [];
-            const index = animations.findIndex(a => a.id === animationId);
+            const animToDelete = animations.find(a => a.id === animationId);
 
-            if (index === -1) {
+            if (!animToDelete) {
                 alert('Animation introuvable');
                 return;
             }
 
-            // Remove from array
-            animations.splice(index, 1);
-            data.animations = animations;
-
-            // Save
-            await this.storage.save(data);
-            await this.loadNews(); // Reload unified contents view
-
-            this.showNotification('Animation supprimée', 'success');
-            console.log('✅ Animation deleted successfully');
+            // Delete from DynamoDB using deleteItem
+            const success = await this.storage.deleteItem('animations', animationId, animToDelete.createdAt);
+            
+            if (success) {
+                await this.loadNews(); // Reload unified contents view
+                this.showNotification('Animation supprimée', 'success');
+                console.log('✅ Animation deleted successfully');
+            } else {
+                alert('Erreur lors de la suppression');
+            }
         } catch (error) {
             console.error('Error deleting animation:', error);
             alert('Erreur lors de la suppression');
@@ -1798,21 +1820,21 @@ ${news.content || 'Pas de contenu'}
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Lancement (avant l'audio)</label>
+                        <label>Lancement <span id="anim-lancement-reading-time" style="color: var(--primary); font-weight: normal; font-size: 0.85em;">(0:00)</span></label>
                         <textarea id="animation-lancement" rows="3" placeholder="Texte à lire avant l'audio...">${this.currentAnimation.lancement || ''}</textarea>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Contenu</label>
+                        <label>Contenu <span id="anim-content-reading-time" style="color: var(--primary); font-weight: normal; font-size: 0.85em;">(0:00)</span></label>
                         <textarea id="animation-content" rows="5" placeholder="Contenu de l'animation...">${this.currentAnimation.content || ''}</textarea>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Pied (après l'audio)</label>
+                        <label>Pied <span id="anim-pied-reading-time" style="color: var(--primary); font-weight: normal; font-size: 0.85em;">(0:00)</span></label>
                         <textarea id="animation-pied" rows="3" placeholder="Texte à lire après l'audio...">${this.currentAnimation.pied || ''}</textarea>
                     </div>
                 </div>
@@ -2004,7 +2026,7 @@ ${news.content || 'Pas de contenu'}
 
         const durations = this.durationManager.calculateTotalDuration(fullText);
 
-        // Update display
+        // Update main display
         const readingEl = document.getElementById('animation-reading-duration');
         const audioEl = document.getElementById('animation-audio-duration');
         const totalEl = document.getElementById('animation-total-duration');
@@ -2012,6 +2034,28 @@ ${news.content || 'Pas de contenu'}
         if (readingEl) readingEl.textContent = durations.textTimeFormatted;
         if (audioEl) audioEl.textContent = durations.audioTimeFormatted;
         if (totalEl) totalEl.textContent = durations.totalTimeFormatted;
+
+        // Update individual field reading times
+        const formatTime = (seconds) => {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `(${mins}:${secs.toString().padStart(2, '0')})`;
+        };
+
+        // Content reading time
+        const contentTime = this.durationManager.calculateTotalDuration(content).readingTime;
+        const contentTimeEl = document.getElementById('anim-content-reading-time');
+        if (contentTimeEl) contentTimeEl.textContent = formatTime(contentTime);
+
+        // Lancement reading time
+        const lancementTime = this.durationManager.calculateTotalDuration(lancement).readingTime;
+        const lancementTimeEl = document.getElementById('anim-lancement-reading-time');
+        if (lancementTimeEl) lancementTimeEl.textContent = formatTime(lancementTime);
+
+        // Pied reading time
+        const piedTime = this.durationManager.calculateTotalDuration(pied).readingTime;
+        const piedTimeEl = document.getElementById('anim-pied-reading-time');
+        if (piedTimeEl) piedTimeEl.textContent = formatTime(piedTime);
     }
 
     async saveAnimation() {

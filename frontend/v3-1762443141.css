@@ -192,17 +192,34 @@ body {
 /* ===== DASHBOARD ===== */
 .cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: var(--space-lg);
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-md);
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+@media (max-width: 1200px) {
+    .cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 .card {
     background: var(--bg-light);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: var(--space-xl);
+    padding: var(--space-lg);
     cursor: pointer;
     transition: all 0.3s;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
 }
 
 .card:hover {
@@ -212,21 +229,31 @@ body {
     box-shadow: var(--shadow-lg);
 }
 
+.card-external {
+    background: linear-gradient(135deg, var(--bg-light) 0%, rgba(102, 126, 234, 0.1) 100%);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+.card-external:hover {
+    border-color: rgba(102, 126, 234, 0.6);
+    background: linear-gradient(135deg, var(--bg-lighter) 0%, rgba(102, 126, 234, 0.15) 100%);
+}
+
 .card-icon {
-    font-size: 48px;
-    margin-bottom: var(--space-md);
+    font-size: 36px;
+    margin-bottom: var(--space-sm);
 }
 
 .card h3 {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
-    margin-bottom: var(--space-sm);
+    margin-bottom: var(--space-xs);
 }
 
 .card p {
     color: var(--text-muted);
-    font-size: 14px;
-    margin-bottom: var(--space-md);
+    font-size: 12px;
+    margin-bottom: var(--space-sm);
 }
 
 .card-stat {
