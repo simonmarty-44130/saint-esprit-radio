@@ -2369,8 +2369,8 @@ class AudioEditor {
                 window.app.currentNews.audioDuration = exportBuffer.duration;
                 window.app.currentNews.hasAudio = true;
 
-                // Save to storage
-                await window.app.storage.save();
+                // Save to storage using saveItem for single item update
+                await window.app.storage.saveItem('news', window.app.currentNews);
 
                 // Update duration manager if available
                 if (window.app.durationManager) {
@@ -2387,9 +2387,14 @@ class AudioEditor {
                 showNotification('Audio exported to news successfully!', 'success');
                 console.log('✅ Audio exported to news as MP3 (192kbps):', audioResult.url);
 
-                // Reload news to show updated audio
+                // Reload news list
                 if (window.app.loadNews) {
                     window.app.loadNews();
+                }
+                
+                // Reload the current news editor to show updated audio
+                if (window.app.openNews) {
+                    window.app.openNews(window.app.currentNews.id);
                 }
             } else {
                 throw new Error('Storage manager not available');
