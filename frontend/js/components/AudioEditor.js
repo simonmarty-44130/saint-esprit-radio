@@ -2246,6 +2246,85 @@ class AudioEditor {
         }
     }
 
+
+    normalizeAudioBuffer(buffer, targetLevelDb = -3) {
+        const targetLevel = Math.pow(10, targetLevelDb / 20);
+        const channels = [];
+        
+        for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+            channels.push(buffer.getChannelData(ch));
+        }
+        
+        let maxSample = 0;
+        channels.forEach(channelData => {
+            for (let i = 0; i < channelData.length; i++) {
+                maxSample = Math.max(maxSample, Math.abs(channelData[i]));
+            }
+        });
+        
+        if (maxSample === 0) return buffer;
+        
+        const gain = targetLevel / maxSample;
+        const normalizedBuffer = this.audioContext.createBuffer(
+            buffer.numberOfChannels,
+            buffer.length,
+            buffer.sampleRate
+        );
+        
+        for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+            const sourceData = buffer.getChannelData(ch);
+            const targetData = normalizedBuffer.getChannelData(ch);
+            for (let i = 0; i < sourceData.length; i++) {
+                targetData[i] = sourceData[i] * gain;
+            }
+        }
+        
+        return normalizedBuffer;
+    }
+
+    encodeToMP3(buffer, bitrate = 192) {
+        if (typeof lamejs === 'undefined') {
+            throw new Error('lamejs not loaded. MP3 encoding not available.');
+        }
+        
+        const channels = buffer.numberOfChannels;
+        const sampleRate = buffer.sampleRate;
+        const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, bitrate);
+        
+        const mp3Data = [];
+        const sampleBlockSize = 1152;
+        
+        const leftChannel = buffer.getChannelData(0);
+        const rightChannel = channels > 1 ? buffer.getChannelData(1) : leftChannel;
+        
+        for (let i = 0; i < leftChannel.length; i += sampleBlockSize) {
+            const leftChunk = this.convertFloat32ToInt16(leftChannel.subarray(i, i + sampleBlockSize));
+            const rightChunk = this.convertFloat32ToInt16(rightChannel.subarray(i, i + sampleBlockSize));
+            
+            const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+        }
+        
+        const mp3buf = mp3encoder.flush();
+        if (mp3buf.length > 0) {
+            mp3Data.push(mp3buf);
+        }
+        
+        return new Blob(mp3Data, { type: 'audio/mpeg' });
+    }
+
+    convertFloat32ToInt16(buffer) {
+        const l = buffer.length;
+        const buf = new Int16Array(l);
+        for (let i = 0; i < l; i++) {
+            let s = Math.max(-1, Math.min(1, buffer[i]));
+            buf[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        return buf;
+    }
+
     async exportToNews() {
         if (!this.currentBuffer) {
             showNotification('No audio to export', 'warning');
@@ -2263,21 +2342,24 @@ class AudioEditor {
             const menu = document.getElementById('audio-export-menu');
             if (menu) menu.classList.remove('active');
 
-            showNotification('Exporting to news...', 'info');
+            showNotification('Encoding to MP3...', 'info');
 
             // Create export buffer (with In/Out points and volume automation)
             const exportBuffer = this.createExportBuffer();
 
-            // Convert to WAV
-            const audioData = this.bufferToWav(exportBuffer);
-            const blob = new Blob([audioData], { type: 'audio/wav' });
+            // Normalize audio
+            const normalizedBuffer = this.normalizeAudioBuffer(exportBuffer, -3);
+
+            // Encode to MP3
+            const mp3Blob = this.encodeToMP3(normalizedBuffer, 192);
 
             // Create File object
-            const fileName = `${window.app.currentNews.id}-audio-edited-${Date.now()}.wav`;
-            const file = new File([blob], fileName, { type: 'audio/wav' });
+            const fileName = `${window.app.currentNews.id}-audio-edited-${Date.now()}.mp3`;
+            const file = new File([mp3Blob], fileName, { type: 'audio/mpeg' });
 
             // Upload to S3 using the same method as normal audio upload
             if (window.app.storage && window.app.storage.s3Manager) {
+                showNotification('Uploading to S3...', 'info');
                 const audioResult = await window.app.storage.s3Manager.uploadAudio(file);
 
                 // Update current news with new audio
@@ -2285,6 +2367,7 @@ class AudioEditor {
                 window.app.currentNews.audioKey = audioResult.key;
                 window.app.currentNews.audioFileName = fileName;
                 window.app.currentNews.audioDuration = exportBuffer.duration;
+                window.app.currentNews.hasAudio = true;
 
                 // Save to storage
                 await window.app.storage.save();
@@ -2292,12 +2375,17 @@ class AudioEditor {
                 // Update duration manager if available
                 if (window.app.durationManager) {
                     window.app.durationManager.audioFile = file;
-                    window.app.durationManager.audioBlob = blob;
+                    window.app.durationManager.audioBlob = mp3Blob;
                     window.app.durationManager.audioDuration = exportBuffer.duration;
                 }
 
+                // Update durations display
+                if (window.app.updateDurations) {
+                    window.app.updateDurations();
+                }
+
                 showNotification('Audio exported to news successfully!', 'success');
-                console.log('✅ Audio exported to news:', audioResult.url);
+                console.log('✅ Audio exported to news as MP3 (192kbps):', audioResult.url);
 
                 // Reload news to show updated audio
                 if (window.app.loadNews) {
@@ -2308,7 +2396,7 @@ class AudioEditor {
             }
         } catch (error) {
             console.error('❌ Error exporting to news:', error);
-            showNotification('Error exporting to news', 'error');
+            showNotification('Error exporting to news: ' + error.message, 'error');
         }
     }
 
