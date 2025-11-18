@@ -2283,3 +2283,22 @@ body {
         width: 100%;
     }
 }
+
+/* Form row layouts for multi-site support */
+.form-row-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.form-row-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+@media (max-width: 900px) {
+    .form-row-3, .form-row-4 {
+        grid-template-columns: 1fr;
+    }
+}
