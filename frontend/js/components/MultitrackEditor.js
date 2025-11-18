@@ -1399,7 +1399,7 @@ class MultitrackEditor {
     
     updateTimeDisplay() {
         // Update time display in UI if it exists
-        const timeDisplay = document.getElementById('multitrack-time-display');
+        const timeDisplay = document.getElementById('mt-timecode');
         if (timeDisplay) {
             timeDisplay.textContent = this.formatTime(this.currentTime);
         }

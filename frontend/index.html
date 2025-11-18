@@ -697,13 +697,13 @@
 
                 <!-- Transport Controls -->
                 <div class="multitrack-transport">
-                    <button class="transport-btn" onclick="app.multitrackEditor?.stop()">⏮️</button>
-                    <button class="transport-btn" onclick="app.multitrackEditor?.seekTo(Math.max(0, (app.multitrackEditor?.currentTime || 0) - 5))">⏪</button>
-                    <button class="transport-btn play" id="mt-play-btn" onclick="app.toggleMultitrackPlayback()">▶️</button>
-                    <button class="transport-btn" onclick="app.multitrackEditor?.pause()">⏸️</button>
-                    <button class="transport-btn" onclick="app.multitrackEditor?.stop()">⏹️</button>
-                    <button class="transport-btn" onclick="app.multitrackEditor?.seekTo(Math.min(app.multitrackEditor?.duration || 0, (app.multitrackEditor?.currentTime || 0) + 5))">⏩</button>
-                    <button class="transport-btn" onclick="app.multitrackEditor?.seekTo(app.multitrackEditor?.duration || 0)">⏭️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.goToStart()" title="Aller au début">⏮️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.seekTo(Math.max(0, (app.multitrackEditor?.currentTime || 0) - 5))" title="Reculer 5s">⏪</button>
+                    <button class="transport-btn play" id="mt-play-btn" onclick="app.toggleMultitrackPlayback()" title="Lecture/Pause">▶️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.pause()" title="Pause">⏸️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.stop()" title="Stop">⏹️</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.seekTo(Math.min(app.multitrackEditor?.getMaxDuration() || 0, (app.multitrackEditor?.currentTime || 0) + 5))" title="Avancer 5s">⏩</button>
+                    <button class="transport-btn" onclick="app.multitrackEditor?.goToEnd()" title="Aller à la fin">⏭️</button>
                     <div class="timecode" id="mt-timecode">00:00.000</div>
                 </div>
 
