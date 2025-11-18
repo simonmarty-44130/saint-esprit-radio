@@ -1130,34 +1130,37 @@ class SaintEspritV3 {
             return;
         }
 
+        // Sauvegarder une référence locale pour éviter les problèmes après reload
+        const newsToSave = this.currentNews;
+
         // Get form values
-        this.currentNews.title = document.getElementById('news-title')?.value || '';
-        this.currentNews.status = document.getElementById('news-status')?.value || 'draft';
-        this.currentNews.category = document.getElementById('news-category')?.value || 'general';
-        this.currentNews.site = document.getElementById('news-site')?.value || '';
-        this.currentNews.scheduledDate = document.getElementById('news-date')?.value || '';
-        this.currentNews.scheduledTime = document.getElementById('news-time')?.value || '';
-        this.currentNews.content = document.getElementById('news-content')?.value || '';
-        this.currentNews.lancement = document.getElementById('news-lancement')?.value || '';
-        this.currentNews.pied = document.getElementById('news-pied')?.value || '';
-        this.currentNews.updatedAt = Date.now();
+        newsToSave.title = document.getElementById('news-title')?.value || '';
+        newsToSave.status = document.getElementById('news-status')?.value || 'draft';
+        newsToSave.category = document.getElementById('news-category')?.value || 'general';
+        newsToSave.site = document.getElementById('news-site')?.value || '';
+        newsToSave.scheduledDate = document.getElementById('news-date')?.value || '';
+        newsToSave.scheduledTime = document.getElementById('news-time')?.value || '';
+        newsToSave.content = document.getElementById('news-content')?.value || '';
+        newsToSave.lancement = document.getElementById('news-lancement')?.value || '';
+        newsToSave.pied = document.getElementById('news-pied')?.value || '';
+        newsToSave.updatedAt = Date.now();
 
         // Calculate duration pour le journal (Lancement + Audio + Pied)
         if (this.durationManager) {
             // Calculer le temps de lecture du lancement et du pied
-            const lancementTime = this.durationManager.calculateTotalDuration(this.currentNews.lancement).readingTime;
-            const piedTime = this.durationManager.calculateTotalDuration(this.currentNews.pied).readingTime;
-            const audioTime = this.currentNews.audioDuration || (this.durationManager.audioFile ? this.durationManager.audioDuration : 0);
+            const lancementTime = this.durationManager.calculateTotalDuration(newsToSave.lancement).readingTime;
+            const piedTime = this.durationManager.calculateTotalDuration(newsToSave.pied).readingTime;
+            const audioTime = newsToSave.audioDuration || (this.durationManager.audioFile ? this.durationManager.audioDuration : 0);
 
             // Durée totale pour le présentateur = Lancement + Audio + Pied
-            this.currentNews.duration = lancementTime + audioTime + piedTime;
+            newsToSave.duration = lancementTime + audioTime + piedTime;
         }
 
         try {
             // Upload audio file to S3 if present
             if (this.durationManager && this.durationManager.audioFile) {
                 console.log('📤 Uploading audio to S3...');
-                const audioFileId = `${this.currentNews.id}-audio-${Date.now()}`;
+                const audioFileId = `${newsToSave.id}-audio-${Date.now()}`;
 
                 try {
                     const audioResult = await this.storage.saveAudioFile(audioFileId, {
@@ -1166,8 +1169,8 @@ class SaintEspritV3 {
                     });
 
                     // Save S3 URL in news
-                    this.currentNews.audioUrl = audioResult.url;
-                    this.currentNews.audioKey = audioResult.key;
+                    newsToSave.audioUrl = audioResult.url;
+                    newsToSave.audioKey = audioResult.key;
                     console.log('✅ Audio uploaded to S3:', audioResult.url);
                 } catch (audioError) {
                     console.error('❌ Audio upload error:', audioError);
@@ -1175,8 +1178,8 @@ class SaintEspritV3 {
                 }
             }
 
-            await this.storage.saveItem('news', this.currentNews);
-            console.log('✅ News saved:', this.currentNews.id);
+            await this.storage.saveItem('news', newsToSave);
+            console.log('✅ News saved:', newsToSave.id);
 
             // Show success notification
             this.showNotification('News enregistrée avec succès', 'success');
@@ -2077,33 +2080,36 @@ ${news.content || 'Pas de contenu'}
             return;
         }
 
+        // Sauvegarder une référence locale pour éviter les problèmes après reload
+        const animationToSave = this.currentAnimation;
+
         // Get form values
-        this.currentAnimation.title = document.getElementById('animation-title')?.value || '';
-        this.currentAnimation.category = document.getElementById('animation-category')?.value || 'chronique';
-        this.currentAnimation.site = document.getElementById('animation-site')?.value || '';
-        this.currentAnimation.scheduledDate = document.getElementById('animation-date')?.value || '';
-        this.currentAnimation.scheduledTime = document.getElementById('animation-time')?.value || '';
-        this.currentAnimation.content = document.getElementById('animation-content')?.value || '';
-        this.currentAnimation.lancement = document.getElementById('animation-lancement')?.value || '';
-        this.currentAnimation.pied = document.getElementById('animation-pied')?.value || '';
-        this.currentAnimation.updatedAt = Date.now();
+        animationToSave.title = document.getElementById('animation-title')?.value || '';
+        animationToSave.category = document.getElementById('animation-category')?.value || 'chronique';
+        animationToSave.site = document.getElementById('animation-site')?.value || '';
+        animationToSave.scheduledDate = document.getElementById('animation-date')?.value || '';
+        animationToSave.scheduledTime = document.getElementById('animation-time')?.value || '';
+        animationToSave.content = document.getElementById('animation-content')?.value || '';
+        animationToSave.lancement = document.getElementById('animation-lancement')?.value || '';
+        animationToSave.pied = document.getElementById('animation-pied')?.value || '';
+        animationToSave.updatedAt = Date.now();
 
         // Calculate duration pour le journal (Lancement + Audio + Pied)
         if (this.durationManager) {
             // Calculer le temps de lecture du lancement et du pied
-            const lancementTime = this.durationManager.calculateTotalDuration(this.currentAnimation.lancement).readingTime;
-            const piedTime = this.durationManager.calculateTotalDuration(this.currentAnimation.pied).readingTime;
-            const audioTime = this.currentAnimation.audioDuration || (this.durationManager.audioFile ? this.durationManager.audioDuration : 0);
+            const lancementTime = this.durationManager.calculateTotalDuration(animationToSave.lancement).readingTime;
+            const piedTime = this.durationManager.calculateTotalDuration(animationToSave.pied).readingTime;
+            const audioTime = animationToSave.audioDuration || (this.durationManager.audioFile ? this.durationManager.audioDuration : 0);
 
             // Durée totale pour le présentateur = Lancement + Audio + Pied
-            this.currentAnimation.duration = lancementTime + audioTime + piedTime;
+            animationToSave.duration = lancementTime + audioTime + piedTime;
         }
 
         try {
             // Upload audio file to S3 if present
             if (this.durationManager && this.durationManager.audioFile) {
                 console.log('📤 Uploading audio to S3...');
-                const audioFileId = `${this.currentAnimation.id}-audio-${Date.now()}`;
+                const audioFileId = `${animationToSave.id}-audio-${Date.now()}`;
 
                 try {
                     const audioResult = await this.storage.saveAudioFile(audioFileId, {
@@ -2112,8 +2118,8 @@ ${news.content || 'Pas de contenu'}
                     });
 
                     // Save S3 URL in animation
-                    this.currentAnimation.audioUrl = audioResult.url;
-                    this.currentAnimation.audioKey = audioResult.key;
+                    animationToSave.audioUrl = audioResult.url;
+                    animationToSave.audioKey = audioResult.key;
                     console.log('✅ Audio uploaded to S3:', audioResult.url);
                 } catch (audioError) {
                     console.error('❌ Audio upload error:', audioError);
@@ -2121,8 +2127,8 @@ ${news.content || 'Pas de contenu'}
                 }
             }
 
-            await this.storage.saveItem('animations', this.currentAnimation);
-            console.log('✅ Animation saved:', this.currentAnimation.id);
+            await this.storage.saveItem('animations', animationToSave);
+            console.log('✅ Animation saved:', animationToSave.id);
 
             // Refresh list
             await this.loadAnimations();
