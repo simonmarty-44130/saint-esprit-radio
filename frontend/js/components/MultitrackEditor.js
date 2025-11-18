@@ -4176,7 +4176,7 @@ class MultitrackEditor {
             };
 
             // Sauvegarder dans DynamoDB
-            await db.put('multitrack-projects', projectData);
+            await window.app.storage.saveItem('multitracks', projectData);
 
             showNotification('Projet sauvegardé avec succès', 'success');
             console.log('✅ Project saved:', this.projectId);
@@ -4202,7 +4202,8 @@ class MultitrackEditor {
             }
 
             const db = window.app.storage.db;
-            const projectData = await db.get('multitrack-projects', projectId);
+            const allProjects = await db.getAll('multitracks');
+            const projectData = allProjects.find(p => p.id === projectId);
 
             if (!projectData) {
                 throw new Error('Project not found');
@@ -4293,7 +4294,7 @@ class MultitrackEditor {
             const userId = localStorage.getItem('saint-esprit-user-id') || 'unknown';
 
             // Récupérer tous les projets (à filtrer côté client pour l'instant)
-            const allProjects = await db.getAll('multitrack-projects');
+            const allProjects = await db.getAll('multitracks');
 
             // Filtrer par userId
             const userProjects = allProjects.filter(p => p.userId === userId);

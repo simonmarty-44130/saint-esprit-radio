@@ -17,7 +17,8 @@ class DynamoDBClient {
             conductors: 'saint-esprit-conductors',
             journals: 'saint-esprit-journals',
             audio: 'saint-esprit-audio',
-            habillage: 'saint-esprit-habillage'
+            habillage: 'saint-esprit-habillage',
+            multitracks: 'saint-esprit-multitracks'
         };
     }
 
